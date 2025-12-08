@@ -267,6 +267,13 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         blank=True,
         null=True,
     )
+    contract = models.ManyToManyField(
+        help_text='Contracts associated with this asset',
+        to='netbox_inventory.Contract',
+        related_name='assets',
+        blank=True,
+        verbose_name='Contracts',
+    )
     warranty_start = models.DateField(
         help_text='First date warranty for this asset is valid',
         blank=True,
@@ -290,6 +297,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         'owner',
         'purchase',
         'delivery',
+        'contract',
         'warranty_start',
         'warranty_end',
         'tenant',

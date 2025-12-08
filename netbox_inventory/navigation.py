@@ -75,6 +75,44 @@ assets_items = (
     ),
 )
 
+#
+# Contracts
+#
+
+contract_buttons = [
+    PluginMenuButton(
+        link='plugins:netbox_inventory:contract_add',
+        title='Add',
+        icon_class='mdi mdi-plus-thick',
+        permissions=['netbox_inventory.add_contract'],
+    ),
+    PluginMenuButton(
+        link='plugins:netbox_inventory:contract_bulk_import',
+        title='Import',
+        icon_class='mdi mdi-upload',
+        permissions=['netbox_inventory.add_contract'],
+    ),
+]
+
+contracts_items = (
+    PluginMenuItem(
+        link='plugins:netbox_inventory:contract_list',
+        link_text='Contracts',
+        permissions=['netbox_inventory.view_contract'],
+        buttons=contract_buttons,
+    ),
+    PluginMenuItem(
+        link='plugins:netbox_inventory:contractvendor_list',
+        link_text='Contract Vendors',
+        permissions=['netbox_inventory.view_contractvendors']
+    ),
+    PluginMenuItem(
+        link='plugins:netbox_inventory:contractsku_list',
+        link_text='Contract SKUs',
+        permissions=['netbox_inventory.view_contractsku']
+    ),
+)
+
 
 #
 # Deliveries
@@ -234,6 +272,7 @@ if get_plugin_config('netbox_inventory', 'top_level_menu'):
         label='Inventory',
         groups=(
             ('Asset Management', assets_items),
+            ('Contracts', contracts_items),
             ('Deliveries', deliveries_items),
             ('Audit', audit_admin_items),
         ),
@@ -241,4 +280,4 @@ if get_plugin_config('netbox_inventory', 'top_level_menu'):
     )
 else:
     # display under plugins
-    menu_items = assets_items + deliveries_items + audit_admin_items
+    menu_items = assets_items + contracts_items + deliveries_items + audit_admin_items

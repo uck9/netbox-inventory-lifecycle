@@ -22,6 +22,10 @@ __all__ = (
     'AssetBulkEditForm',
     'AuditFlowBulkEditForm',
     'AuditFlowPageAssignmentBulkEditForm',
+    'ContractVendorBulkEditForm',
+    'ContractSKUBulkEditForm',
+    'ContractBulkEditForm',
+    'ContractAssignmentBulkEditForm',
     'DeliveryBulkEditForm',
     'InventoryItemGroupBulkEditForm',
     'PurchaseBulkEditForm',
@@ -244,6 +248,86 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
         'storage_location',
     )
 
+
+#
+# Contracts
+#
+
+class ContractVendorBulkEditForm(NetBoxModelBulkEditForm):
+    description = forms.CharField(
+        label=_('Description'),
+        max_length=200,
+        required=False
+    )
+    comments = CommentField()
+
+    model = ContractVendor
+    fieldsets = (
+        FieldSet('description', ),
+    )
+    nullable_fields = ('description', )
+
+
+class ContractSKUBulkEditForm(NetBoxModelBulkEditForm):
+    description = forms.CharField(
+        label=_('Description'),
+        max_length=200,
+        required=False
+    )
+    comments = CommentField()
+
+    model = ContractSKU
+    fieldsets = (
+        FieldSet('description', ),
+    )
+    nullable_fields = ('description', )
+
+
+class ContractBulkEditForm(NetBoxModelBulkEditForm):
+    description = forms.CharField(
+        label=_('Description'),
+        max_length=200,
+        required=False
+    )
+    comments = CommentField()
+
+    model = Contract
+    fieldsets = (
+        FieldSet('description', ),
+    )
+    nullable_fields = ('description', )
+
+
+class ContractAssignmentBulkEditForm(NetBoxModelBulkEditForm):
+    contract = DynamicModelChoiceField(
+        queryset=Contract.objects.all(),
+        label=_('Contract'),
+        required=False,
+        selector=True
+    )
+    sku = DynamicModelChoiceField(
+        queryset=ContractSKU.objects.all(),
+        label=_('SKU'),
+        required=False,
+        selector=True
+    )
+    description = forms.CharField(
+        label=_('Description'),
+        max_length=200,
+        required=False
+    )
+    end = forms.DateField(
+        label=_('End date'),
+        required=False,
+        widget=DatePicker(),
+    )
+    comments = CommentField()
+
+    model = ContractAssignment
+    fieldsets = (
+        FieldSet('contract', 'sku', 'description', 'end', ),
+    )
+    nullable_fields = ('contract', 'sku', 'description', 'end', )
 
 #
 # Deliveries

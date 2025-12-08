@@ -14,10 +14,19 @@ router.register('dcim/devices', views.DeviceAssetViewSet)
 router.register('dcim/modules', views.ModuleAssetViewSet)
 router.register('dcim/inventory-items', views.InventoryItemAssetViewSet)
 
+
+# Contracts
+router.register('contracts', views.ContractViewSet)
+router.register('contract-assignments', views.ContractAssignmentViewSet)
+router.register('contract-vendors', views.ContractVendorViewSet)
+router.register('contract-skus', views.ContractSKUViewSet)
+
+
 # Deliveries
 router.register('suppliers', views.SupplierViewSet)
 router.register('purchases', views.PurchaseViewSet)
 router.register('deliveries', views.DeliveryViewSet)
+
 
 # Audit
 router.register('audit-flows', views.AuditFlowViewSet)

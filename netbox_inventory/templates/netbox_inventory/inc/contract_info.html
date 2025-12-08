@@ -1,0 +1,54 @@
+
+{% load lcm_filters %}
+{% load helpers %}
+{# renders panel on object (device) with contract info assigned to it #}
+
+<div class="card">
+  <h2 class="card-header">
+    Contract
+    {% if contract %}
+    <div class="card-actions"><a href="{% url 'plugins:netbox_inventory:contractassignment' support_contract.pk %}" class="btn btn-sm btn-ghost-primary">
+      <i class="mdi mdi-chevron-right-box-outline" aria-hidden="true"></i> View Details
+      </a></div>
+      </h2>
+      <table class="table table-hover attr-table">
+        <tr>
+          <th scope="row">Coverage Status</th>
+          <td>{% badge contract.get_coverage_status_display bg_color=support_contract.get_support_coverage_status_color %}</td>
+        </tr>
+        {% if contract %}
+        <tr>
+          <th scope="row">Vendor</th>
+          <td>{{ contract.contract.vendor|linkify|placeholder }}</td>
+        </tr>
+        <tr>
+          <th scope="row"><span title="Contract Number">Contract Number</span></th>
+          <td>{{ contract.contract.contract_id|linkify|placeholder }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Support SKU</th>
+          <td>{{ contract.sku|linkify|placeholder }} ({{ contract.sku.description }})</td>
+        </tr>
+        <tr>
+          <th scope="row">Start Date</th>
+          <td>{{ contract.contract.start_date }}</td>
+        </tr>
+        <tr>
+          <th scope="row">End Date</th>
+          {% if contract.end_date == None %}
+          <td><span {{ contract.contract.end_date|date_badge_class }}>{{ contract.contract.end_date }}</span></td>
+          {% else %}
+          <td><span {{ contract.end_date|date_badge_class }}>{{ contract.end_date }}</span></td>
+          {% endif %}
+        </tr>
+        {% endif %}
+      </table>
+    {% else %}
+      <div class="card-actions"><a href="{% url 'plugins:netbox_inventory:contractassignment_add' %}?asset={{ object.pk }}&return_url={% url 'plugins:netbox_inventory:asset' pk=object.pk %}" class="btn btn-ghost-primary btn-sm">
+      <span class="mdi mdi-plus-thick" aria-hidden="true"></span>Add Contract</a></div>
+      </h2>
+      <div class="card-body"><span class="text-muted">No Contract Associated with Linked Asset<span></div>
+  {% endif %}
+</div>
+
+{# % include "netbox_lcm/inc/hardware_lifecycle_info.html" % #}

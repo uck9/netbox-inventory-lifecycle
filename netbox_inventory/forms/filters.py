@@ -36,6 +36,10 @@ __all__ = (
     'AuditFlowPageFilterForm',
     'AuditTrailFilterForm',
     'AuditTrailSourceFilterForm',
+    'ContractSKUFilterForm',
+    'ContractFilterForm',
+    'ContractVendorFilterForm',
+    'ContractAssignmentFilterForm',
     'DeliveryFilterForm',
     'InventoryItemGroupFilterForm',
     'InventoryItemTypeFilterForm',
@@ -361,6 +365,80 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
         },
         label='Located at location',
         help_text='Currently installed or stored here',
+    )
+    tag = TagFilterField(model)
+
+
+#
+# Contracts
+#
+
+class ContractSKUFilterForm(NetBoxModelFilterSetForm):
+    model = ContractSKU
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag', 'manufacturer_id'),
+    )
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Manufacturer'),
+    )
+    tag = TagFilterField(model)
+
+
+class ContractFilterForm(NetBoxModelFilterSetForm):
+    model = Contract
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('vendor_id', name='Purchase Information'),
+    )
+    vendor_id = DynamicModelMultipleChoiceField(
+        queryset=ContractVendor.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Vendor'),
+    )
+    tag = TagFilterField(model)
+
+
+class ContractVendorFilterForm(NetBoxModelFilterSetForm):
+    model = ContractVendor
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+    )
+    tag = TagFilterField(model)
+
+
+class ContractAssignmentFilterForm(NetBoxModelFilterSetForm):
+    model = ContractAssignment
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('contract_id', 'asset_id', 'sku_id', name='Assignment'),
+        FieldSet('end_date__lt', name='Dates'),
+    )
+    contract_id = DynamicModelMultipleChoiceField(
+        queryset=Contract.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Contracts'),
+    )
+    asset_id = DynamicModelMultipleChoiceField(
+        queryset=Asset.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Devices'),
+    )
+    sku_id = DynamicModelMultipleChoiceField(
+        queryset=ContractSKU.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Support SKU'),
+    )
+    end_date__lt = forms.DateField(
+        required=False,
+        label=_('Contract End before'),
+        widget=DatePicker,
     )
     tag = TagFilterField(model)
 

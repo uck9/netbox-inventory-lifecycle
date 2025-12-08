@@ -12,6 +12,10 @@ __all__ = (
     'AuditFlowViewSet',
     'AuditTrailSourceViewSet',
     'AuditTrailViewSet',
+    'ContractVendorViewSet',
+    'ContractSKUViewSet',
+    'ContractAssignmentViewSet',
+    'ContractViewSet',
     'DeliveryViewSet',
     'DeviceAssetViewSet',
     'InventoryItemAssetViewSet',
@@ -86,6 +90,36 @@ class InventoryItemAssetViewSet(InventoryItemViewSet):
     """
 
     filterset_class = filtersets.InventoryItemAssetFilterSet
+
+#
+# Contracts
+#
+
+
+class ContractVendorViewSet(NetBoxModelViewSet):
+    queryset = models.ContractVendor.objects.all()
+    serializer_class = ContractVendorSerializer
+    filterset_class = filtersets.ContractVendorFilterSet
+
+
+class ContractSKUViewSet(NetBoxModelViewSet):
+    queryset = models.ContractSKU.objects.all()
+    serializer_class = ContractSKUSerializer
+    filterset_class = filtersets.ContractSKUFilterSet
+
+
+class ContractAssignmentViewSet(NetBoxModelViewSet):
+    queryset = models.ContractAssignment.objects.all()
+    serializer_class = ContractAssignmentSerializer
+    filterset_class = filtersets.ContractAssignmentFilterSet
+
+
+class ContractViewSet(NetBoxModelViewSet):
+    queryset = models.Contract.objects.prefetch_related('tags').annotate(
+        asset_count=count_related(models.Asset, 'contract')
+    )
+    serializer_class = ContractSerializer
+    filterset_class = filtersets.ContractFilterSet
 
 
 #

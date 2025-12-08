@@ -1,0 +1,54 @@
+{% extends 'generic/object_edit.html' %}
+{% load form_helpers %}
+{% load static %}
+
+{% block form %}
+    <div class="field-group my-5">
+      <div class="row mb-2">
+        <h5 class="offset-sm-3">Assignment</h5>
+      </div>
+      <div class="row mb-2">
+        <div class="offset-sm-3">
+          <ul class="nav nav-pills" role="tablist">
+            <li role="presentation" class="nav-item">
+              <button role="tab" type="button" id="device_tab" data-bs-toggle="tab" aria-controls="asset" data-bs-target="#asset" class="nav-link active">
+                Asset
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="tab-content p-0 border-0">
+        <div class="tab-pane active" id="asset" role="tabpanel" aria-labeled-by="asset_tab">
+          {% render_field form.asset %}
+        </div>
+      </div>
+    </div>
+    <div class="field-group my-5">
+      <div class="row mb-2">
+        <h5 class="offset-sm-3">Contract</h5>
+      </div>
+      {% render_field form.contract %}
+      {% render_field form.sku %}
+    </div>
+    <div class="field-group my-5">
+      <div class="row mb-2">
+        <h5 class="offset-sm-3">Dates</h5>
+      </div>
+      {% render_field form.end_date %}
+    </div>
+    <div class="field-group my-5">
+      {% render_field form.comments %}
+    </div>
+    <div class="field-group my-5">
+      {% render_field form.tags %}
+    </div>
+    {% if form.custom_fields %}
+    <div class="field-group my-5">
+        <div class="row mb-2">
+          <h5 class="offset-sm-3">Custom Fields</h5>
+        </div>
+        {% render_custom_fields form %}
+    </div>
+    {% endif %} 
+{% endblock %}

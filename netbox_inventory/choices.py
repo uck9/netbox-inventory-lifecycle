@@ -37,3 +37,28 @@ class PurchaseStatusChoices(ChoiceSet):
         ('partial', 'Partial', 'blue'),
         ('closed', 'Closed', 'green'),
     ]
+
+#
+# Contract Types
+#
+
+class ContractTypeChoices(ChoiceSet):
+    key = 'Contract.contract_type'
+
+    CHOICES = [
+        ('support-ea', 'Support - Enterprise Agreement', 'blue'),
+        ('alc', 'Support - A la carte', 'red'),
+        ('warranty', 'Warranty', 'blue'),
+        ('other', 'Other', 'gray'),
+    ]
+
+class ContractStatusChoices(ChoiceSet):
+    key = 'Contract.status'
+
+    CHOICES = [
+        ('draft', 'Draft', 'gray'),
+        ('active', 'Active', 'green'),
+        ('expired', 'Expired', 'red'),
+        ('renewed', 'Renewed', 'orange'),
+        ('cancelled', 'Cancelled', 'red'),
+    ]

@@ -25,6 +25,10 @@ __all__ = (
     'AuditFlowPageAssignmentForm',
     'AuditFlowPageForm',
     'AuditTrailSourceForm',
+    'ContractForm',
+    'ContractSKUForm',
+    'ContractVendorForm',
+    'ContractAssignmentForm',
     'DeliveryForm',
     'InventoryItemGroupForm',
     'InventoryItemTypeForm',
@@ -307,6 +311,76 @@ class AssetForm(NetBoxModelForm):
         purchase = self.cleaned_data['purchase']
         if delivery and not purchase:
             self.cleaned_data['purchase'] = delivery.purchase
+
+
+#
+# Contract
+#
+
+
+class ContractVendorForm(NetBoxModelForm):
+
+    class Meta:
+        model = ContractVendor
+        fields = ('name', 'description', 'comments', 'tags', )
+
+
+class ContractSKUForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        selector=False,
+    )
+
+    class Meta:
+        model = ContractSKU
+        fields = ('manufacturer', 'sku', 'description', 'comments', 'tags', )
+
+
+class ContractForm(NetBoxModelForm):
+    vendor = DynamicModelChoiceField(
+        queryset=ContractVendor.objects.all(),
+        selector=True,
+    )
+
+    class Meta:
+        model = Contract
+        fields = ('vendor', 'contract_id', 'description', 'contract_type', 'status', 
+            'start_date', 'renewal_date', 'end_date', 'comments', 'tags', )
+        widgets = {
+            'start_date': DatePicker(),
+            'renewal_date': DatePicker(),
+            'end_date': DatePicker(),
+        }
+
+
+class ContractAssignmentForm(NetBoxModelForm):
+    contract = DynamicModelChoiceField(
+        queryset=Contract.objects.all(),
+        required=False,
+        selector=True,
+    )
+    sku = DynamicModelChoiceField(
+        queryset=ContractSKU.objects.all(),
+        required=False,
+        selector=True,
+        label=_('SKU'),
+    )
+    asset = DynamicModelChoiceField(
+        queryset=Asset.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Asset'),
+    )
+
+    class Meta:
+        model = ContractAssignment
+        fields = ('contract', 'sku', 'asset', 'end_date', 'description', 'comments', 'tags', )
+        widgets = {
+            'end_date': DatePicker(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 #

@@ -27,7 +27,14 @@ from tenancy.models import Contact, ContactGroup, Tenant
 from utilities import filters
 from utilities.filters import ContentTypeFilter, TreeNodeMultipleChoiceFilter
 
-from .choices import AssetStatusChoices, HardwareKindChoices, PurchaseStatusChoices
+from .choices import (
+    AssetStatusChoices,
+    ContractTypeChoices,
+    ContractStatusChoices,
+    HardwareKindChoices,
+    PurchaseStatusChoices,
+)
+
 from .models import *
 from .utils import get_asset_custom_fields_search_filters, query_located
 
@@ -37,6 +44,9 @@ __all__ = (
     'AuditFlowPageFilterSet',
     'AuditTrailFilterSet',
     'AuditTrailSourceFilterSet',
+    'ContractVendorFilterSet',
+    'ContractSKUFilterSet',
+    'ContractFilterSet',
     'DeliveryFilterSet',
     'DeviceAssetFilterSet',
     'InventoryItemAssetFilterSet',
@@ -534,6 +544,191 @@ class ModuleAssetFilterSet(HasAssetFilterMixin, ModuleFilterSet):
 class InventoryItemAssetFilterSet(HasAssetFilterMixin, InventoryItemFilterSet):
     pass
 
+
+#
+# Contracts
+#
+
+class ContractVendorFilterSet(NetBoxModelFilterSet):
+
+    class Meta:
+        model = ContractVendor
+        fields = ('id', 'q', 'name', )
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        qs_filter = (
+            Q(name__icontains=value)
+        )
+        return queryset.filter(qs_filter).distinct()
+
+
+class ContractSKUFilterSet(NetBoxModelFilterSet):
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer',
+        queryset=Manufacturer.objects.all(),
+        label=_('Manufacturer (ID)'),
+    )
+    manufacturer = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer__slug',
+        queryset=Manufacturer.objects.all(),
+        to_field_name='slug',
+        label=_('Manufacturer (slug)'),
+    )
+
+    class Meta:
+        model = ContractSKU
+        fields = ('id', 'q', 'sku', )
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        qs_filter = (
+            Q(sku__icontains=value) |
+            Q(manufacturer__name__icontains=value)
+        )
+        return queryset.filter(qs_filter).distinct()
+
+
+class ContractFilterSet(NetBoxModelFilterSet):
+    vendor_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='vendor',
+        queryset=ContractVendor.objects.all(),
+        label=_('Vendor (ID)'),
+    )
+    vendor = django_filters.ModelMultipleChoiceFilter(
+        field_name='vendor__name',
+        queryset=ContractVendor.objects.all(),
+        to_field_name='name',
+        label=_('Vendor (Name)'),
+    )
+    contract_type = django_filters.MultipleChoiceFilter(
+        choices=ContractTypeChoices,
+    )
+    status = django_filters.MultipleChoiceFilter(
+        choices=ContractStatusChoices,
+    )
+    start_date = django_filters.DateFromToRangeFilter()
+    end_date = django_filters.DateFromToRangeFilter()
+    renewal_date = django_filters.DateFromToRangeFilter()
+    is_active = django_filters.BooleanFilter(
+        method='filter_is_active',
+        label='Is currently active',
+    )
+    is_expired = django_filters.BooleanFilter(
+        method='filter_is_expired',
+        label='Is expired',
+    )
+    needs_renewal = django_filters.BooleanFilter(
+        method='filter_needs_renewal',
+        label='Needs renewal',
+    )
+
+    class Meta:
+        model = Contract
+        fields = (
+            'id',
+            'contract_id',
+            'vendor',
+            'contract_type',
+            'status',
+            'start_date',
+            'end_date',
+            'renewal_date',
+            'description',
+        )
+
+    def search(self, queryset, name, value):
+        query = Q(
+            Q(name__icontains=value)
+            | Q(contract_id__icontains=value)
+            | Q(description__icontains=value)
+            | Q(vendor__name__icontains=value)
+        )
+        return queryset.filter(query)
+
+    def filter_is_active(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        if value:
+            return queryset.filter(start_date__lte=today, end_date__gte=today)
+        else:
+            return queryset.exclude(start_date__lte=today, end_date__gte=today)
+
+    def filter_is_expired(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        if value:
+            return queryset.filter(end_date__lt=today)
+        else:
+            return queryset.exclude(end_date__lt=today)
+
+    def filter_needs_renewal(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        if value:
+            return queryset.filter(renewal_date__lte=today).exclude(renewal_date__isnull=True)
+        else:
+            return queryset.exclude(renewal_date__lte=today).filter(renewal_date__isnull=False)
+
+
+class ContractAssignmentFilterSet(NetBoxModelFilterSet):
+    contract_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='contract',
+        queryset=Contract.objects.all(),
+        label=_('Contract'),
+    )
+    contract = django_filters.ModelMultipleChoiceFilter(
+        field_name='contract__contract_id',
+        queryset=Contract.objects.all(),
+        to_field_name='contract_id',
+        label=_('Contract'),
+    )
+    sku_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='sku',
+        queryset=ContractSKU.objects.all(),
+        label=_('SKU'),
+    )
+    sku = django_filters.ModelMultipleChoiceFilter(
+        field_name='sku__sku',
+        queryset=ContractSKU.objects.all(),
+        to_field_name='sku',
+        label=_('SKU'),
+    )
+    asset_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='asset',
+        queryset=Asset.objects.all(),
+        label=_('Asset (ID)'),
+    )
+    asset = django_filters.ModelMultipleChoiceFilter(
+        field_name='asset__name',
+        queryset=Asset.objects.all(),
+        to_field_name='name',
+        label=_('Asset (name)'),
+    )
+    asset_status = django_filters.ModelMultipleChoiceFilter(
+        field_name='asset__status',
+        queryset=Asset.objects.all(),
+        to_field_name='status',
+        label=_('Asset Status'),
+    )
+
+    class Meta:
+        model = ContractAssignment
+        fields = ('id', 'q', 'end_date')
+
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        qs_filter = (
+            Q(contract__contract_id__icontains=value) |
+            Q(contract__vendor__name__icontains=value) |
+            Q(sku__sku__icontains=value) |
+            Q(asset__name__icontains=value)
+        )
+        return queryset.filter(qs_filter).distinct()
 
 #
 # Deliveries

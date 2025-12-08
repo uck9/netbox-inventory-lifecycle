@@ -1,5 +1,6 @@
 from django.urls import include, path
 
+from netbox.views.generic import ObjectChangeLogView
 from utilities.urls import get_model_urls
 
 from . import views
@@ -76,6 +77,39 @@ urlpatterns = (
         'assets/rack/<int:pk>/reassign/',
         views.AssetRackReassignView.as_view(),
         name='asset_rack_reassign',
+    ),
+    # Contracts
+    path(
+        'contracts/',
+        include(get_model_urls('netbox_inventory', 'contract', detail=False)),
+    ),
+    path(
+        'contracts/<int:pk>/',
+        include(get_model_urls('netbox_inventory', 'contract')),
+    ),
+    path(
+        'contract-assignment/',
+        include(get_model_urls('netbox_inventory', 'contractassignment', detail=False)),
+    ),
+    path(
+        'contract-assignment/<int:pk>/',
+        include(get_model_urls('netbox_inventory', 'contractassignment')),
+    ),
+    path(
+        'contract-sku/',
+        include(get_model_urls('netbox_inventory', 'contractsku', detail=False)),
+    ),
+    path(
+        'contract-sku/<int:pk>/',
+        include(get_model_urls('netbox_inventory', 'contractsku')),
+    ),
+    path(
+        'contract-vendor/',
+        include(get_model_urls('netbox_inventory', 'contractvendor', detail=False)),
+    ),
+    path(
+        'contract-vendor/<int:pk>/',
+        include(get_model_urls('netbox_inventory', 'contractvendor')),
     ),
     # Suppliers
     path(

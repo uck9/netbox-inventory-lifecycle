@@ -13,7 +13,7 @@ from utilities.forms.fields import (
     CSVModelChoiceField,
 )
 
-from ..choices import AssetStatusChoices, HardwareKindChoices, PurchaseStatusChoices
+from ..choices import AssetStatusChoices, ContractStatusChoices, HardwareKindChoices, PurchaseStatusChoices
 from ..constants import AUDITFLOW_OBJECT_TYPE_CHOICES
 from ..models import *
 from ..utils import get_plugin_setting
@@ -24,6 +24,7 @@ __all__ = (
     'AuditFlowPageImportForm',
     'AuditTrailImportForm',
     'AuditTrailSourceImportForm',
+    'ContractImportForm',
     'DeliveryImportForm',
     'InventoryItemGroupImportForm',
     'PurchaseImportForm',
@@ -437,6 +438,40 @@ class AssetImportForm(NetBoxModelImportForm):
         except forms.ValidationError as e:
             self.add_error(field_name, e)
             raise
+
+
+#
+# Contracts
+#
+
+
+class ContractImportForm(NetBoxModelImportForm):
+    vendor = CSVModelChoiceField(
+        queryset=ContractVendor.objects.all(),
+        to_field_name='name',
+        help_text='Contract Vendor. It must exist when importing.',
+        required=True,
+    )
+    status = CSVChoiceField(
+        choices=ContractStatusChoices,
+        help_text='Status of purchase',
+    )
+
+    class Meta:
+        model = Contract
+        fields = (
+            'contract_id',
+            'contract_type',
+            'vendor',
+            'status',
+            'description',
+            'start_date',
+            'end_date',
+            'renewal_date',
+            'notes',
+            'tags',
+        )
+
 
 
 #
