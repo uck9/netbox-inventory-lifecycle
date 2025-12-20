@@ -119,9 +119,8 @@ class ContractSKUView(GetRelatedModelsMixin, ObjectView):
             ),
         } 
     
-
-@register_model_view(models.ContractSKU, 'edit')
 @register_model_view(models.ContractSKU, 'add', detail=False)
+@register_model_view(models.ContractSKU, 'edit')
 class ContractSKUEditView(ObjectEditView):
     queryset = models.ContractSKU.objects.all()
     form = forms.ContractSKUForm
@@ -241,9 +240,8 @@ class ContractAssignmentListView(ObjectListView):
 class ContractAssignmentView(ObjectView):
     queryset = models.ContractAssignment.objects.all()
 
-
-@register_model_view(models.ContractAssignment, 'edit')
 @register_model_view(models.ContractAssignment, 'add', detail=False)
+@register_model_view(models.ContractAssignment, 'edit')
 class ContractAssignmentEditView(ObjectEditView):
     template_name = 'netbox_inventory/contractassignment_edit.html'
     queryset = models.ContractAssignment.objects.all()

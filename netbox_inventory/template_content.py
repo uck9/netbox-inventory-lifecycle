@@ -5,7 +5,7 @@ from django.template import Template
 from core.models import ObjectType
 from netbox.plugins import PluginTemplateExtension
 
-from .models import Asset, AuditFlow
+from .models import Asset, AuditFlow, Contract, ContractAssignment
 from .utils import query_located
 
 #
@@ -63,7 +63,7 @@ WARRANTY_PROGRESSBAR = """
 
 
 class AssetInfoExtension(PluginTemplateExtension):
-    def left_page(self):
+    def right_page(self):
         object = self.context.get('object')
         asset = Asset.objects.filter(**{self.kind: object}).first()
         context = {'asset': asset}
@@ -108,6 +108,14 @@ class AssetLocationCounts(PluginTemplateExtension):
         )
 
 
+class AssetContractInfoExtension(PluginTemplateExtension):
+    def right_page(self):
+        object = self.context.get('object')
+        asset = Asset.objects.filter(**{self.kind: object}).first()
+        contracts = asset.contracts.all()
+        context = {'asset': asset, 'contracts': contracts}
+        return self.render('netbox_inventory/inc/contract_info.html', extra_context=context)
+
 class DeviceAssetInfo(AssetInfoExtension):
     models = ['dcim.device']
     kind = 'device'
@@ -116,6 +124,11 @@ class DeviceAssetInfo(AssetInfoExtension):
 class ModuleAssetInfo(AssetInfoExtension):
     models = ['dcim.module']
     kind = 'module'
+
+
+class AssetContractInfo(AssetContractInfoExtension):
+    models = ['dcim.device']
+    kind = 'device'
 
 
 class InventoryItemAssetInfo(AssetInfoExtension):
@@ -325,6 +338,7 @@ template_extensions = (
     # Assets
     DeviceAssetInfo,
     ModuleAssetInfo,
+    AssetContractInfo,
     InventoryItemAssetInfo,
     RackAssetInfo,
     ManufacturerAssetCounts,

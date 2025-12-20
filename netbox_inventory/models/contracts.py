@@ -93,7 +93,7 @@ class ContractSKU(PrimaryModel):
 
     def __str__(self):
         if self.description:
-            return f'{self.sku} – {self.description}'
+            return f'{self.sku} ({self.description})'
         return self.sku
 
     def get_absolute_url(self):
@@ -186,10 +186,7 @@ class Contract(PrimaryModel):
         return f'{self.contract_id}'
 
     def get_absolute_url(self):
-        return reverse(
-            f'plugins:{self._meta.app_label}:{self._meta.model_name}',
-            args=[self.pk],
-        )
+        return reverse('plugins:netbox_inventory:contract', args=[self.pk])
     
     @property
     def is_active(self):
@@ -377,7 +374,7 @@ class ContractAssignment(PrimaryModel):
             # Prevent exact duplicates; overlap logic is in clean()
             models.UniqueConstraint(
                 fields=['asset', 'sku', 'start_date', 'end_date'],
-                name='uniq_supportassignment_asset_sku_period',
+                name='uniq_contractassignment_asset_sku_period',
             ),
         )
 
@@ -388,7 +385,7 @@ class ContractAssignment(PrimaryModel):
             return f'{self.asset}: (no contract)'
         elif self.contract:
             return f'(no asset): {self.contract.contract_id}'
-        return f'Support assignment #{self.pk}'
+        return f'Contract assignment #{self.pk}'
 
     def get_absolute_url(self):
         return reverse(
@@ -436,14 +433,10 @@ class ContractAssignment(PrimaryModel):
         return None  # truly unknown
 
     def get_device_status_color(self):
-        if self.device is None:
-            return
         return DeviceStatusChoices.colors.get(self.device.status)
 
-    def get_support_coverage_status_color(self):
-        if self.device is None:
-            return
-        return SupportCoverageStatusChoices.colors.get(self.support_coverage_status)
+    def get_coverage_status_color(self):
+        return ContractStatusChoices.colors.get(self.support_coverage_status)
 
     @property
     def assignment_type(self):

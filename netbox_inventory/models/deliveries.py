@@ -26,7 +26,22 @@ class Purchase(NamedModel):
     Represents a purchase of a set of Assets from a Supplier.
     """
 
-    name = models.CharField(max_length=100)
+    name = models.CharField(
+        max_length=100,
+        help_text='Name of Purchase'
+    )
+    purchase_order_id = models.CharField(
+        max_length=100,
+        help_text='Purchase Order ID',
+        blank=True,
+        null=True
+    )
+    vendor_order_id = models.CharField(
+        max_length=100,
+        help_text='Vendor Order ID (eg. Cisco Sales Order ID)',
+        blank=True,
+        null=True
+    )
     supplier = models.ForeignKey(
         help_text='Legal entity this purchase was made at',
         to='netbox_inventory.Supplier',

@@ -1,54 +1,42 @@
 
-{% load lcm_filters %}
+{% load inventory_filters %}
 {% load helpers %}
 {# renders panel on object (device) with contract info assigned to it #}
 
 <div class="card">
-  <h2 class="card-header">
-    Contract
-    {% if contract %}
-    <div class="card-actions"><a href="{% url 'plugins:netbox_inventory:contractassignment' support_contract.pk %}" class="btn btn-sm btn-ghost-primary">
-      <i class="mdi mdi-chevron-right-box-outline" aria-hidden="true"></i> View Details
-      </a></div>
-      </h2>
+  <h2 class="card-header">Contracts
+    {% if asset %}
+    </h2>
       <table class="table table-hover attr-table">
-        <tr>
-          <th scope="row">Coverage Status</th>
-          <td>{% badge contract.get_coverage_status_display bg_color=support_contract.get_support_coverage_status_color %}</td>
-        </tr>
-        {% if contract %}
-        <tr>
-          <th scope="row">Vendor</th>
-          <td>{{ contract.contract.vendor|linkify|placeholder }}</td>
-        </tr>
-        <tr>
-          <th scope="row"><span title="Contract Number">Contract Number</span></th>
-          <td>{{ contract.contract.contract_id|linkify|placeholder }}</td>
-        </tr>
-        <tr>
-          <th scope="row">Support SKU</th>
-          <td>{{ contract.sku|linkify|placeholder }} ({{ contract.sku.description }})</td>
-        </tr>
-        <tr>
-          <th scope="row">Start Date</th>
-          <td>{{ contract.contract.start_date }}</td>
-        </tr>
-        <tr>
-          <th scope="row">End Date</th>
-          {% if contract.end_date == None %}
-          <td><span {{ contract.contract.end_date|date_badge_class }}>{{ contract.contract.end_date }}</span></td>
-          {% else %}
-          <td><span {{ contract.end_date|date_badge_class }}>{{ contract.end_date }}</span></td>
-          {% endif %}
-        </tr>
+        <thead>
+          <tr class="border-bottom">
+            <th>Contract ID</th>
+            <th>Type</th>
+            <th>SKU</th>
+            <th>End Date</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        {% if contracts %}
+        <tbody>
+          {% for contract in contracts %}
+            <tr>
+              <td><a href="{% url 'plugins:netbox_inventory:contract' contract.contract.pk %}">{{ contract.contract }}</a></td>
+              <td>{{ contract.contract.get_contract_type_display }}</td>
+              <td>{{ contract.sku }}</td>
+              {% if contract.effective_end_date == None %}
+              <td>No End Date</td>
+              {% else %}
+              <td><span {{ contract.effective_end_date|date_badge_class }}>{{ contract.effective_end_date }}</span></td>
+              {% endif %}
+              <td><a href="{% url 'plugins:netbox_inventory:contractassignment' contract.pk %}"><i class="mdi mdi-chevron-right-box-outline" aria-hidden="true"></i></a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
         {% endif %}
       </table>
     {% else %}
-      <div class="card-actions"><a href="{% url 'plugins:netbox_inventory:contractassignment_add' %}?asset={{ object.pk }}&return_url={% url 'plugins:netbox_inventory:asset' pk=object.pk %}" class="btn btn-ghost-primary btn-sm">
-      <span class="mdi mdi-plus-thick" aria-hidden="true"></span>Add Contract</a></div>
       </h2>
-      <div class="card-body"><span class="text-muted">No Contract Associated with Linked Asset<span></div>
-  {% endif %}
+      <div class="card-body"><span class="text-muted">No linked Asset<span></div>
+    {% endif %}
 </div>
-
-{# % include "netbox_lcm/inc/hardware_lifecycle_info.html" % #}
