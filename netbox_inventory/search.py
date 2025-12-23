@@ -3,7 +3,7 @@ from netbox.search import SearchIndex
 from .models import (
     Asset,
     AuditTrailSource,
-    Delivery,
+    Order,
     InventoryItemGroup,
     InventoryItemType,
     Purchase,
@@ -47,7 +47,7 @@ class AssetIndex(SearchIndex):
 
 
 #
-# Deliveries
+# Purchases
 #
 
 
@@ -69,8 +69,8 @@ class PurchaseIndex(SearchIndex):
     )
 
 
-class DeliveryIndex(SearchIndex):
-    model = Delivery
+class OrderIndex(SearchIndex):
+    model = Order
     fields = (
         ('name', 100),
         ('description', 500),
@@ -99,6 +99,6 @@ indexes = [
     AssetIndex,
     SupplierIndex,
     PurchaseIndex,
-    DeliveryIndex,
+    OrderIndex,
     AuditTrailSourceIndex,
 ]

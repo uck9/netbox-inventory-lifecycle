@@ -40,7 +40,7 @@ __all__ = (
     'ContractFilterForm',
     'ContractVendorFilterForm',
     'ContractAssignmentFilterForm',
-    'DeliveryFilterForm',
+    'OrderFilterForm',
     'InventoryItemGroupFilterForm',
     'InventoryItemTypeFilterForm',
     'SupplierFilterForm',
@@ -119,11 +119,9 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
         FieldSet('tenant_id', 'contact_group_id', 'contact_id', name='Usage'),
         FieldSet(
             'owner_id',
-            'delivery_id',
+            'order_id',
             'purchase_id',
             'supplier_id',
-            'delivery_date_after',
-            'delivery_date_before',
             'purchase_date_after',
             'purchase_date_before',
             'warranty_start_after',
@@ -243,11 +241,11 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
         null_option='None',
         label='Owner',
     )
-    delivery_id = DynamicModelMultipleChoiceField(
-        queryset=Delivery.objects.all(),
+    order_id = DynamicModelMultipleChoiceField(
+        queryset=Order.objects.all(),
         required=False,
         null_option='None',
-        label='Delivery',
+        label='Order',
     )
     purchase_id = DynamicModelMultipleChoiceField(
         queryset=Purchase.objects.all(),
@@ -259,16 +257,6 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
         queryset=Supplier.objects.all(),
         required=False,
         label='Supplier',
-    )
-    delivery_date_after = forms.DateField(
-        required=False,
-        label='Delivered on or after',
-        widget=DatePicker,
-    )
-    delivery_date_before = forms.DateField(
-        required=False,
-        label='Delivered on or before',
-        widget=DatePicker,
     )
     purchase_date_after = forms.DateField(
         required=False,
@@ -444,7 +432,7 @@ class ContractAssignmentFilterForm(NetBoxModelFilterSetForm):
 
 
 #
-# Deliveries
+# Purchases
 #
 
 
@@ -503,18 +491,15 @@ class PurchaseFilterForm(NetBoxModelFilterSetForm):
     tag = TagFilterField(model)
 
 
-class DeliveryFilterForm(NetBoxModelFilterSetForm):
-    model = Delivery
+class OrderFilterForm(NetBoxModelFilterSetForm):
+    model = Order
     fieldsets = (
         FieldSet('q', 'filter_id', 'tag'),
         FieldSet(
             'purchase_id',
             'supplier_id',
-            'contact_group_id',
-            'receiving_contact_id',
-            'date_after',
-            'date_before',
-            name='Delivery',
+            'manufacturer_id',
+            name='Order',
         ),
     )
 
@@ -533,24 +518,6 @@ class DeliveryFilterForm(NetBoxModelFilterSetForm):
         required=False,
         null_option='None',
         label='Contact Group',
-    )
-    receiving_contact_id = DynamicModelMultipleChoiceField(
-        queryset=Contact.objects.all(),
-        required=False,
-        query_params={
-            'group_id': '$contact_group_id',
-        },
-        label='Receiving contact',
-    )
-    date_after = forms.DateField(
-        required=False,
-        label='Delivered on or after',
-        widget=DatePicker,
-    )
-    date_before = forms.DateField(
-        required=False,
-        label='Delivered on or before',
-        widget=DatePicker,
     )
     tag = TagFilterField(model)
 

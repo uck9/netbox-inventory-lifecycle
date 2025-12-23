@@ -1,6 +1,6 @@
 from .schema import (
     AssetQuery,
-    DeliveryQuery,
+    OrderQuery,
     InventoryItemGroupQuery,
     InventoryItemTypeQuery,
     PurchaseQuery,
@@ -11,7 +11,7 @@ schema = [
     AssetQuery,
     SupplierQuery,
     PurchaseQuery,
-    DeliveryQuery,
+    OrderQuery,
     InventoryItemTypeQuery,
     InventoryItemGroupQuery,
 ]

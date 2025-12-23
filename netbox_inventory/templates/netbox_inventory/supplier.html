@@ -34,9 +34,9 @@
             </td>
           </tr>
           <tr>
-            <th scope="row">Deliveries</th>
+            <th scope="row">Orders</th>
             <td>
-              <a href="{% url 'plugins:netbox_inventory:delivery_list' %}?supplier_id={{ object.pk }}">{{ delivery_count }}</a>
+              <a href="{% url 'plugins:netbox_inventory:order_list' %}?supplier_id={{ object.pk }}">{{ order_count }}</a>
             </td>
           </tr>
           <tr>

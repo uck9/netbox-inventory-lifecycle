@@ -52,7 +52,7 @@ class AssetListView(generic.ObjectListView):
         'rack__role',
         'owner',
         'purchase__supplier',
-        'delivery',
+        'order',
         'storage_location',
     )
     table = tables.AssetTable

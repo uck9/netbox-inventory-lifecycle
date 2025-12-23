@@ -6,9 +6,9 @@ from netbox_inventory import models
 
 __all__ = (
     'AssetFilter',
-    'SupplierFilter',
+    'SupplierFilter'
+    'OrderFilter',
     'PurchaseFilter',
-    'DeliveryFilter',
     'InventoryItemTypeFilter',
     'InventoryItemGroupFilter',
 )
@@ -29,8 +29,8 @@ class PurchaseFilter(BaseFilterMixin):
     pass
 
 
-@strawberry_django.filter(models.Delivery, lookups=True)
-class DeliveryFilter(BaseFilterMixin):
+@strawberry_django.filter(models.Order, lookups=True)
+class OrderFilter(BaseFilterMixin):
     pass
 
 

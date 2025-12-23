@@ -22,7 +22,7 @@ class PurchaseView(generic.ObjectView):
     def get_extra_context(self, request, instance):
         return {
             'asset_count': models.Asset.objects.filter(purchase=instance).count(),
-            'delivery_count': models.Delivery.objects.filter(purchase=instance).count(),
+            'order_count': models.Order.objects.filter(purchase=instance).count(),
         }
 
 
@@ -30,7 +30,7 @@ class PurchaseView(generic.ObjectView):
 class PurchaseListView(generic.ObjectListView):
     queryset = models.Purchase.objects.annotate(
         asset_count=count_related(models.Asset, 'purchase'),
-        delivery_count=count_related(models.Delivery, 'purchase'),
+        order_count=count_related(models.Order, 'purchase'),
     )
     table = tables.PurchaseTable
     filterset = filtersets.PurchaseFilterSet

@@ -251,9 +251,9 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         blank=True,
         null=True,
     )
-    delivery = models.ForeignKey(
-        help_text='Delivery this asset was part of',
-        to='netbox_inventory.Delivery',
+    order = models.ForeignKey(
+        help_text='Order this asset was part of',
+        to='netbox_inventory.Order',
         on_delete=models.PROTECT,
         related_name='assets',
         blank=True,
@@ -296,7 +296,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         'inventoryitem_type',
         'owner',
         'purchase',
-        'delivery',
+        'order',
         'contract',
         'warranty_start',
         'warranty_end',
@@ -431,7 +431,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         return int(100 * (self.warranty_elapsed / self.warranty_total))
 
     def clean(self):
-        self.clean_delivery()
+        self.clean_order()
         self.clean_warranty_dates()
         self.validate_hardware_types()
         self.validate_hardware()
@@ -548,10 +548,10 @@ class Asset(NamedModel, ImageAttachmentsMixin):
             if new_hw:
                 asset_set_new_hw(asset=self, hw=new_hw)
 
-    def clean_delivery(self):
-        if self.delivery and self.delivery.purchase != self.purchase:
+    def clean_order(self):
+        if self.order and self.order.purchase != self.purchase:
             raise ValidationError(
-                f'Assigned delivery must belong to selected purchase ({self.purchase}).'
+                f'Assigned order must belong to selected purchase ({self.purchase}).'
             )
 
     def clean_warranty_dates(self):

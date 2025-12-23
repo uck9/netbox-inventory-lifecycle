@@ -25,7 +25,7 @@ class HardwareKindChoices(ChoiceSet):
 
 
 #
-# Deliveries
+# Purchases
 #
 
 

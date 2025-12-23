@@ -115,7 +115,7 @@ contracts_items = (
 
 
 #
-# Deliveries
+# Purchases
 #
 
 supplier_buttons = [
@@ -148,22 +148,22 @@ purchase_buttons = [
     ),
 ]
 
-delivery_buttons = [
+order_buttons = [
     PluginMenuButton(
-        link='plugins:netbox_inventory:delivery_add',
+        link='plugins:netbox_inventory:order_add',
         title='Add',
         icon_class='mdi mdi-plus-thick',
-        permissions=['netbox_inventory.add_delivery'],
+        permissions=['netbox_inventory.add_order'],
     ),
     PluginMenuButton(
-        link='plugins:netbox_inventory:delivery_bulk_import',
+        link='plugins:netbox_inventory:order_bulk_import',
         title='Import',
         icon_class='mdi mdi-upload',
-        permissions=['netbox_inventory.add_delivery'],
+        permissions=['netbox_inventory.add_order'],
     ),
 ]
 
-deliveries_items = (
+purchases_items = (
     PluginMenuItem(
         link='plugins:netbox_inventory:supplier_list',
         link_text='Suppliers',
@@ -177,10 +177,10 @@ deliveries_items = (
         buttons=purchase_buttons,
     ),
     PluginMenuItem(
-        link='plugins:netbox_inventory:delivery_list',
-        link_text='Deliveries',
-        permissions=['netbox_inventory.view_delivery'],
-        buttons=delivery_buttons,
+        link='plugins:netbox_inventory:order_list',
+        link_text='Orders',
+        permissions=['netbox_inventory.view_order'],
+        buttons=order_buttons,
     ),
 )
 
@@ -273,11 +273,11 @@ if get_plugin_config('netbox_inventory', 'top_level_menu'):
         groups=(
             ('Asset Management', assets_items),
             ('Contracts', contracts_items),
-            ('Deliveries', deliveries_items),
+            ('Purchases', purchases_items),
             ('Audit', audit_admin_items),
         ),
         icon_class='mdi mdi-clipboard-text-multiple-outline',
     )
 else:
     # display under plugins
-    menu_items = assets_items + contracts_items + deliveries_items + audit_admin_items
+    menu_items = assets_items + contracts_items + purchases_items + audit_admin_items

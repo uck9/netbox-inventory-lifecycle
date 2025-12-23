@@ -8,7 +8,7 @@ from .auditflowpageassignments import *
 from .audittrail import *
 from .audittrailsource import *
 from .contract import *
-from .delivery import *
+from .order import *
 from .inventoryitem_group import *
 from .inventoryitem_type import *
 from .purchase import *

@@ -3,7 +3,7 @@ import strawberry_django
 
 from .types import (
     AssetType,
-    DeliveryType,
+    OrderType,
     InventoryItemGroupType,
     InventoryItemTypeType,
     PurchaseType,
@@ -11,7 +11,7 @@ from .types import (
 )
 from netbox_inventory.models import (
     Asset,
-    Delivery,
+    Order,
     InventoryItemGroup,
     InventoryItemType,
     Purchase,
@@ -47,12 +47,12 @@ class PurchaseQuery:
 
 
 @strawberry.type
-class DeliveryQuery:
+class OrderQuery:
     @strawberry.field
-    def delivery(self, id: int) -> DeliveryType:
-        return Delivery.objects.get(pk=id)
+    def order(self, id: int) -> OrderType:
+        return Order.objects.get(pk=id)
 
-    delivery_list: list[DeliveryType] = strawberry_django.field()
+    order_list: list[OrderType] = strawberry_django.field()
 
 
 @strawberry.type

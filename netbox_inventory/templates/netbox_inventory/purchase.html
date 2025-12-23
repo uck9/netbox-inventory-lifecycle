@@ -48,9 +48,9 @@
             <td>{{ object.description|placeholder }}</td>
           </tr>
           <tr>
-            <th scope="row">Deliveries</th>
+            <th scope="row">Orders</th>
             <td>
-              <a href="{% url 'plugins:netbox_inventory:delivery_list' %}?purchase_id={{ object.pk }}">{{ delivery_count }}</a>
+              <a href="{% url 'plugins:netbox_inventory:order_list' %}?purchase_id={{ object.pk }}">{{ order_count }}</a>
             </td>
           </tr>
           <tr>
@@ -74,16 +74,16 @@
     <div class="col col-md-12">
       <div class="card">
         <h5 class="card-header">
-          Deliveries
-          {% if perms.netbox_inventory.add_delivery %}
+          Orders
+          {% if perms.netbox_inventory.add_order %}
             <div class="card-actions">
-              <a href="{% url 'plugins:netbox_inventory:delivery_add' %}?purchase={{ object.pk }}&return_url={{ object.get_absolute_url }}" class="btn btn-ghost-primary btn-sm">
-                <i class="mdi mdi-plus-thick" aria-hidden="true"></i> Add a Delivery
+              <a href="{% url 'plugins:netbox_inventory:order_add' %}?purchase={{ object.pk }}&return_url={{ object.get_absolute_url }}" class="btn btn-ghost-primary btn-sm">
+                <i class="mdi mdi-plus-thick" aria-hidden="true"></i> Add an Order
               </a>
             </div>
           {% endif %}
         </h5>
-        {% htmx_table 'plugins:netbox_inventory:delivery_list' purchase_id=object.pk %}
+        {% htmx_table 'plugins:netbox_inventory:order_list' purchase_id=object.pk %}
       </div>
       <div class="card">
         <h5 class="card-header">

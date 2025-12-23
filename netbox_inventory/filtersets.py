@@ -47,12 +47,12 @@ __all__ = (
     'ContractVendorFilterSet',
     'ContractSKUFilterSet',
     'ContractFilterSet',
-    'DeliveryFilterSet',
     'DeviceAssetFilterSet',
     'InventoryItemAssetFilterSet',
     'InventoryItemGroupFilterSet',
     'InventoryItemTypeFilterSet',
     'ModuleAssetFilterSet',
+    'OrderFilterSet',
     'PurchaseFilterSet',
     'SupplierFilterSet',
 )
@@ -321,15 +321,15 @@ class AssetFilterSet(NetBoxModelFilterSet):
         lookup_expr='icontains',
         label='Owner (name)',
     )
-    delivery_id = django_filters.ModelMultipleChoiceFilter(
-        queryset=Delivery.objects.all(),
-        field_name='delivery',
-        label='Delivery (ID)',
+    order_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Order.objects.all(),
+        field_name='order',
+        label='Order (ID)',
     )
-    delivery = django_filters.CharFilter(
-        field_name='delivery__name',
+    order = django_filters.CharFilter(
+        field_name='order__name',
         lookup_expr='iexact',
-        label='Delivery (name)',
+        label='Order (name)',
     )
     purchase_id = django_filters.ModelMultipleChoiceFilter(
         queryset=Purchase.objects.all(),
@@ -353,9 +353,6 @@ class AssetFilterSet(NetBoxModelFilterSet):
     )
     warranty_start = django_filters.DateFromToRangeFilter()
     warranty_end = django_filters.DateFromToRangeFilter()
-    delivery_date = django_filters.DateFromToRangeFilter(
-        field_name='delivery__date',
-    )
     purchase_date = django_filters.DateFromToRangeFilter(
         field_name='purchase__date',
     )
@@ -438,7 +435,7 @@ class AssetFilterSet(NetBoxModelFilterSet):
             | Q(device__name__icontains=value)
             | Q(inventoryitem__name__icontains=value)
             | Q(rack__name__icontains=value)
-            | Q(delivery__name__icontains=value)
+            | Q(order__name__icontains=value)
             | Q(purchase__name__icontains=value)
             | Q(purchase__supplier__name__icontains=value)
             | Q(tenant__name__icontains=value)
@@ -731,7 +728,7 @@ class ContractAssignmentFilterSet(NetBoxModelFilterSet):
         return queryset.filter(qs_filter).distinct()
 
 #
-# Deliveries
+# Purchases
 #
 
 
@@ -778,7 +775,7 @@ class PurchaseFilterSet(NetBoxModelFilterSet):
         return queryset.filter(query)
 
 
-class DeliveryFilterSet(NetBoxModelFilterSet):
+class OrderFilterSet(NetBoxModelFilterSet):
     purchase_id = django_filters.ModelMultipleChoiceFilter(
         field_name='purchase',
         queryset=Purchase.objects.all(),
@@ -789,26 +786,19 @@ class DeliveryFilterSet(NetBoxModelFilterSet):
         queryset=Supplier.objects.all(),
         label='Supplier (ID)',
     )
-    contact_group_id = django_filters.ModelMultipleChoiceFilter(
-        queryset=ContactGroup.objects.all(),
-        field_name='receiving_contact__groups',
-        label='Contact Group (ID)',
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Manufacturer.objects.all(),
+        field_name='manufacturer',
+        label='Manufacturer (ID)',
     )
-    receiving_contact_id = django_filters.ModelMultipleChoiceFilter(
-        field_name='receiving_contact',
-        queryset=Contact.objects.all(),
-        label='Contact (ID)',
-    )
-    date = django_filters.DateFromToRangeFilter()
 
     class Meta:
-        model = Delivery
+        model =Order
         fields = (
             'id',
             'name',
-            'date',
+            'manufacturer',
             'description',
-            'receiving_contact',
             'purchase',
         )
 
@@ -818,7 +808,7 @@ class DeliveryFilterSet(NetBoxModelFilterSet):
             | Q(description__icontains=value)
             | Q(purchase__name__icontains=value)
             | Q(purchase__supplier__name__icontains=value)
-            | Q(receiving_contact__name__icontains=value)
+            | Q(manufacturer__name__icontains=value)
         )
         return queryset.filter(query)
 

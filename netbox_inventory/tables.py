@@ -23,7 +23,7 @@ __all__ = (
     'AuditTrailTable',
     'SupplierTable',
     'PurchaseTable',
-    'DeliveryTable',
+    'OrderTable',
     'ContractTable',
     'ContractVendorTable',
     'ContractSKUTable',
@@ -189,7 +189,7 @@ class AssetTable(NetBoxTable):
     purchase = tables.Column(
         linkify=True,
     )
-    delivery = tables.Column(
+    order = tables.Column(
         linkify=True,
     )
     contract = columns.TemplateColumn(
@@ -206,10 +206,6 @@ class AssetTable(NetBoxTable):
     purchase_date = columns.DateColumn(
         accessor='purchase__date',
         verbose_name='Purchase Date',
-    )
-    delivery_date = columns.DateColumn(
-        accessor='delivery__date',
-        verbose_name='Delivery Date',
     )
     current_site = tables.Column(
         linkify=True,
@@ -395,10 +391,9 @@ class AssetTable(NetBoxTable):
             'owner',
             'supplier',
             'purchase',
-            'delivery',
+            'order',
             'contract',
             'purchase_date',
-            'delivery_date',
             'warranty_start',
             'warranty_end',
             'warranty_progress',
@@ -426,7 +421,7 @@ class AssetTable(NetBoxTable):
 
 
 #
-# Deliveries
+# Purchases
 #
 
 
@@ -439,10 +434,10 @@ class SupplierTable(ContactsColumnMixin, NetBoxTable):
         url_params={'supplier_id': 'pk'},
         verbose_name='Purchases',
     )
-    delivery_count = columns.LinkedCountColumn(
-        viewname='plugins:netbox_inventory:delivery_list',
+   order_count = columns.LinkedCountColumn(
+        viewname='plugins:netbox_inventory:order_list',
         url_params={'supplier_id': 'pk'},
-        verbose_name='Deliveries',
+        verbose_name='Orders',
     )
     asset_count = columns.LinkedCountColumn(
         viewname='plugins:netbox_inventory:asset_list',
@@ -463,7 +458,7 @@ class SupplierTable(ContactsColumnMixin, NetBoxTable):
             'comments',
             'contacts',
             'purchase_count',
-            'delivery_count',
+            'order_count',
             'asset_count',
             'tags',
             'created',
@@ -484,10 +479,10 @@ class PurchaseTable(NetBoxTable):
         linkify=True,
     )
     status = columns.ChoiceFieldColumn()
-    delivery_count = columns.LinkedCountColumn(
-        viewname='plugins:netbox_inventory:delivery_list',
+    order_count = columns.LinkedCountColumn(
+        viewname='plugins:netbox_inventory:order_list',
         url_params={'purchase_id': 'pk'},
-        verbose_name='Deliveries',
+        verbose_name='Orders',
     )
     asset_count = columns.LinkedCountColumn(
         viewname='plugins:netbox_inventory:asset_list',
@@ -508,7 +503,7 @@ class PurchaseTable(NetBoxTable):
             'date',
             'description',
             'comments',
-            'delivery_count',
+            'order_count',
             'asset_count',
             'tags',
             'created',
@@ -523,7 +518,7 @@ class PurchaseTable(NetBoxTable):
         )
 
 
-class DeliveryTable(NetBoxTable):
+class OrderTable(NetBoxTable):
     supplier = tables.Column(
         accessor=columns.Accessor('purchase__supplier'),
         linkify=True,
@@ -531,14 +526,11 @@ class DeliveryTable(NetBoxTable):
     purchase = tables.Column(
         linkify=True,
     )
-    date = columns.DateColumn(
-        verbose_name='Delivery Date',
-    )
     purchase_date = columns.DateColumn(
         accessor=columns.Accessor('purchase__date'),
         verbose_name='Purchase Date',
     )
-    receiving_contact = tables.Column(
+    manufacturer = tables.Column(
         linkify=True,
     )
     name = tables.Column(
@@ -546,23 +538,21 @@ class DeliveryTable(NetBoxTable):
     )
     asset_count = columns.LinkedCountColumn(
         viewname='plugins:netbox_inventory:asset_list',
-        url_params={'delivery_id': 'pk'},
+        url_params={'order_id': 'pk'},
         verbose_name='Assets',
     )
     comments = columns.MarkdownColumn()
     tags = columns.TagColumn()
 
     class Meta(NetBoxTable.Meta):
-        model = Delivery
+        model = Order
         fields = (
             'pk',
             'id',
             'name',
             'purchase',
             'supplier',
-            'date',
             'purchase_date',
-            'receiving_contact',
             'description',
             'comments',
             'asset_count',

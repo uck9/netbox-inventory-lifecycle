@@ -29,7 +29,7 @@ __all__ = (
     'ContractSKUForm',
     'ContractVendorForm',
     'ContractAssignmentForm',
-    'DeliveryForm',
+    'OrderForm',
     'InventoryItemGroupForm',
     'InventoryItemTypeForm',
     'PurchaseForm',
@@ -157,10 +157,10 @@ class AssetForm(NetBoxModelForm):
         help_text=Asset._meta.get_field('purchase').help_text,
         required=not Asset._meta.get_field('purchase').blank,
     )
-    delivery = DynamicModelChoiceField(
-        queryset=Delivery.objects.all(),
-        help_text=Asset._meta.get_field('delivery').help_text,
-        required=not Asset._meta.get_field('delivery').blank,
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        help_text=Asset._meta.get_field('order').help_text,
+        required=not Asset._meta.get_field('order').blank,
         query_params={'purchase_id': '$purchase'},
     )
     tenant = DynamicModelChoiceField(
@@ -217,7 +217,7 @@ class AssetForm(NetBoxModelForm):
         FieldSet(
             'owner',
             'purchase',
-            'delivery',
+            'order',
             'warranty_start',
             'warranty_end',
             name='Purchase',
@@ -241,7 +241,7 @@ class AssetForm(NetBoxModelForm):
             'storage_location',
             'owner',
             'purchase',
-            'delivery',
+            'order',
             'warranty_start',
             'warranty_end',
             'tenant',
@@ -306,11 +306,11 @@ class AssetForm(NetBoxModelForm):
 
     def clean(self):
         super().clean()
-        # if only delivery set, infer purchase from it
-        delivery = self.cleaned_data['delivery']
+        # if only order set, infer purchase from it
+        order = self.cleaned_data['order']
         purchase = self.cleaned_data['purchase']
-        if delivery and not purchase:
-            self.cleaned_data['purchase'] = delivery.purchase
+        if order and not purchase:
+            self.cleaned_data['purchase'] = order.purchase
 
 
 #
@@ -384,7 +384,7 @@ class ContractAssignmentForm(NetBoxModelForm):
 
 
 #
-# Deliveries
+# Purchases
 #
 
 
@@ -433,25 +433,8 @@ class PurchaseForm(NetBoxModelForm):
         }
 
 
-class DeliveryForm(NetBoxModelForm):
-    contact_group = DynamicModelChoiceField(
-        queryset=ContactGroup.objects.all(),
-        required=False,
-        null_option='None',
-        label='Contact Group',
-        help_text='Filter receiving contacts by group',
-        initial_params={
-            'contact': '$receiving_contact',
-        },
-    )
-    receiving_contact = DynamicModelChoiceField(
-        queryset=Contact.objects.all(),
-        required=False,
-        help_text=Delivery._meta.get_field('receiving_contact').help_text,
-        query_params={
-            'group_id': '$contact_group',
-        },
-    )
+class OrderForm(NetBoxModelForm):
+
 
     comments = CommentField()
 
@@ -459,23 +442,19 @@ class DeliveryForm(NetBoxModelForm):
         FieldSet(
             'purchase',
             'name',
-            'date',
-            'contact_group',
-            'receiving_contact',
+            'manufacturer',
             'description',
             'tags',
-            name='Delivery',
+            name='Order',
         ),
     )
 
     class Meta:
-        model = Delivery
+        model = Order
         fields = (
             'purchase',
             'name',
-            'date',
-            'contact_group',
-            'receiving_contact',
+            'manufacturer',
             'description',
             'comments',
             'tags',

@@ -163,8 +163,8 @@
             <td>{{ object.purchase|linkify|placeholder }}{% if object.purchase.date %} on {{ object.purchase.date|isodate }}{% endif %}</td>
           </tr>
           <tr>
-            <th scope="row">Delivery</th>
-            <td>{{ object.delivery|linkify:'name'|placeholder }}{% if object.delivery.date %} on {{ object.delivery.date|isodate }}{% endif %}</td>
+            <th scope="row">Order</th>
+            <td>{{ object.order|linkify:'name'|placeholder }}</td>
           </tr>
           <tr>
             <th scope="row">Warranty start</th>

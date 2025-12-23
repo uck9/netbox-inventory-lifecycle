@@ -14,7 +14,7 @@ from dcim.api.serializers import (
 from netbox.api.serializers import NestedGroupModelSerializer, NetBoxModelSerializer
 from tenancy.api.serializers import ContactSerializer, TenantSerializer
 
-from .deliveries import *
+from .purchases import *
 from .nested import *
 from netbox_inventory.models import Asset, InventoryItemGroup, InventoryItemType
 
@@ -137,7 +137,7 @@ class AssetSerializer(NetBoxModelSerializer):
         allow_null=True,
         default=None,
     )
-    delivery = DeliverySerializer(
+    order = OrderSerializer(
         nested=True,
         required=False,
         allow_null=True,
@@ -170,9 +170,9 @@ class AssetSerializer(NetBoxModelSerializer):
 
     def to_internal_value(self, data):
         ret = super().to_internal_value(data)
-        # if only delivery set, infer pruchase from it
-        if 'delivery' in ret and ret['delivery'] and not ret.get('purchase'):
-            ret['purchase'] = ret['delivery'].purchase
+        # if only order set, infer pruchase from it
+        if 'order' in ret and ret['order'] and not ret.get('purchase'):
+            ret['purchase'] = ret['order'].purchase
         if 'asset_tag' in ret and ret['asset_tag'] == '':
             ret['asset_tag'] = None
         if 'serial' in ret and ret['serial'] == '':
@@ -203,7 +203,7 @@ class AssetSerializer(NetBoxModelSerializer):
             'contact',
             'storage_location',
             'owner',
-            'delivery',
+            'order',
             'purchase',
             'warranty_start',
             'warranty_end',

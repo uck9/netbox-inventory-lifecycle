@@ -6,7 +6,7 @@ from django.dispatch import receiver
 from dcim.models import Device, InventoryItem, Module, Rack
 from utilities.exceptions import AbortRequest
 
-from .models import Asset, Delivery
+from .models import Asset, Order
 from .utils import get_plugin_setting, get_status_for, is_equal_none
 
 logger = logging.getLogger('netbox.netbox_inventory.signals')
@@ -70,10 +70,10 @@ def free_assigned_asset(instance, **kwargs):
     logger.info(f'Asset marked as stored {asset}')
 
 
-@receiver(post_save, sender=Delivery)
-def handle_delivery_purchase_change(instance, created, **kwargs):
+@receiver(post_save, sender=Order)
+def handle_order_purchase_change(instance, created, **kwargs):
     """
-    Update child Assets if Delivery Purchase has changed.
+    Update child Assets if Order Purchase has changed.
     """
     if not created:
-        Asset.objects.filter(delivery=instance).update(purchase=instance.purchase)
+        Asset.objects.filter(order=instance).update(purchase=instance.purchase)

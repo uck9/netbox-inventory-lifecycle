@@ -5,64 +5,64 @@ from utilities.views import register_model_view
 from .. import filtersets, forms, models, tables
 
 __all__ = (
-    'DeliveryView',
-    'DeliveryListView',
-    'DeliveryEditView',
-    'DeliveryDeleteView',
-    'DeliveryBulkImportView',
-    'DeliveryBulkEditView',
-    'DeliveryBulkDeleteView',
+    'OrderView',
+    'OrderListView',
+    'OrderEditView',
+    'OrderDeleteView',
+    'OrderBulkImportView',
+    'OrderBulkEditView',
+    'OrderBulkDeleteView',
 )
 
 
-@register_model_view(models.Delivery)
-class DeliveryView(generic.ObjectView):
-    queryset = models.Delivery.objects.all()
+@register_model_view(models.Order)
+class OrderView(generic.ObjectView):
+    queryset = models.Order.objects.all()
 
     def get_extra_context(self, request, instance):
         return {
-            'asset_count': models.Asset.objects.filter(delivery=instance).count(),
+            'asset_count': models.Asset.objects.filter(order=instance).count(),
         }
 
 
-@register_model_view(models.Delivery, 'list', path='', detail=False)
-class DeliveryListView(generic.ObjectListView):
-    queryset = models.Delivery.objects.annotate(
-        asset_count=count_related(models.Asset, 'delivery'),
+@register_model_view(models.Order, 'list', path='', detail=False)
+class OrderListView(generic.ObjectListView):
+    queryset = models.Order.objects.annotate(
+        asset_count=count_related(models.Asset, 'order'),
     )
-    table = tables.DeliveryTable
-    filterset = filtersets.DeliveryFilterSet
-    filterset_form = forms.DeliveryFilterForm
+    table = tables.OrderTable
+    filterset = filtersets.OrderFilterSet
+    filterset_form = forms.OrderFilterForm
 
 
-@register_model_view(models.Delivery, 'edit')
-@register_model_view(models.Delivery, 'add', detail=False)
-class DeliveryEditView(generic.ObjectEditView):
-    queryset = models.Delivery.objects.all()
-    form = forms.DeliveryForm
+@register_model_view(models.Order, 'edit')
+@register_model_view(models.Order, 'add', detail=False)
+class OrderEditView(generic.ObjectEditView):
+    queryset = models.Order.objects.all()
+    form = forms.OrderForm
 
 
-@register_model_view(models.Delivery, 'delete')
-class DeliveryDeleteView(generic.ObjectDeleteView):
-    queryset = models.Delivery.objects.all()
+@register_model_view(models.Order, 'delete')
+class OrderDeleteView(generic.ObjectDeleteView):
+    queryset = models.Order.objects.all()
 
 
-@register_model_view(models.Delivery, 'bulk_import', path='import', detail=False)
-class DeliveryBulkImportView(generic.BulkImportView):
-    queryset = models.Delivery.objects.all()
-    model_form = forms.DeliveryImportForm
+@register_model_view(models.Order, 'bulk_import', path='import', detail=False)
+class OrderBulkImportView(generic.BulkImportView):
+    queryset = models.Order.objects.all()
+    model_form = forms.OrderImportForm
 
 
-@register_model_view(models.Delivery, 'bulk_edit', path='edit', detail=False)
-class DeliveryBulkEditView(generic.BulkEditView):
-    queryset = models.Delivery.objects.all()
-    filterset = filtersets.DeliveryFilterSet
-    table = tables.DeliveryTable
-    form = forms.DeliveryBulkEditForm
+@register_model_view(models.Order, 'bulk_edit', path='edit', detail=False)
+class OrderBulkEditView(generic.BulkEditView):
+    queryset = models.Order.objects.all()
+    filterset = filtersets.OrderFilterSet
+    table = tables.OrderTable
+    form = forms.OrderBulkEditForm
 
 
-@register_model_view(models.Delivery, 'bulk_delete', path='delete', detail=False)
-class DeliveryBulkDeleteView(generic.BulkDeleteView):
-    queryset = models.Delivery.objects.all()
-    filterset = filtersets.DeliveryFilterSet
-    table = tables.DeliveryTable
+@register_model_view(models.Order, 'bulk_delete', path='delete', detail=False)
+class OrderBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.Order.objects.all()
+    filterset = filtersets.OrderFilterSet
+    table = tables.OrderTable

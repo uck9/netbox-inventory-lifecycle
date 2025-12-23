@@ -71,12 +71,12 @@ urlpatterns = [
     path('purchases/<int:pk>/',
         include(get_model_urls('netbox_inventory', 'purchase')),
     ),
-    # Deliveries
-    path('deliveries/',
-        include(get_model_urls('netbox_inventory', 'delivery', detail=False)),
+    # Orders
+    path('orders/',
+        include(get_model_urls('netbox_inventory', 'order', detail=False)),
     ),
-    path('deliveries/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'delivery')),
+    path('orders/<int:pk>/',
+        include(get_model_urls('netbox_inventory', 'order')),
     ),
     # AuditFlows (for clarity above AuditFlowPages)
     path(

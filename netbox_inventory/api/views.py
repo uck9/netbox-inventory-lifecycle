@@ -16,7 +16,7 @@ __all__ = (
     'ContractSKUViewSet',
     'ContractAssignmentViewSet',
     'ContractViewSet',
-    'DeliveryViewSet',
+    'OrderViewSet',
     'DeviceAssetViewSet',
     'InventoryItemAssetViewSet',
     'InventoryItemGroupViewSet',
@@ -60,7 +60,7 @@ class AssetViewSet(NetBoxModelViewSet):
         'rack_type',
         'rack',
         'storage_location',
-        'delivery',
+        'order',
         'purchase__supplier',
         'tags',
     )
@@ -123,7 +123,7 @@ class ContractViewSet(NetBoxModelViewSet):
 
 
 #
-# Deliveries
+# Purchases
 #
 
 
@@ -131,7 +131,7 @@ class SupplierViewSet(NetBoxModelViewSet):
     queryset = models.Supplier.objects.prefetch_related('tags').annotate(
         asset_count=count_related(models.Asset, 'purchase__supplier'),
         purchase_count=count_related(models.Purchase, 'supplier'),
-        delivery_count=count_related(models.Delivery, 'purchase__supplier'),
+        order_count=count_related(models.Order, 'purchase__supplier'),
     )
     serializer_class = SupplierSerializer
     filterset_class = filtersets.SupplierFilterSet
@@ -140,18 +140,18 @@ class SupplierViewSet(NetBoxModelViewSet):
 class PurchaseViewSet(NetBoxModelViewSet):
     queryset = models.Purchase.objects.prefetch_related('tags').annotate(
         asset_count=count_related(models.Asset, 'purchase'),
-        delivery_count=count_related(models.Delivery, 'purchase'),
+        order_count=count_related(models.Order, 'purchase'),
     )
     serializer_class = PurchaseSerializer
     filterset_class = filtersets.PurchaseFilterSet
 
 
-class DeliveryViewSet(NetBoxModelViewSet):
-    queryset = models.Delivery.objects.prefetch_related('tags').annotate(
-        asset_count=count_related(models.Asset, 'delivery')
+class OrderViewSet(NetBoxModelViewSet):
+    queryset = models.Order.objects.prefetch_related('tags').annotate(
+        asset_count=count_related(models.Asset, 'order')
     )
-    serializer_class = DeliverySerializer
-    filterset_class = filtersets.DeliveryFilterSet
+    serializer_class = OrderSerializer
+    filterset_class = filtersets.OrderFilterSet
 
 
 #

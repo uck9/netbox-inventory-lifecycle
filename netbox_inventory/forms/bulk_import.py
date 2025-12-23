@@ -25,7 +25,7 @@ __all__ = (
     'AuditTrailImportForm',
     'AuditTrailSourceImportForm',
     'ContractImportForm',
-    'DeliveryImportForm',
+    'OrderImportForm',
     'InventoryItemGroupImportForm',
     'PurchaseImportForm',
     'SupplierImportForm',
@@ -129,18 +129,8 @@ class AssetImportForm(NetBoxModelImportForm):
         help_text='Tenant that owns this asset. It must exist before import.',
         required=False,
     )
-    delivery = forms.CharField(
-        help_text='Delivery that delivered this asset. See "Import settings" for more info.',
-        required=False,
-    )
-    delivery_date = forms.DateField(
-        help_text='Date when this delivery was made.',
-        required=False,
-    )
-    receiving_contact = CSVModelChoiceField(
-        queryset=Contact.objects.all(),
-        to_field_name='name',
-        help_text='Contact that accepted this delivery. It must exist before import.',
+    order = forms.CharField(
+        help_text='Order that included this asset. See "Import settings" for more info.',
         required=False,
     )
     purchase = forms.CharField(
@@ -194,9 +184,8 @@ class AssetImportForm(NetBoxModelImportForm):
             'purchase',
             'purchase_date',
             'purchase_status',
-            'delivery',
-            'delivery_date',
-            'receiving_contact',
+            'order',
+            'manufacturer',
             'warranty_start',
             'warranty_end',
             'comments',
@@ -244,18 +233,18 @@ class AssetImportForm(NetBoxModelImportForm):
             )
         return purchase
 
-    def clean_delivery(self):
+    def clean_order(self):
         purchase = self.cleaned_data.get('purchase')
-        delivery_name = self.cleaned_data.get('delivery')
-        if not delivery_name:
+        order_name = self.cleaned_data.get('order')
+        if not order_name:
             return None
         try:
-            delivery = Delivery.objects.get(purchase=purchase, name=delivery_name)
+            order = Order.objects.get(purchase=purchase, name=order_name)
         except ObjectDoesNotExist:
             raise forms.ValidationError(
-                f'Unable to find delivery {purchase} {delivery_name}'
+                f'Unable to find order {purchase} {order_name}'
             )
-        return delivery
+        return order
 
     def __init__(self, data=None, *args, **kwargs):
         super().__init__(data, *args, **kwargs)
@@ -317,15 +306,11 @@ class AssetImportForm(NetBoxModelImportForm):
                         'status': self._get_clean_value('purchase_status'),
                     },
                 )
-                if self.data.get('delivery'):
-                    Delivery.objects.get_or_create(
-                        name=self.data.get('delivery'),
+                if self.data.get('order'):
+                    Order.objects.get_or_create(
+                        name=self.data.get('order'),
                         purchase=purchase,
                         defaults={
-                            'date': self._get_clean_value('delivery_date'),
-                            'receiving_contact': self._get_clean_value(
-                                'receiving_contact'
-                            ),
                         },
                     )
             if (
@@ -475,7 +460,7 @@ class ContractImportForm(NetBoxModelImportForm):
 
 
 #
-# Deliveries
+# Purchases
 #
 
 
@@ -510,27 +495,20 @@ class PurchaseImportForm(NetBoxModelImportForm):
         )
 
 
-class DeliveryImportForm(NetBoxModelImportForm):
+class OrderImportForm(NetBoxModelImportForm):
     purchase = CSVModelChoiceField(
         queryset=Purchase.objects.all(),
         to_field_name='id',
-        help_text='Purchase that this delivery is part of. It must exist when importing.',
+        help_text='Purchase that this order is part of. It must exist when importing.',
         required=True,
-    )
-    receiving_contact = CSVModelChoiceField(
-        queryset=Contact.objects.all(),
-        to_field_name='id',
-        help_text='Contact that accepted this delivery. It must exist when importing.',
-        required=False,
     )
 
     class Meta:
-        model = Delivery
+        model = Order
         fields = (
             'name',
-            'date',
             'purchase',
-            'receiving_contact',
+            'manufacturer',
             'description',
             'comments',
             'tags',

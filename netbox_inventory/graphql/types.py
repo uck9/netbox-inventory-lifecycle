@@ -19,17 +19,17 @@ from tenancy.graphql.types import ContactType, TenantType
 
 from .filters import (
     AssetFilter,
-    DeliveryFilter,
     InventoryItemGroupFilter,
     InventoryItemTypeFilter,
+    OrderFilter,
     PurchaseFilter,
     SupplierFilter,
 )
 from netbox_inventory.models import (
     Asset,
-    Delivery,
     InventoryItemGroup,
     InventoryItemType,
+    Order,
     Purchase,
     Supplier,
 )
@@ -62,8 +62,8 @@ class AssetType(ImageAttachmentsMixin, NetBoxObjectType):
         Annotated['LocationType', strawberry.lazy('dcim.graphql.types')] | None
     )
     owner: Annotated['TenantType', strawberry.lazy('tenancy.graphql.types')] | None
-    delivery: (
-        Annotated['DeliveryType', strawberry.lazy('netbox_inventory.graphql.types')]
+    order: (
+        Annotated['OrderType', strawberry.lazy('netbox_inventory.graphql.types')]
         | None
     )
     purchase: (
@@ -88,18 +88,15 @@ class PurchaseType(NetBoxObjectType):
         Annotated['AssetType', strawberry.lazy('netbox_inventory.graphql.types')]
     ]
     orders: list[
-        Annotated['DeliveryType', strawberry.lazy('netbox_inventory.graphql.types')]
+        Annotated['OrderType', strawberry.lazy('netbox_inventory.graphql.types')]
     ]
 
 
-@strawberry_django.type(Delivery, fields='__all__', filters=DeliveryFilter)
-class DeliveryType(NetBoxObjectType):
+@strawberry_django.type(Order, fields='__all__', filters=OrderFilter)
+class OrderType(NetBoxObjectType):
     purchase: Annotated[
         'PurchaseType', strawberry.lazy('netbox_inventory.graphql.types')
     ]
-    receiving_contact: (
-        Annotated['ContactType', strawberry.lazy('tenancy.graphql.types')] | None
-    )
     assets: list[
         Annotated['AssetType', strawberry.lazy('netbox_inventory.graphql.types')]
     ]

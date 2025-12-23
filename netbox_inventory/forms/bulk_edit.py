@@ -26,7 +26,7 @@ __all__ = (
     'ContractSKUBulkEditForm',
     'ContractBulkEditForm',
     'ContractAssignmentBulkEditForm',
-    'DeliveryBulkEditForm',
+    'OrderBulkEditForm',
     'InventoryItemGroupBulkEditForm',
     'PurchaseBulkEditForm',
     'SupplierBulkEditForm',
@@ -152,10 +152,10 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
         help_text=Asset._meta.get_field('purchase').help_text,
         required=not Asset._meta.get_field('purchase').blank,
     )
-    delivery = DynamicModelChoiceField(
-        queryset=Delivery.objects.all(),
-        help_text=Asset._meta.get_field('delivery').help_text,
-        required=not Asset._meta.get_field('delivery').blank,
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        help_text=Asset._meta.get_field('order').help_text,
+        required=not Asset._meta.get_field('order').blank,
     )
     warranty_start = forms.DateField(
         label='Warranty start',
@@ -216,7 +216,7 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
         FieldSet(
             'owner',
             'purchase',
-            'delivery',
+            'order',
             'warranty_start',
             'warranty_end',
             name='Purchase',
@@ -240,7 +240,7 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
         'rack',
         'owner',
         'purchase',
-        'delivery',
+        'order',
         'tenant',
         'contact',
         'warranty_start',
@@ -330,7 +330,7 @@ class ContractAssignmentBulkEditForm(NetBoxModelBulkEditForm):
     nullable_fields = ('contract', 'sku', 'description', 'end', )
 
 #
-# Deliveries
+# Purchases
 #
 
 
@@ -391,7 +391,7 @@ class PurchaseBulkEditForm(NetBoxModelBulkEditForm):
     )
 
 
-class DeliveryBulkEditForm(NetBoxModelBulkEditForm):
+class OrderBulkEditForm(NetBoxModelBulkEditForm):
     date = forms.DateField(
         label='Date',
         required=False,
@@ -402,21 +402,6 @@ class DeliveryBulkEditForm(NetBoxModelBulkEditForm):
         required=False,
         label='Purchase',
     )
-    contact_group = DynamicModelChoiceField(
-        queryset=ContactGroup.objects.all(),
-        required=False,
-        null_option='None',
-        label='Contact Group',
-        help_text='Filter receiving contacts by group',
-    )
-    receiving_contact = DynamicModelChoiceField(
-        queryset=Contact.objects.all(),
-        required=False,
-        label='Receiving Contact',
-        query_params={
-            'group_id': '$contact_group',
-        },
-    )
     description = forms.CharField(
         required=False,
     )
@@ -424,13 +409,11 @@ class DeliveryBulkEditForm(NetBoxModelBulkEditForm):
         required=False,
     )
 
-    model = Delivery
+    model = Order
     fieldsets = (
         FieldSet(
             'date',
             'purchase',
-            'contact_group',
-            'receiving_contact',
             'description',
             name='General',
         ),
@@ -438,7 +421,6 @@ class DeliveryBulkEditForm(NetBoxModelBulkEditForm):
     nullable_fields = (
         'date',
         'description',
-        'receiving_contact',
     )
 
 

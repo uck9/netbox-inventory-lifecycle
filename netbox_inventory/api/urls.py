@@ -22,10 +22,10 @@ router.register('contract-vendors', views.ContractVendorViewSet)
 router.register('contract-skus', views.ContractSKUViewSet)
 
 
-# Deliveries
+# Orders
 router.register('suppliers', views.SupplierViewSet)
 router.register('purchases', views.PurchaseViewSet)
-router.register('deliveries', views.DeliveryViewSet)
+router.register('orders', views.OrderViewSet)
 
 
 # Audit

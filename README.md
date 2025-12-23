@@ -254,7 +254,7 @@ PLUGINS_CONFIG = {
 | `stored_status_name` | `'stored'`| Status that indicates asset is in storage. See "Automatic management of asset status" below for more info on this setting.
 | `stored_additional_status_names` | `['retired',]`| List of statuses that are also considered as not in use by various filters.
 | `sync_hardware_serial_asset_tag` | `False` | When an asset is assigned or unassigned to a device, module or inventory item, update its serial number and asset tag to be in sync with the asset? For device and module device type or module type is also updated to match asset. For inventory items, manufacturer and part ID are updated to match asset. |
-| `asset_import_create_purchase` | `False` | When importing assets, automatically create any given purchase, delivery or supplier if it doesn't exist already |
+| `asset_import_create_purchase` | `False` | When importing assets, automatically create any given purchase, order or supplier if it doesn't exist already |
 | `asset_import_create_device_type` | `False` | When importing a device type asset, automatically create manufacturer and/or device type if it doesn't exist |
 | `asset_import_create_module_type` | `False` | When importing a module type asset, automatically create manufacturer and/or module type if it doesn't exist |
 | `asset_import_create_inventoryitem_type` | `False` | When importing an inventory type asset, automatically create manufacturer and/or inventory item type if it doesn't exist |
@@ -288,9 +288,9 @@ The possible colours can be found at [FIELD_CHOICES](https://netboxlabs.com/docs
 
 Netbox inventory supports limited file attachments for its various models. You can add images to assets, inventory item types and that is it.
 
-If you would like to attach various other documents to purchases, deliveries, suppliers... first ask yourself if you really need those documents in netbox or could you use some other tool that is possibly in use in your organization. Netbox itself is not great at managing documents. If you decide to manage documents outside netbox, you can probably still achieve some sort of integration by using [custom links feature](https://netboxlabs.com/docs/netbox/en/stable/customization/custom-links/) to link from a netbox inventory object directly to a document in your document system.
+If you would like to attach various other documents to purchases, orders, suppliers... first ask yourself if you really need those documents in netbox or could you use some other tool that is possibly in use in your organization. Netbox itself is not great at managing documents. If you decide to manage documents outside netbox, you can probably still achieve some sort of integration by using [custom links feature](https://netboxlabs.com/docs/netbox/en/stable/customization/custom-links/) to link from a netbox inventory object directly to a document in your document system.
 
-If you really want to store document in netbox itself, then consider using [netbox_attachments plugin](https://github.com/Kani999/netbox-attachments). Here is a sample netbox configuration that will allow adding documents to suppliers, purchases and deliveries:
+If you really want to store document in netbox itself, then consider using [netbox_attachments plugin](https://github.com/Kani999/netbox-attachments). Here is a sample netbox configuration that will allow adding documents to suppliers, purchases and orders:
 
 ```python
 PLUGINS = [
@@ -304,12 +304,12 @@ PLUGINS_CONFIG = {
         'scope_filter': [
             'netbox_inventory.supplier',
             'netbox_inventory.purchase',
-            'netbox_inventory.delivery',
+            'netbox_inventory.order',
         ],
         'display_setting': {
             "netbox_inventory.supplier": "left_page",
             "netbox_inventory.purchase": "full_width_page",
-            "netbox_inventory.delivery": "righ_page",
+            "netbox_inventory.order": "right_page",
         },
     },
 }

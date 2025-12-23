@@ -25,7 +25,7 @@ class SupplierView(generic.ObjectView):
                 purchase__supplier=instance
             ).count(),
             'purchase_count': models.Purchase.objects.filter(supplier=instance).count(),
-            'delivery_count': models.Delivery.objects.filter(
+            'order_count': models.Order.objects.filter(
                 purchase__supplier=instance
             ).count(),
         }
@@ -35,7 +35,7 @@ class SupplierView(generic.ObjectView):
 class SupplierListView(generic.ObjectListView):
     queryset = models.Supplier.objects.annotate(
         purchase_count=count_related(models.Purchase, 'supplier'),
-        delivery_count=count_related(models.Delivery, 'purchase__supplier'),
+        order_count=count_related(models.Order, 'purchase__supplier'),
         asset_count=count_related(models.Asset, 'purchase__supplier'),
     )
     table = tables.SupplierTable
