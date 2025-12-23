@@ -410,7 +410,7 @@ class PurchaseForm(NetBoxModelForm):
 
     fieldsets = (
         FieldSet(
-            'supplier', 'name', 'purchase_order_id', 'vendor_order_id', 'status', 'date', 'description', 'tags', name='Purchase'
+            'supplier', 'name', 'purchase_requisition', 'purchase_order', 'request_ticket', 'status', 'date', 'description', 'tags', name='Purchase'
         ),
     )
 
@@ -419,18 +419,15 @@ class PurchaseForm(NetBoxModelForm):
         fields = (
             'supplier',
             'name',
-            'purchase_order_id',
-            'vendor_order_id',
+            'purchase_requisition',
+            'purchase_order',
+            'request_ticket',
             'status',
             'date',
             'description',
             'comments',
             'tags',
         )
-        labels = {
-            'purchase_order_id': 'Purchase Order ID',
-            'vendor_order_id': 'Vendor Order ID',
-        }
         widgets = {
             'date': DatePicker(),
         }

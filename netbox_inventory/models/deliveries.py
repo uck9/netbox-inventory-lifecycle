@@ -30,15 +30,21 @@ class Purchase(NamedModel):
         max_length=100,
         help_text='Name of Purchase'
     )
-    purchase_order_id = models.CharField(
+    purchase_requisition = models.CharField(
         max_length=100,
-        help_text='Purchase Order ID',
+        help_text='Purchase Requisition',
         blank=True,
         null=True
     )
-    vendor_order_id = models.CharField(
+    purchase_order = models.CharField(
         max_length=100,
-        help_text='Vendor Order ID (eg. Cisco Sales Order ID)',
+        help_text='Purchase Order',
+        blank=True,
+        null=True
+    )
+    request_ticket = models.CharField(
+        max_length=100,
+        help_text='Request Ticket ',
         blank=True,
         null=True
     )
