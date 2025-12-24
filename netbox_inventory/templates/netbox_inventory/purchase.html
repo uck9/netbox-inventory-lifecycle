@@ -28,12 +28,16 @@
             <td>{{ object.purchase_order }}</td>
           </tr>
           <tr>
-            <th scope="row">Request Ticket</th>
-            <td>{{ object.request_ticket }}</td>
+            <th scope="row">Internal Reference</th>
+            <td>{{ object.internal_reference }}</td>
           </tr>
           <tr>
             <th scope="row">Supplier</th>
             <td>{{ object.supplier|linkify }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Supplier Reference</th>
+            <td>{{ object.supplier_reference }}</td>
           </tr>
           <tr>
             <th scope="row">Status</th>

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from netbox.api.serializers import NetBoxModelSerializer
+from dcim.api.serializers_.manufacturers import ManufacturerSerializer
 from tenancy.api.serializers import ContactSerializer
 
 from .nested import *
@@ -48,7 +49,8 @@ class PurchaseSerializer(NetBoxModelSerializer):
             'name',
             'purchase_requisition',
             'purchase_order',
-            'request_ticket',
+            'internal_reference',
+            'supplier_reference',
             'status',
             'date',
             'description',
@@ -68,7 +70,7 @@ class PurchaseSerializer(NetBoxModelSerializer):
             'name',
             'purchase_requisition',
             'purchase_order',
-            'request_ticket',
+            'internal_reference',
             'status',
             'date',
             'description',

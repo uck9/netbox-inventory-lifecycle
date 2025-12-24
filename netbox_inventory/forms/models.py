@@ -410,7 +410,7 @@ class PurchaseForm(NetBoxModelForm):
 
     fieldsets = (
         FieldSet(
-            'supplier', 'name', 'purchase_requisition', 'purchase_order', 'request_ticket', 'status', 'date', 'description', 'tags', name='Purchase'
+            'supplier', 'name', 'purchase_requisition', 'purchase_order', 'internal_reference', 'supplier_reference', 'status', 'date', 'description', 'tags', name='Purchase'
         ),
     )
 
@@ -421,7 +421,8 @@ class PurchaseForm(NetBoxModelForm):
             'name',
             'purchase_requisition',
             'purchase_order',
-            'request_ticket',
+            'internal_reference',
+            'supplier_reference',
             'status',
             'date',
             'description',

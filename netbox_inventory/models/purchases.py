@@ -42,19 +42,25 @@ class Purchase(NamedModel):
         blank=True,
         null=True
     )
-    request_ticket = models.CharField(
+    internal_reference = models.CharField(
         max_length=100,
-        help_text='Request Ticket ',
+        help_text='Internal reference ID for this purchase',
         blank=True,
         null=True
     )
     supplier = models.ForeignKey(
-        help_text='Legal entity this purchase was made at',
+        help_text='Legal entity this purchase was made from',
         to='netbox_inventory.Supplier',
         on_delete=models.PROTECT,
         related_name='purchases',
         blank=False,
         null=False,
+    )
+    supplier_reference = models.CharField(
+        max_length=100,
+        help_text='Supplier order, quote, or external reference ID',
+        blank=True,
+        null=True
     )
     status = models.CharField(
         max_length=30,

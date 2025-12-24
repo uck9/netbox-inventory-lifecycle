@@ -190,7 +190,9 @@ class AssetTable(NetBoxTable):
         linkify=True,
     )
     order = tables.Column(
-        linkify=True,
+        accessor='order.name',
+        linkify=lambda record: record.order.get_absolute_url(),
+        verbose_name='Order',
     )
     contract = columns.TemplateColumn(
         template_code='''
@@ -413,8 +415,8 @@ class AssetTable(NetBoxTable):
             'hardware_type',
             'asset_tag',
             'status',
+            'order',
             'hardware',
-            'contract',
             'tags',
         )
 
@@ -434,7 +436,7 @@ class SupplierTable(ContactsColumnMixin, NetBoxTable):
         url_params={'supplier_id': 'pk'},
         verbose_name='Purchases',
     )
-   order_count = columns.LinkedCountColumn(
+    order_count = columns.LinkedCountColumn(
         viewname='plugins:netbox_inventory:order_list',
         url_params={'supplier_id': 'pk'},
         verbose_name='Orders',
@@ -535,6 +537,7 @@ class OrderTable(NetBoxTable):
     )
     name = tables.Column(
         linkify=True,
+        verbose_name='Vendor ID',
     )
     asset_count = columns.LinkedCountColumn(
         viewname='plugins:netbox_inventory:asset_list',
