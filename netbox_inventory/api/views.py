@@ -16,6 +16,7 @@ __all__ = (
     'ContractSKUViewSet',
     'ContractAssignmentViewSet',
     'ContractViewSet',
+    'HardwareLifecycleViewSet',
     'OrderViewSet',
     'DeviceAssetViewSet',
     'InventoryItemAssetViewSet',
@@ -120,6 +121,16 @@ class ContractViewSet(NetBoxModelViewSet):
     )
     serializer_class = ContractSerializer
     filterset_class = filtersets.ContractFilterSet
+
+
+#
+# Hardware Lifecycle
+#
+
+class HardwareLifecycleViewSet(NetBoxModelViewSet):
+    queryset = models.HardwareLifecycle.objects.all()
+    serializer_class = HardwareLifecycleSerializer
+    filterset_class = filtersets.HardwareLifecycleFilterSet
 
 
 #

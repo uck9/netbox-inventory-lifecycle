@@ -4,7 +4,7 @@ from utilities.urls import get_model_urls
 
 from . import views
 
-from netbox_inventory.models import ContractAssignment
+from netbox_inventory.models import ContractAssignment, HardwareLifecycle
 
 urlpatterns = [
     # InventoryItemGroups
@@ -78,6 +78,33 @@ urlpatterns = [
     path('orders/<int:pk>/',
         include(get_model_urls('netbox_inventory', 'order')),
     ),
+
+    path('lifecycle/', views.HardwareLifecycleListView.as_view(),
+        name='hardwarelifecycle_list',
+    ),
+    path('lifecycle/add',views.HardwareLifecycleEditView.as_view(),
+        name='hardwarelifecycle_add',
+    ),
+    path('lifecycle/edit', views.HardwareLifecycleBulkEditView.as_view(),
+        name='hardwarelifecycle_bulk_edit',
+    ),
+    path('lifecycle/delete', views.HardwareLifecycleBulkDeleteView.as_view(),
+        name='hardwarelifecycle_bulk_delete',
+    ),
+    path('lifecycle/<int:pk>', views.HardwareLifecycleView.as_view(),
+        name='hardwarelifecycle',
+    ),
+    path('lifecycle/<int:pk>/edit', views.HardwareLifecycleEditView.as_view(),
+        name='hardwarelifecycle_edit',
+    ),
+    path('lifecycle/<int:pk>/delete', views.HardwareLifecycleDeleteView.as_view(),
+        name='hardwarelifecycle_delete',
+    ),
+    path('lifecycle/<int:pk>/changelog', ObjectChangeLogView.as_view(),
+        name='hardwarelifecycle_changelog',
+        kwargs={'model': HardwareLifecycle},
+    ),
+
     # AuditFlows (for clarity above AuditFlowPages)
     path(
         'audit-flows/',

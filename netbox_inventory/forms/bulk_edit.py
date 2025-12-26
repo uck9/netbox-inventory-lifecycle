@@ -26,6 +26,7 @@ __all__ = (
     'ContractSKUBulkEditForm',
     'ContractBulkEditForm',
     'ContractAssignmentBulkEditForm',
+    'HardwareLifecycleBulkEditForm',
     'OrderBulkEditForm',
     'InventoryItemGroupBulkEditForm',
     'PurchaseBulkEditForm',
@@ -460,3 +461,22 @@ class AuditFlowPageAssignmentBulkEditForm(ChangelogMessageMixin, BulkEditForm):
             name=_('Attributes'),
         ),
     )
+
+
+# 
+# HArdware Lifecycle
+#
+
+class HardwareLifecycleBulkEditForm(NetBoxModelBulkEditForm):
+    description = forms.CharField(
+        label=_('Description'), max_length=200, required=False
+    )
+    comments = CommentField()
+
+    model = HardwareLifecycle
+    fieldsets = (
+        FieldSet(
+            'description',
+        ),
+    )
+    nullable_fields = ('description',)

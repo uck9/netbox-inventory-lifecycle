@@ -185,6 +185,14 @@ purchases_items = (
 )
 
 
+lifecycle_items = (
+    PluginMenuItem(
+        link='plugins:netbox_inventory:hardwarelifecycle_list',
+        link_text='Hardware Lifecycle',
+        permissions=['netbox_inventory.view_hardwarelifecycle'],
+    ),
+)
+
 #
 # Audit
 #
@@ -273,6 +281,7 @@ if get_plugin_config('netbox_inventory', 'top_level_menu'):
         groups=(
             ('Asset Management', assets_items),
             ('Contracts', contracts_items),
+            ('Lifecycle', lifecycle_items),
             ('Purchases', purchases_items),
             ('Audit', audit_admin_items),
         ),
