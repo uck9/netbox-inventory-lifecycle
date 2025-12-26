@@ -1,9 +1,9 @@
 from django.urls import include, path
+
 from netbox.views.generic import ObjectChangeLogView
 from utilities.urls import get_model_urls
 
 from . import views
-
 from netbox_inventory.models import ContractAssignment, HardwareLifecycle
 
 urlpatterns = [

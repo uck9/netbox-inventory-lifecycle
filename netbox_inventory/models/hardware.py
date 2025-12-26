@@ -1,19 +1,17 @@
+from datetime import date
+
+from dateutil.relativedelta import relativedelta
+from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
-from django.conf import settings
 
-from dcim.models import DeviceType, ModuleType, Device, Module
+from dcim.models import Device, DeviceType, Module, ModuleType
 from netbox.models import PrimaryModel
 from utilities.choices import ChoiceSet
 
-from datetime import date, datetime
-
-from dateutil.relativedelta import relativedelta
-
 from netbox_inventory.constants import HARDWARE_LIFECYCLE_MODELS
-
 
 __all__ = (
     'HardwareLifecycle',
@@ -123,22 +121,6 @@ class HardwareLifecycle(PrimaryModel):
         if self.support_basis == SupportBasisChoices.DEFAULT_KEY:  # 'support'
             return self.end_of_support
         return self.end_of_security
-
-
-    @property
-    def is_supported(self):
-        """
-        Return False only if the selected support basis date exists and has passed.
-
-        If no relevant lifecycle date is set, assume the hardware is supported.
-        """
-        today = date.today()
-        end_date = self._support_basis_date()
-
-        if not end_date:
-            return True
-
-        return today < end_date
 
 
     @property

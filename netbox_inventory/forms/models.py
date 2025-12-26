@@ -1,7 +1,14 @@
 from django.utils.translation import gettext_lazy as _
 
 from core.models import ObjectType
-from dcim.models import DeviceType, Location, Manufacturer, ModuleType, RackType, Site
+from dcim.models import (  # pyright: ignore[reportMissingImports]
+    DeviceType,
+    Location,
+    Manufacturer,
+    ModuleType,
+    RackType,
+    Site,
+)
 from netbox.forms import NetBoxModelForm
 from tenancy.models import Contact, ContactGroup, Tenant
 from utilities.forms.fields import (
@@ -344,7 +351,7 @@ class ContractForm(NetBoxModelForm):
 
     class Meta:
         model = Contract
-        fields = ('vendor', 'contract_id', 'description', 'contract_type', 'status', 
+        fields = ('vendor', 'contract_id', 'description', 'contract_type', 'status',
             'start_date', 'renewal_date', 'end_date', 'comments', 'tags', )
         widgets = {
             'start_date': DatePicker(),

@@ -1,5 +1,4 @@
 import django_tables2 as tables
-from django.db.models.functions import Coalesce
 from django.utils.translation import gettext_lazy as _
 
 from dcim.tables import (
@@ -8,12 +7,10 @@ from dcim.tables import (
     ModuleTypeTable,
     RackTypeTable,
 )
-from netbox.tables import NetBoxTable, columns, ChoiceFieldColumn
-from tenancy.tables import ContactsColumnMixin
+from netbox.tables import NetBoxTable, columns
 from utilities.tables import register_table_column
 
 from ..models import *
-from ..template_content import WARRANTY_PROGRESSBAR
 
 __all__ = (
     'AuditFlowPageAssignmentTable',

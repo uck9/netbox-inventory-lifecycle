@@ -1,21 +1,21 @@
 from netbox.views.generic import (
-    ObjectListView,
-    ObjectEditView,
-    ObjectDeleteView,
-    ObjectView,
-    BulkEditView,
     BulkDeleteView,
+    BulkEditView,
+    ObjectDeleteView,
+    ObjectEditView,
+    ObjectListView,
+    ObjectView,
 )
+from utilities.views import register_model_view
+
 from netbox_inventory.filtersets import HardwareLifecycleFilterSet
 from netbox_inventory.forms import (
-    HardwareLifecycleFilterForm,
     HardwareLifecycleBulkEditForm,
+    HardwareLifecycleFilterForm,
 )
 from netbox_inventory.forms.models import HardwareLifecycleForm
 from netbox_inventory.models import HardwareLifecycle
 from netbox_inventory.tables import HardwareLifecycleTable
-from utilities.views import register_model_view
-
 
 __all__ = (
     'HardwareLifecycleListView',
