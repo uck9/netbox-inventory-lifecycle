@@ -1,13 +1,13 @@
-from rest_framework import serializers
-from dcim.api.serializers_.manufacturers import ManufacturerSerializer
-from netbox.api.fields import ChoiceField
-from netbox.api.serializers import NetBoxModelSerializer
-from tenancy.api.serializers import ContactSerializer
+from rest_framework import serializers  # type: ignore
 
-from netbox_inventory.models.contracts import *
+from dcim.api.serializers_.manufacturers import ManufacturerSerializer  # type: ignore
+from netbox.api.fields import ChoiceField  # type: ignore
+from netbox.api.serializers import NetBoxModelSerializer  # type: ignore
+from tenancy.api.serializers import ContactSerializer  # type: ignore  # noqa: F401
+
 from netbox_inventory.api.serializers_.assets import AssetSerializer
-
-from netbox_inventory.choices import ContractTypeChoices, ContractStatusChoices
+from netbox_inventory.choices import ContractTypeChoices
+from netbox_inventory.models.contracts import *
 
 __all__ = (
     'ContractVendorSerializer',
@@ -21,7 +21,7 @@ class ContractVendorSerializer(NetBoxModelSerializer):
 
     class Meta:
         model = ContractVendor
-        fields = ('url', 'id', 'display', 'name', 'description', 'comments', 'custom_fields', )
+        fields = ('url', 'id', 'display', 'name', 'description', 'comments', 'tags', 'custom_fields', )
         brief_fields = ('url', 'id', 'display', 'name', )
 
 class ContractSKUSerializer(NetBoxModelSerializer):
@@ -30,7 +30,7 @@ class ContractSKUSerializer(NetBoxModelSerializer):
 
     class Meta:
         model = ContractSKU
-        fields = ('url', 'id', 'display', 'manufacturer', 'sku', 'service_level','description', 'comments', 'custom_fields' )
+        fields = ('url', 'id', 'display', 'manufacturer', 'sku', 'service_level','description', 'comments', 'tags', 'custom_fields' )
         brief_fields = ('url', 'id', 'display', 'manufacturer', 'sku', )
 
 class ContractSerializer(NetBoxModelSerializer):
@@ -89,7 +89,7 @@ class ContractAssignmentSerializer(NetBoxModelSerializer):
     class Meta:
         model = ContractAssignment
         fields = (
-            'url', 'id', 'display', 'contract', 'sku', 'asset', 'start_date', 'end_date', 
+            'url', 'id', 'display', 'contract', 'sku', 'asset', 'start_date', 'end_date',
             'renewal_date', 'tags', 'description', 'comments', 'custom_fields',
         )
 

@@ -1,5 +1,8 @@
 from django import forms
 from django.utils.translation import gettext as _
+from django.contrib.contenttypes.models import ContentType
+
+from django.db.models import Q
 
 from core.models import ObjectType
 from dcim.models import (
@@ -25,7 +28,7 @@ from utilities.forms.fields import (
     TagFilterField,
 )
 from utilities.forms.rendering import FieldSet
-from utilities.forms.widgets import DatePicker, DateTimePicker
+from utilities.forms.widgets import APISelectMultiple, DatePicker, DateTimePicker
 
 from ..choices import AssetStatusChoices, HardwareKindChoices, PurchaseStatusChoices
 from ..models import *
@@ -41,6 +44,7 @@ __all__ = (
     'ContractVendorFilterForm',
     'ContractAssignmentFilterForm',
     'OrderFilterForm',
+    'HardwareLifecycleFilterForm',
     'InventoryItemGroupFilterForm',
     'InventoryItemTypeFilterForm',
     'SupplierFilterForm',
@@ -608,3 +612,50 @@ class AuditTrailFilterForm(BaseFlowFilterForm):
             name='Assignment',
         ),
     )
+
+
+class HardwareLifecycleFilterForm(NetBoxModelFilterSetForm):
+    model = HardwareLifecycle
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('assigned_object_type_id', name=_('Hardware')),
+        FieldSet(
+            'end_of_sale__lt',
+            'end_of_maintenance__lt',
+            'end_of_security__lt',
+            'end_of_support__lt',
+            name=_('Dates'),
+        ),
+    )
+
+    assigned_object_type_id = DynamicModelMultipleChoiceField(
+        queryset=ContentType.objects.filter(
+            Q(app_label='dcim', model='devicetype')
+            | Q(app_label='dcim', model='moduletype')
+        ),
+        required=False,
+        label=_('Object Type'),
+        widget=APISelectMultiple(
+            api_url='/api/extras/content-types/',
+        ),
+    )
+    end_of_sale__lt = forms.DateField(
+        required=False,
+        label=_('End of sale before'),
+        widget=DatePicker,
+    )
+    end_of_maintenance__lt = forms.DateField(
+        required=False,
+        label=_('End of maintenance before'),
+    )
+    end_of_security__lt = forms.DateField(
+        required=False,
+        label=_('End of security before'),
+        widget=DatePicker,
+    )
+    end_of_support__lt = forms.DateField(
+        required=False,
+        label=_('End of support before'),
+        widget=DatePicker,
+    )
+    tag = TagFilterField(model)

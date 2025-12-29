@@ -9,6 +9,8 @@ from .audittrail import *
 from .audittrailsource import *
 from .contract import *
 from .order import *
+from .hardwarelifecycle import *
+from .htmx import *
 from .inventoryitem_group import *
 from .inventoryitem_type import *
 from .purchase import *

@@ -1,7 +1,14 @@
 from django.utils.translation import gettext_lazy as _
 
 from core.models import ObjectType
-from dcim.models import DeviceType, Location, Manufacturer, ModuleType, RackType, Site
+from dcim.models import (  # pyright: ignore[reportMissingImports]
+    DeviceType,
+    Location,
+    Manufacturer,
+    ModuleType,
+    RackType,
+    Site,
+)
 from netbox.forms import NetBoxModelForm
 from tenancy.models import Contact, ContactGroup, Tenant
 from utilities.forms.fields import (
@@ -11,7 +18,7 @@ from utilities.forms.fields import (
     JSONField,
     SlugField,
 )
-from utilities.forms.rendering import FieldSet
+from utilities.forms.rendering import FieldSet, TabbedGroups
 from utilities.forms.widgets import DatePicker
 
 from ..constants import AUDITFLOW_OBJECT_TYPE_CHOICES
@@ -344,7 +351,7 @@ class ContractForm(NetBoxModelForm):
 
     class Meta:
         model = Contract
-        fields = ('vendor', 'contract_id', 'description', 'contract_type', 'status', 
+        fields = ('vendor', 'contract_id', 'description', 'contract_type', 'status',
             'start_date', 'renewal_date', 'end_date', 'comments', 'tags', )
         widgets = {
             'start_date': DatePicker(),
@@ -581,3 +588,99 @@ class AuditTrailSourceForm(NetBoxModelForm):
             'description',
             'comments',
         )
+
+
+class HardwareLifecycleForm(NetBoxModelForm):
+    device_type = DynamicModelChoiceField(
+        queryset=DeviceType.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Device Type'),
+    )
+    module_type = DynamicModelChoiceField(
+        queryset=ModuleType.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Module Type'),
+    )
+
+    fieldsets = (
+        FieldSet(
+            TabbedGroups(
+                FieldSet('device_type', name=_('Device Type')),
+                FieldSet('module_type', name=_('Module Type')),
+            ),
+        ),
+        FieldSet(
+            'last_contract_attach',
+            'last_contract_renewal',
+            'end_of_sale',
+            'end_of_maintenance',
+            'end_of_security',
+            'end_of_support',
+            'support_basis',
+            name=_('Dates'),
+        ),
+        FieldSet('notice_url', 'description', name=_('Information')),
+        FieldSet('tags', name=_('Tags')),
+    )
+
+    class Meta:
+        model = HardwareLifecycle
+        fields = (
+            'last_contract_attach',
+            'last_contract_renewal',
+            'end_of_sale',
+            'end_of_maintenance',
+            'end_of_security',
+            'end_of_support',
+            'notice_url',
+            'support_basis',
+            'description',
+            'comments',
+            'tags',
+        )
+        widgets = {
+            'last_contract_attach': DatePicker(),
+            'last_contract_renewal': DatePicker(),
+            'end_of_sale': DatePicker(),
+            'end_of_maintenance': DatePicker(),
+            'end_of_security': DatePicker(),
+            'end_of_support': DatePicker(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        # Initialize helper selectors
+        instance = kwargs.get('instance')
+        initial = kwargs.get('initial', {}).copy()
+        if instance:
+            if type(instance.assigned_object) is DeviceType:
+                initial['device_type'] = instance.assigned_object
+            elif type(instance.assigned_object) is ModuleType:
+                initial['module_type'] = instance.assigned_object
+        kwargs['initial'] = initial
+
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+
+        # Handle object assignment
+        selected_objects = [
+            field
+            for field in ('device_type', 'module_type')
+            if self.cleaned_data[field]
+        ]
+
+        if len(selected_objects) > 1:
+            raise forms.ValidationError(
+                {
+                    selected_objects[
+                        1
+                    ]: "You can only have a lifecycle for a device or module type"
+                }
+            )
+        elif selected_objects:
+            self.instance.assigned_object = self.cleaned_data[selected_objects[0]]
+        else:
+            self.instance.assigned_object = None

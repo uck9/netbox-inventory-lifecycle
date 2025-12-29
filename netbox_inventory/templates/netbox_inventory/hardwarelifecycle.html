@@ -1,0 +1,105 @@
+{% extends 'generic/object.html' %}
+{% load buttons %}
+{% load custom_links %}
+{% load helpers %}
+{% load inventory_filters %}
+{% load perms %}
+{% load plugins %}
+{% load tabs %}
+
+{% block content %}
+  <div class="row">
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">{{ object.assigned_object_type.name|capfirst}}</h5>
+        <div class="card-body">
+          <table class="table table-hover attr-table">
+            <tr>
+              <th>Manufacturer</th>
+              <td>{{ object.assigned_object.manufacturer|linkify }}</td>
+            </tr>
+            <tr>
+              <th>Object</th>
+              <td>{{ object.assigned_object|linkify }}</td>
+            </tr>
+            <tr>
+              <th>Description</th>
+              <td>{{ object.assigned_object.description }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h5 class="card-header">Lifecycle Details</h5>
+        <div class="card-body">
+          <table class="table table-hover attr-table">
+            
+            <tr>
+              <td>End of Sale</td>
+              <td><span {{ object.end_of_sale|date_badge_class }}>{{ object.end_of_sale|placeholder }}</span></td>
+            </tr>
+            <tr>
+              <td>End of Maintenance Updates</td>
+              <td><span {{ object.end_of_maintenance|date_badge_class }}>{{ object.end_of_maintenance|placeholder }}</span></td>
+            </tr>
+            <tr>
+              <td>End of Security Updates</td>
+              <td><span {{ object.end_of_security|date_badge_class }}>{{ object.end_of_security|placeholder }}</span></td>
+            </tr>
+            <tr>
+              <td>Last Support Contract Attach</td>
+              <td><span {{ object.last_contract_attach|date_badge_class }}>{{ object.last_contract_attach|placeholder }}</span></td>
+            </tr>
+            <tr>
+              <td>Last Support Contract Renewal</td>
+              <td><span {{ object.last_contract_renewal|date_badge_class }}>{{ object.last_contract_renewal|placeholder }}</span></td>
+            </tr>
+            <tr>
+              <td>End of Support</td>
+              <td><span {{ object.end_of_support|date_badge_class }}>{{ object.end_of_support|placeholder }}</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Product Notice</th>
+              <td>
+              {% if object.notice_url %}<span class="text-center"><a href="{{ object.notice_url }}" target="_blank">{{ object.assigned_object }} Notice</a>
+                {% else %}<span class="text-muted">&mdash;{% endif %}
+              </span>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Support Status Calculated From</th>
+              <td>
+              {% if object.support_basis %}<span class="text-center">{{ object.get_support_basis_display|capfirst}}{% else %}<span class="text-muted">&mdash;{% endif %}
+              </span>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      {% plugin_left_page object %}
+      {% include 'inc/panels/tags.html' %}
+    </div>
+    <div class="col col-md-6">
+      <div class="card">
+        <h2 class="card-header">Related Objects</h2>
+        <ul class="list-group list-group-flush" role="presentation">
+          {% if object.assigned_object_type|stringformat:"s" == 'DCIM | device type' %}
+            <a href="{% url 'dcim:device_list' %}?device_type_id={{ object.assigned_object.id }}" class="list-group-item list-group-item-action d-flex justify-content-between">
+              Devices<span class="badge text-bg-primary rounded-pill">{{ object.assigned_object_count}}</span></a>
+          {% elif object.assigned_object_type|stringformat:"s" == 'DCIM | module type' %}
+            <a href="{% url 'dcim:module_list' %}?module_type_id={{ object.assigned_object.id }}" class="list-group-item list-group-item-action d-flex justify-content-between">
+              Modules<span class="badge text-bg-primary rounded-pill">{{ object.assigned_object_count}}</span></a>
+          {% endif %}
+        </ul>
+      </div>
+      {% include 'inc/panels/custom_fields.html' %}
+      {% include 'inc/panels/comments.html' %}
+      {% plugin_right_page object %}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-md-12">
+      {% plugin_full_width_page object %}
+    </div>
+  </div>
+{% endblock %}
