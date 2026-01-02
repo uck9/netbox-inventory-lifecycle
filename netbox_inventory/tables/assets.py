@@ -120,7 +120,7 @@ class AssetTable(NetBoxTable):
     )
     hardware_type = tables.Column(
         linkify=True,
-        verbose_name='Hardware Type',
+        verbose_name='Device Type',
     )
     inventoryitem_group = tables.Column(
         accessor='inventoryitem_type__inventoryitem_group',

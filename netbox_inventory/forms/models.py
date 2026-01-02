@@ -41,6 +41,10 @@ __all__ = (
     'InventoryItemTypeForm',
     'PurchaseForm',
     'SupplierForm',
+    'HardwareLifecycleForm',
+    'VendorProgramForm',
+    'AssetProgramCoverageForm',
+    'LicenseSKUForm',
 )
 
 
@@ -208,6 +212,14 @@ class AssetForm(NetBoxModelForm):
             'site_id': '$storage_site',
         },
     )
+    base_license_sku = DynamicModelChoiceField(
+        queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.PERPETUAL),
+        required=False,
+        query_params={
+            # Filter by manufacturer field on the Asset form if you have it:
+            "manufacturer_id": "$manufacturer",
+        },
+    )
     comments = CommentField()
 
     fieldsets = (
@@ -225,9 +237,14 @@ class AssetForm(NetBoxModelForm):
             'owner',
             'purchase',
             'order',
+            'base_license_sku',
+            name='Purchase',
+        ),
+        FieldSet(
+            'vendor_ship_date',
             'warranty_start',
             'warranty_end',
-            name='Purchase',
+            name='Key Hardware Dates',
         ),
         FieldSet('tenant', 'contact_group', 'contact', name='Assigned to'),
         FieldSet('storage_site', 'storage_location', name='Location'),
@@ -249,6 +266,8 @@ class AssetForm(NetBoxModelForm):
             'owner',
             'purchase',
             'order',
+            'base_license_sku',
+            'vendor_ship_date',
             'warranty_start',
             'warranty_end',
             'tenant',
@@ -260,6 +279,7 @@ class AssetForm(NetBoxModelForm):
             'storage_site',
         )
         widgets = {
+            'vendor_ship_date': DatePicker(),
             'warranty_start': DatePicker(),
             'warranty_end': DatePicker(),
         }
@@ -340,8 +360,7 @@ class ContractSKUForm(NetBoxModelForm):
 
     class Meta:
         model = ContractSKU
-        fields = ('manufacturer', 'sku', 'description', 'comments', 'tags', )
-
+        fields = ('manufacturer', 'sku', 'contract_type', 'description', 'comments', 'tags', )
 
 class ContractForm(NetBoxModelForm):
     vendor = DynamicModelChoiceField(
@@ -442,8 +461,6 @@ class PurchaseForm(NetBoxModelForm):
 
 
 class OrderForm(NetBoxModelForm):
-
-
     comments = CommentField()
 
     fieldsets = (
@@ -684,3 +701,105 @@ class HardwareLifecycleForm(NetBoxModelForm):
             self.instance.assigned_object = self.cleaned_data[selected_objects[0]]
         else:
             self.instance.assigned_object = None
+
+
+class VendorProgramForm(NetBoxModelForm):
+    slug = SlugField(slug_source='name')
+    comments = CommentField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # If an asset is selected/known, constrain program choices to matching manufacturer
+        asset = self.initial.get('asset') or getattr(self.instance, 'asset', None)
+        if asset is None and 'asset' in self.data:
+            try:
+                asset = AssetProgramCoverage._meta.get_field('asset').remote_field.model.objects.get(pk=self.data.get('asset'))
+            except Exception:
+                asset = None
+
+        asset_mfr = None
+        asset_device = getattr(asset, 'device', None) if asset else None
+        if asset_device is not None:
+            device_type = getattr(asset_device, 'device_type', None)
+            if device_type is not None:
+                asset_mfr = getattr(device_type, 'manufacturer', None)
+
+        if asset_mfr is not None:
+            self.fields['program'].queryset = VendorProgram.objects.filter(manufacturer=asset_mfr).order_by('name')
+
+    class Meta:
+        model = VendorProgram
+        fields = (
+            "name",
+            "slug",
+            "manufacturer",
+            'contract_type',
+            "description",
+            "tags",
+            "comments",
+        )
+
+
+class AssetProgramCoverageForm(NetBoxModelForm):
+    comments = CommentField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # If an asset is selected/known, constrain program choices to matching manufacturer
+        asset = self.initial.get('asset') or getattr(self.instance, 'asset', None)
+        if asset is None and 'asset' in self.data:
+            try:
+                asset = AssetProgramCoverage._meta.get_field('asset').remote_field.model.objects.get(pk=self.data.get('asset'))
+            except Exception:
+                asset = None
+
+        asset_mfr = None
+        asset_device = getattr(asset, 'device', None) if asset else None
+        if asset_device is not None:
+            device_type = getattr(asset_device, 'device_type', None)
+            if device_type is not None:
+                asset_mfr = getattr(device_type, 'manufacturer', None)
+
+        if asset_mfr is not None:
+            self.fields['program'].queryset = VendorProgram.objects.filter(manufacturer=asset_mfr).order_by('name')
+
+    class Meta:
+        model = AssetProgramCoverage
+        fields = (
+            "asset",
+            "program",
+            "status",
+            "eligibility",
+            "effective_start",
+            "effective_end",
+            "decision_reason",
+            "evidence_url",
+            "source",
+            "last_synced",
+            "tags",
+            "comments",
+            "notes",
+        )
+        widgets = {
+            'effective_start': DatePicker(),
+            'effective_end': DatePicker(),
+        }
+
+
+class LicenseSKUForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all()
+    )
+
+    class Meta:
+        model = LicenseSKU
+        fields = (
+            "manufacturer",
+            "sku",
+            "name",
+            "license_kind",
+            "description",
+            "tags",
+        )

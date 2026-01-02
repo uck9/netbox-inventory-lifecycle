@@ -274,6 +274,12 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         blank=True,
         verbose_name='Contracts',
     )
+    vendor_ship_date = models.DateField(
+        help_text='Date when vendor shipped this asset',
+        blank=True,
+        null=True,
+        verbose_name='Vendor Ship Date',
+    )
     warranty_start = models.DateField(
         help_text='First date warranty for this asset is valid',
         blank=True,
@@ -285,6 +291,27 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         blank=True,
         null=True,
         verbose_name='Warranty End',
+    )
+    base_license_sku = models.ForeignKey(
+        to="netbox_inventory.LicenseSKU",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assets_as_base',
+        verbose_name='Base license SKU',
+        help_text='Perpetual/base entitlement tied to the hardware.',
+    )
+    base_license_source = models.CharField(
+        max_length=32,
+        blank=True,
+        verbose_name='Base license source',
+        help_text='e.g. ORDER, UPGRADE, MANUAL, DISCOVERED',
+    )
+    base_license_source_ref = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Base license source ref',
+        help_text='SO number, transaction ID, evidence link, etc.',
     )
 
     clone_fields = [

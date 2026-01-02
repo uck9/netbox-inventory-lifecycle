@@ -1,6 +1,7 @@
 from functools import reduce
 
 import django_filters
+from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.utils.translation import gettext as _
@@ -30,12 +31,11 @@ from utilities.filters import ContentTypeFilter, TreeNodeMultipleChoiceFilter
 
 from .choices import (
     AssetStatusChoices,
-    ContractTypeChoices,
     ContractStatusChoices,
+    ContractTypeChoices,
     HardwareKindChoices,
     PurchaseStatusChoices,
 )
-
 from .models import *
 from .utils import get_asset_custom_fields_search_filters, query_located
 
@@ -57,6 +57,9 @@ __all__ = (
     'OrderFilterSet',
     'PurchaseFilterSet',
     'SupplierFilterSet',
+    'VendorProgramFilterSet',
+    'AssetProgramCoverageFilterSet',
+    'LicenseSKUFilterSet',
 )
 
 
@@ -353,6 +356,7 @@ class AssetFilterSet(NetBoxModelFilterSet):
         lookup_expr='iexact',
         label='Supplier (name)',
     )
+    vendor_ship_date = django_filters.DateFromToRangeFilter()
     warranty_start = django_filters.DateFromToRangeFilter()
     warranty_end = django_filters.DateFromToRangeFilter()
     purchase_date = django_filters.DateFromToRangeFilter(
@@ -983,3 +987,71 @@ class HardwareLifecycleFilterSet(NetBoxModelFilterSet):
             return queryset.filter(**{f'{name}': value})
         except ValueError:
             return queryset.none()
+
+
+class VendorProgramFilterSet(NetBoxModelFilterSet):
+    q = django_filters.CharFilter(method="search", label="Search")
+    manufacturer_id = filters.MultiValueCharFilter(
+        method='filter_manufacturer',
+        label='Manufacturer (ID)',
+    )
+
+    class Meta:
+        model = VendorProgram
+        fields = (
+            "id",
+            "name",
+            "slug",
+            "manufacturer_id",
+            "tag",
+        )
+
+
+class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
+    q = django_filters.CharFilter(method="search", label="Search")
+    manufacturer_id = filters.MultiValueCharFilter(
+        method='filter_manufacturer',
+        label='Manufacturer (ID)',
+    )
+    asset_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='asset',
+        queryset=Asset.objects.all(),
+        label=_('Asset (ID)'),
+    )
+    program_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='program',
+        queryset=VendorProgram.objects.all(),
+        label=_('Program (ID)'),
+    )
+
+    class Meta:
+        model = AssetProgramCoverage
+        fields = (
+            "id",
+            "asset_id",
+            "program_id",
+            "status",
+            "eligibility",
+            "source",
+            "tag",
+        )
+
+
+class LicenseSKUFilterSet(NetBoxModelFilterSet):
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="manufacturer",
+        queryset=Manufacturer.objects.all(),
+        label="Manufacturer (ID)",
+    )
+    q = django_filters.CharFilter(method="search", label="Search")
+
+    class Meta:
+        model = LicenseSKU
+        fields = ("manufacturer_id", "license_kind", "sku")
+
+    def search(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(sku__icontains=value) | Q(name__icontains=value)
+        )

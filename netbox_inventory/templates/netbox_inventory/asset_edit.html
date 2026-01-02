@@ -72,6 +72,14 @@
         {% render_field form.owner %}
         {% render_field form.purchase %}
         {% render_field form.order %}
+        {% render_field form.base_license_sku %}
+    </div>
+
+    <div class="field-group my-5">
+        <div class="row mb-2">
+          <h5 class="offset-sm-3">Key Hardware Dates</h5>
+        </div>
+        {% render_field form.vendor_ship_date %}
         {% render_field form.warranty_start %}
         {% render_field form.warranty_end %}
     </div>

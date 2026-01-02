@@ -47,10 +47,11 @@ class ContractTypeChoices(ChoiceSet):
 
     CHOICES = [
         ('support-ea', 'Support - Enterprise Agreement', 'blue'),
-        ('alc', 'Support - A la carte', 'red'),
+        ('support-alc', 'Support - A la carte', 'red'),
         ('warranty', 'Warranty', 'blue'),
         ('other', 'Other', 'gray'),
     ]
+
 
 class ContractStatusChoices(ChoiceSet):
     key = 'Contract.status'
@@ -61,4 +62,47 @@ class ContractStatusChoices(ChoiceSet):
         ('expired', 'Expired', 'red'),
         ('renewed', 'Renewed', 'orange'),
         ('cancelled', 'Cancelled', 'red'),
+    ]
+
+
+class ProgramCoverageStatusChoices(ChoiceSet):
+    key = "AssetProgramCoverage.status"
+
+    PLANNED = 'planned'
+    ACTIVE = 'active'
+    EXCLUDED = 'excluded'
+    TERMINATED = 'terminated'
+
+    CHOICES = [
+        (PLANNED, 'Planned', 'blue'),
+        (ACTIVE, 'Active', 'green'),
+        (EXCLUDED, 'Excluded', 'gray'),
+        (TERMINATED, 'Terminated', 'red'),
+    ]
+
+
+class ProgramEligibilityChoices(ChoiceSet):
+    key = "AssetProgramCoverage.eligibility"
+
+    UNKNOWN = 'unknown'
+    ELIGIBLE = 'eligible'
+    INELIGIBLE = 'ineligible'
+
+    CHOICES = [
+        (UNKNOWN, "Unknown", "blue"),
+        (ELIGIBLE, "Eligible", "green"),
+        (INELIGIBLE, "Ineligible", "red"),
+    ]
+
+class ProgramCoverageSourceChoices(ChoiceSet):
+    key = "AssetProgramCoverage.source"
+
+    MANUAL = 'manual'
+    SYNC = 'sync'
+    IMPORT = 'import'
+
+    CHOICES = [
+        (MANUAL, "Manual", "blue"),
+        (SYNC, "Sync", "cyan"),
+        (IMPORT, "Import", "purple"),
     ]

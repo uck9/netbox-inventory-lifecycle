@@ -4,13 +4,13 @@ from netbox.views.generic import ObjectChangeLogView
 from utilities.urls import get_model_urls
 
 from . import views
-from netbox_inventory.models import ContractAssignment, HardwareLifecycle
+from .models import ContractAssignment, HardwareLifecycle, VendorProgram, AssetProgramCoverage
 
 urlpatterns = [
     # InventoryItemGroups
     path('inventory-item-groups/', include(get_model_urls('netbox_inventory', 'inventoryitemgroup', detail=False))),
     path('inventory-item-groups/<int:pk>/',include(get_model_urls('netbox_inventory', 'inventoryitemgroup'))),
-    
+
     # InventoryItemTypes
     path('inventory-item-types/', include(get_model_urls('netbox_inventory', 'inventoryitemtype', detail=False))),
     path('inventory-item-types/<int:pk>/', include(get_model_urls('netbox_inventory', 'inventoryitemtype'))),
@@ -152,4 +152,34 @@ urlpatterns = [
         'audit-trails/<int:pk>/',
         include(get_model_urls('netbox_inventory', 'audittrail')),
     ),
+
+    # Vendor Programs
+    path("vendor-programs/", views.VendorProgramListView.as_view(), name="vendorprogram_list"),
+    path("vendor-programs/add/", views.VendorProgramEditView.as_view(), name="vendorprogram_add"),
+    path("vendor-programs/<int:pk>/", views.VendorProgramView.as_view(), name="vendorprogram"),
+    path("vendor-programs/<int:pk>/edit/", views.VendorProgramEditView.as_view(), name="vendorprogram_edit"),
+    path("vendor-programs/<int:pk>/delete/", views.VendorProgramDeleteView.as_view(), name="vendorprogram_delete"),
+    path('vendor-programs/<int:pk>/changelog', ObjectChangeLogView.as_view(),
+        name='vendorprogram_changelog',
+        kwargs={'model': VendorProgram},
+    ),
+
+    # Asset Program Coverage
+    path("asset-program-coverages/", views.AssetProgramCoverageListView.as_view(), name="assetprogramcoverage_list"),
+    path("asset-program-coverages/add/", views.AssetProgramCoverageEditView.as_view(), name="assetprogramcoverage_add"),
+    path("asset-program-coverages/<int:pk>/", views.AssetProgramCoverageView.as_view(), name="assetprogramcoverage"),
+    path("asset-program-coverages/<int:pk>/edit/", views.AssetProgramCoverageEditView.as_view(), name="assetprogramcoverage_edit"),
+    path("asset-program-coverages/<int:pk>/delete/", views.AssetProgramCoverageDeleteView.as_view(), name="assetprogramcoverage_delete"),
+    path("asset-program-coverages/<int:pk>/activate/", views.AssetProgramCoverageActivateView.as_view(), name="assetprogramcoverage_activate"),
+    path('asset-program-coverages/<int:pk>/changelog', ObjectChangeLogView.as_view(),
+            name='assetprogramcoverage_changelog',
+            kwargs={'model': AssetProgramCoverage},
+        ),
+
+    # License SKUs
+    path("license-skus/", views.LicenseSKUListView.as_view(), name="licensesku_list"),
+    path("license-skus/add/", views.LicenseSKUEditView.as_view(), name="licensesku_add"),
+    path("license-skus/<int:pk>/", views.LicenseSKUView.as_view(), name="licensesku"),
+    path("license-skus/<int:pk>/edit/", views.LicenseSKUEditView.as_view(), name="licensesku_edit"),
+    path("license-skus/<int:pk>/delete/", views.LicenseSKUDeleteView.as_view(), name="licensesku_delete"),
 ]

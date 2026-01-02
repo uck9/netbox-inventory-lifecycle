@@ -1,0 +1,58 @@
+{% extends 'generic/object.html' %}
+{% load buttons %}
+{% load helpers %}
+
+{% block content %}
+<div class="row">
+  <div class="col col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <table class="table table-hover attr-table">
+          <tr><th scope="row">Name</th><td>{{ object.name }}</td></tr>
+          <tr><th scope="row">Slug</th><td><code>{{ object.slug }}</code></td></tr>
+          <tr><th scope="row">Manufacturer</th><td>{{ object.manufacturer|linkify|placeholder }}</td></tr>
+          <tr><th scope="row">Description</th><td>{{ object.description|placeholder }}</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col col-md-6">
+    {% include 'inc/panels/tags.html' %}
+    {% include 'inc/panels/comments.html' %}
+  </div>
+</div>
+
+<div class="card mt-3">
+  <h5 class="card-header">Asset Coverage Records</h5>
+  <div class="card-body">
+    {% if object.asset_coverages.all %}
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Asset</th>
+            <th>Status</th>
+            <th>Eligibility</th>
+            <th>Contract</th>
+            <th>Start</th>
+            <th>End</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cov in object.asset_coverages.all %}
+            <tr>
+              <td><a href="{{ cov.asset.get_absolute_url }}">{{ cov.asset }}</a></td>
+              <td>{{ cov.get_status_display }}</td>
+              <td>{{ cov.get_eligibility_display }}</td>
+              <td>{{ cov.effective_start|placeholder }}</td>
+              <td>{{ cov.effective_end|placeholder }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <span class="text-muted">No coverage records.</span>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

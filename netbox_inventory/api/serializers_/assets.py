@@ -15,6 +15,7 @@ from netbox.api.serializers import NestedGroupModelSerializer, NetBoxModelSerial
 from tenancy.api.serializers import ContactSerializer, TenantSerializer
 
 from .purchases import *
+from .licenses import *
 from .nested import *
 from netbox_inventory.models import Asset, InventoryItemGroup, InventoryItemType
 
@@ -137,13 +138,19 @@ class AssetSerializer(NetBoxModelSerializer):
         allow_null=True,
         default=None,
     )
+    purchase = PurchaseSerializer(
+        nested=True,
+        required=False,
+        allow_null=True,
+        default=None,
+    )
     order = OrderSerializer(
         nested=True,
         required=False,
         allow_null=True,
         default=None,
     )
-    purchase = PurchaseSerializer(
+    base_license_sku = LicenseSKUSerializer(
         nested=True,
         required=False,
         allow_null=True,
@@ -205,6 +212,8 @@ class AssetSerializer(NetBoxModelSerializer):
             'owner',
             'order',
             'purchase',
+            'base_license_sku',
+            'vendor_ship_date',
             'warranty_start',
             'warranty_end',
             'comments',

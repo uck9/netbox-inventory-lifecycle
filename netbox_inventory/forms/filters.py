@@ -1,8 +1,7 @@
 from django import forms
-from django.utils.translation import gettext as _
 from django.contrib.contenttypes.models import ContentType
-
 from django.db.models import Q
+from django.utils.translation import gettext as _
 
 from core.models import ObjectType
 from dcim.models import (
@@ -49,6 +48,7 @@ __all__ = (
     'InventoryItemTypeFilterForm',
     'SupplierFilterForm',
     'PurchaseFilterForm',
+    'LicenseSKUFilterForm',
 )
 
 
@@ -659,3 +659,13 @@ class HardwareLifecycleFilterForm(NetBoxModelFilterSetForm):
         widget=DatePicker,
     )
     tag = TagFilterField(model)
+
+
+class LicenseSKUFilterForm(NetBoxModelFilterSetForm):
+    model = LicenseSKU
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        label="Manufacturer",
+    )
+    fields = (FieldSet("q", "manufacturer_id", "license_kind"))

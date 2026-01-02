@@ -38,5 +38,10 @@ router.register('audit-flowpage-assignments', views.AuditFlowPageAssignmentViewS
 router.register('audit-trail-sources', views.AuditTrailSourceViewSet)
 router.register('audit-trails', views.AuditTrailViewSet)
 
+# Programs
+router.register('vendor-programs', views.VendorProgramViewSet)
+router.register('asset-program-coverages', views.AssetProgramCoverageViewSet)
+
+router.register("license-skus", views.LicenseSKUViewSet)
 
 urlpatterns = router.urls

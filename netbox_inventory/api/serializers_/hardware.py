@@ -4,8 +4,9 @@ from rest_framework import serializers
 
 from netbox.api.fields import ContentTypeField
 from netbox.api.serializers import NetBoxModelSerializer
-from netbox_inventory.models import HardwareLifecycle
+from utilities.api import get_serializer_for_model
 
+from netbox_inventory.models import HardwareLifecycle
 
 __all__ = ('HardwareLifecycleSerializer',)
 
@@ -52,7 +53,7 @@ class HardwareLifecycleSerializer(NetBoxModelSerializer):
             'assigned_object_id',
             'end_of_sale',
         )
-    
+
 
     @extend_schema_field(serializers.JSONField(allow_null=True))
     def get_assigned_object(self, instance):

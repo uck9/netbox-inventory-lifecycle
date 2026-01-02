@@ -158,6 +158,16 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
         help_text=Asset._meta.get_field('order').help_text,
         required=not Asset._meta.get_field('order').blank,
     )
+    base_license_sku = DynamicModelChoiceField(
+        queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.PERPETUAL),
+        help_text=Asset._meta.get_field('base_license_sku').help_text,
+        required=not Asset._meta.get_field('base_license_sku').blank,
+    )
+    vendor_ship_date = forms.DateField(
+        label='Vendor Ship Date',
+        required=False,
+        widget=DatePicker(),
+    )
     warranty_start = forms.DateField(
         label='Warranty start',
         required=False,
@@ -218,9 +228,17 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
             'owner',
             'purchase',
             'order',
+            'base_license_sku',
+            'vendor_ship_date',
             'warranty_start',
             'warranty_end',
             name='Purchase',
+        ),
+        FieldSet(
+            'vendor_ship_date',
+            'warranty_start',
+            'warranty_end',
+            name='Key Hardware Dates',
         ),
         FieldSet(
             'tenant',
