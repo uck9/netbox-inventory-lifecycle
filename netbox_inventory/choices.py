@@ -66,7 +66,7 @@ class ContractStatusChoices(ChoiceSet):
 
 
 class ProgramCoverageStatusChoices(ChoiceSet):
-    key = "AssetProgramCoverage.status"
+    key = "ProgramCoverage.status"
 
     PLANNED = 'planned'
     ACTIVE = 'active'
@@ -82,7 +82,7 @@ class ProgramCoverageStatusChoices(ChoiceSet):
 
 
 class ProgramEligibilityChoices(ChoiceSet):
-    key = "AssetProgramCoverage.eligibility"
+    key = "ProgramCoverage.eligibility"
 
     UNKNOWN = 'unknown'
     ELIGIBLE = 'eligible'

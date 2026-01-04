@@ -19,6 +19,7 @@ from utilities.views import register_model_view
 from ..choices import ProgramCoverageStatusChoices, ProgramEligibilityChoices
 from ..filtersets import AssetProgramCoverageFilterSet, VendorProgramFilterSet
 from ..forms.models import AssetProgramCoverageForm, VendorProgramForm
+from ..forms.filters import AssetProgramCoverageFilterForm
 from ..forms.programs import ActivateCoverageForm
 from ..models import AssetProgramCoverage, ContractAssignment
 from ..models.programs import (
@@ -90,38 +91,9 @@ class AssetProgramCoverageListView(ObjectListView):
     )
     table = AssetProgramCoverageTable
     filterset = AssetProgramCoverageFilterSet
-    template_name = "netbox_inventory/assetprogramcoverage_list.html"
-
-    def get_extra_context(self, request):
-        """
-        Provide per-status tab counts.
-        Counts respect all active filters except 'status'.
-        """
-        params = request.GET.copy()
-
-        # Remove status + noise so counts span all statuses
-        params.pop("status", None)
-        params.pop("page", None)
-        params.pop("sort", None)
-
-        fs = self.filterset(params, queryset=self.queryset)
-
-        # Count DISTINCT assets per status
-        counts_qs = (
-            fs.qs
-            .values("status")
-            .annotate(count=Count("asset_id", distinct=True))
-        )
-
-        tab_counts = {row["status"]: row["count"] for row in counts_qs}
-
-        total_assets = fs.qs.values("asset_id").distinct().count()
-
-        return {
-            "tab_counts": tab_counts,
-            "tab_total": total_assets,
-            "tab_status": request.GET.get("status", ""),
-        }
+    form = AssetProgramCoverageForm
+    filterset_form = AssetProgramCoverageFilterForm
+    #template_name = "netbox_inventory/assetprogramcoverage_list.html"
 
 
 class AssetProgramCoverageView(ObjectView):
@@ -135,8 +107,6 @@ class AssetProgramCoverageEditView(ObjectEditView):
 
 class AssetProgramCoverageDeleteView(ObjectDeleteView):
     queryset = AssetProgramCoverage.objects.all()
-
-
 
 
 @register_model_view(AssetProgramCoverage, name="activate", path="activate")

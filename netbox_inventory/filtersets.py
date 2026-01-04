@@ -34,6 +34,7 @@ from .choices import (
     ContractStatusChoices,
     ContractTypeChoices,
     HardwareKindChoices,
+    ProgramCoverageStatusChoices,
     PurchaseStatusChoices,
 )
 from .models import *
@@ -1028,25 +1029,83 @@ class LicenseSKUFilterSet(NetBoxModelFilterSet):
 
 
 class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
-    # Examples — tailor to your actual fields
-    q = django_filters.CharFilter(method="search", label="Search")
+    """
+    FilterSet for AssetProgramCoverage list view.
+
+    Notes:
+    - Adjust field names (effective_start/effective_end, status choices, etc.) to match your model.
+    - "q" implements a simple search across common related fields.
+    """
+
+    q = django_filters.CharFilter(method="filter_q", label="Search")
+
+    # Status
+    status = django_filters.MultipleChoiceFilter(
+        choices=AssetStatusChoices,
+    )
+
+    # Common foreign keys
+    program_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="program",
+        queryset=VendorProgram.objects.all(),
+        label="Program",
+    )
+    asset_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="asset",
+        queryset=Asset.objects.all(),
+        label="Asset",
+    )
+    # If your Asset links to a Device (asset.device or asset.assigned_object), adjust accordingly
+    device_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="asset__device",
+        queryset=Device.objects.all(),
+        label="Device",
+    )
+    site_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="asset__device__site",
+        queryset=Site.objects.all(),
+        label="Site",
+    )
+    tenant_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="asset__device__tenant",
+        queryset=Tenant.objects.all(),
+        label="Tenant",
+    )
+    
+    # Effective dates (range)
+    effective_start = django_filters.DateFromToRangeFilter(
+        field_name="effective_start",
+        label="Effective start (range)",
+    )
+    effective_end = django_filters.DateFromToRangeFilter(
+        field_name="effective_end",
+        label="Effective end (range)",
+    )
 
     class Meta:
         model = AssetProgramCoverage
         fields = (
-            "program",
-            "asset",
+            "q",
+            "program_id",
+            "asset_id",
+            "device_id",
+            "site_id",
+            "tenant_id",
             "status",
             "effective_start",
             "effective_end",
         )
 
-    def search(self, queryset, name, value):
+    def filter_q(self, queryset, name, value):
         if not value:
             return queryset
-        # Adjust search fields to match your model
+
+        value = value.strip()
         return queryset.filter(
-            program__name__icontains=value
-        ) | queryset.filter(
-            asset__name__icontains=value
+            Q(program__name__icontains=value)
+            | Q(program__slug__icontains=value)
+            | Q(asset__name__icontains=value)
+            | Q(asset__serial__icontains=value)
+            | Q(asset__device__name__icontains=value)
+            | Q(asset__device__serial__icontains=value)
         )

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from django.db.models import Count
 from django.urls import reverse
 
 from netbox.views.generic import ObjectListView
 
-from ..models import AssetProgramCoverage
 from ..filtersets import AssetProgramCoverageFilterSet
+from ..models import AssetProgramCoverage
 from ..tables import AssetProgramCoverageTable
 
 
@@ -13,7 +14,7 @@ class AssetProgramCoverageTabbedListView(ObjectListView):
     queryset = AssetProgramCoverage.objects.all().select_related("asset", "program")
     table = AssetProgramCoverageTable
     filterset = AssetProgramCoverageFilterSet
-    template_name = "netbox_inventory/assetprogramcoverage_list.html"
+    template_name = "netbox_inventory/assetprogramcoverage_tabbed_list.html"
 
     # Update these to match your actual status values
     SCOPE_TO_STATUS = {
@@ -44,43 +45,79 @@ class AssetProgramCoverageTabbedListView(ObjectListView):
     def _get_show_filters(self, request) -> bool:
         return str(request.GET.get("show_filters", "")).lower() in ("1", "true", "yes", "on")
 
+
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
+        """
+        Return the list queryset for the page (this drives what rows show in the table).
+        NetBox passes `request` into get_queryset() in this view type.
+        """
         scope = self._get_scope(request)
-        status_value = self.SCOPE_TO_STATUS[scope]
+        status_value = self.SCOPE_TO_STATUS.get(scope)
+
+        # Start from a fresh base queryset (avoids scope bleed / NetBox internal munging)
+        qs = (
+            AssetProgramCoverage.objects.all()
+            .select_related("asset", "program")
+        )
+
+        # Apply scope filter to the LIST results
         if status_value:
             qs = qs.filter(status=status_value)
+
         return qs
+
 
     def get_extra_context(self, request, **kwargs):
         scope = self._get_scope(request)
         show_filters = self._get_show_filters(request)
 
-        # Preserve all filters across tabs, but normalize scope/show_filters
-        params = request.GET.copy()
-        params.pop("scope", None)
-        params.pop("show_filters", None)
-        params.pop("status", None) 
-        preserved = params.urlencode()
-
         base_url = reverse("plugins:netbox_inventory:assetprogramcoverage_tabbed")
 
         def build_url(new_scope: str, *, open_filters: bool = False) -> str:
-            # Keep other filters, but remove scope/status/show_filters so tabs control those
-            params = request.GET.copy()
-            params.pop("scope", None)
-            params.pop("status", None)
-            params.pop("show_filters", None)
+            p = request.GET.copy()
+            p.pop("scope", None)
+            p.pop("status", None)
+            p.pop("show_filters", None)
 
-            # Force scope into the URL every time
-            params["scope"] = new_scope
-
+            # always include scope so hover/click reflects it
+            p["scope"] = new_scope
             if open_filters:
-                params["show_filters"] = "1"
+                p["show_filters"] = "1"
 
-            qs = params.urlencode()
+            qs = p.urlencode()
             return f"{base_url}?{qs}" if qs else base_url
 
+        # ---------- COUNTS ----------
+        # Strip tab-driving params so counts reflect *global* filters only
+        filter_params = request.GET.copy()
+        filter_params.pop("scope", None)
+        filter_params.pop("status", None)
+        filter_params.pop("show_filters", None)
+
+        # IMPORTANT: fresh base queryset (not self.queryset)
+        base_qs = (
+            AssetProgramCoverage.objects.all()
+            .select_related("asset", "program")
+        )
+
+        # Apply your filterset to this unscoped base
+        fs = self.filterset(filter_params, queryset=base_qs, request=request)
+        counted_qs = fs.qs
+
+        rows = list(counted_qs.values("status").annotate(c=Count("id")))
+        by_status = {r["status"]: int(r["c"]) for r in rows}
+
+        def count_for(status_value):
+            # status_value might be None for "all"
+            return int(by_status.get(status_value, 0) or 0)
+
+        tab_counts = {
+            "all": int(counted_qs.count()),
+            "planned": count_for(self.SCOPE_TO_STATUS["planned"]),
+            "active": count_for(self.SCOPE_TO_STATUS["active"]),
+            "excluded": count_for(self.SCOPE_TO_STATUS["excluded"]),
+            "terminated": count_for(self.SCOPE_TO_STATUS["terminated"]),
+        }
 
         return {
             "active_scope": scope,
@@ -93,4 +130,10 @@ class AssetProgramCoverageTabbedListView(ObjectListView):
                 "terminated": build_url("terminated"),
                 "filters": build_url(scope, open_filters=True),
             },
+            "tab_counts": tab_counts,
+
+            # extra debug so you can see what the DB actually holds
+            "debug_by_status": by_status,
+            "debug_counted_total": int(counted_qs.count()),
+            "debug_filter_params": filter_params.urlencode(),
         }
