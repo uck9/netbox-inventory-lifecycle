@@ -1007,36 +1007,6 @@ class VendorProgramFilterSet(NetBoxModelFilterSet):
         )
 
 
-class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
-    q = django_filters.CharFilter(method="search", label="Search")
-    manufacturer_id = filters.MultiValueCharFilter(
-        method='filter_manufacturer',
-        label='Manufacturer (ID)',
-    )
-    asset_id = django_filters.ModelMultipleChoiceFilter(
-        field_name='asset',
-        queryset=Asset.objects.all(),
-        label=_('Asset (ID)'),
-    )
-    program_id = django_filters.ModelMultipleChoiceFilter(
-        field_name='program',
-        queryset=VendorProgram.objects.all(),
-        label=_('Program (ID)'),
-    )
-
-    class Meta:
-        model = AssetProgramCoverage
-        fields = (
-            "id",
-            "asset_id",
-            "program_id",
-            "status",
-            "eligibility",
-            "source",
-            "tag",
-        )
-
-
 class LicenseSKUFilterSet(NetBoxModelFilterSet):
     manufacturer_id = django_filters.ModelMultipleChoiceFilter(
         field_name="manufacturer",
@@ -1054,4 +1024,29 @@ class LicenseSKUFilterSet(NetBoxModelFilterSet):
             return queryset
         return queryset.filter(
             Q(sku__icontains=value) | Q(name__icontains=value)
+        )
+
+
+class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
+    # Examples — tailor to your actual fields
+    q = django_filters.CharFilter(method="search", label="Search")
+
+    class Meta:
+        model = AssetProgramCoverage
+        fields = (
+            "program",
+            "asset",
+            "status",
+            "effective_start",
+            "effective_end",
+        )
+
+    def search(self, queryset, name, value):
+        if not value:
+            return queryset
+        # Adjust search fields to match your model
+        return queryset.filter(
+            program__name__icontains=value
+        ) | queryset.filter(
+            asset__name__icontains=value
         )

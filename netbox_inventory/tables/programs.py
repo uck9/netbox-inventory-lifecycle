@@ -7,6 +7,12 @@ from ..models.programs import AssetProgramCoverage, VendorProgram
 from ..choices import ProgramCoverageStatusChoices
 
 
+_all__ = (
+    'VendorProgramTable',
+    'AssetProgramCoverageTable',
+    'AssetProgramCoverageForAssetTable',
+)
+
 class VendorProgramTable(NetBoxTable):
     name = tables.Column(linkify=True)
     manufacturer = tables.Column(linkify=True)

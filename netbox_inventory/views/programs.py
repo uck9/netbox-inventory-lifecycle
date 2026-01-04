@@ -2,6 +2,7 @@ from datetime import date
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -77,9 +78,50 @@ class VendorProgramDeleteView(ObjectDeleteView):
 #
 
 class AssetProgramCoverageListView(ObjectListView):
-    queryset = AssetProgramCoverage.objects.select_related("asset", "program")
+    queryset = (
+        AssetProgramCoverage.objects
+        .select_related(
+            "asset",
+            "program",
+            # uncomment if these are used in the table:
+            # "asset__device",
+            # "asset__site",
+        )
+    )
     table = AssetProgramCoverageTable
     filterset = AssetProgramCoverageFilterSet
+    template_name = "netbox_inventory/assetprogramcoverage_list.html"
+
+    def get_extra_context(self, request):
+        """
+        Provide per-status tab counts.
+        Counts respect all active filters except 'status'.
+        """
+        params = request.GET.copy()
+
+        # Remove status + noise so counts span all statuses
+        params.pop("status", None)
+        params.pop("page", None)
+        params.pop("sort", None)
+
+        fs = self.filterset(params, queryset=self.queryset)
+
+        # Count DISTINCT assets per status
+        counts_qs = (
+            fs.qs
+            .values("status")
+            .annotate(count=Count("asset_id", distinct=True))
+        )
+
+        tab_counts = {row["status"]: row["count"] for row in counts_qs}
+
+        total_assets = fs.qs.values("asset_id").distinct().count()
+
+        return {
+            "tab_counts": tab_counts,
+            "tab_total": total_assets,
+            "tab_status": request.GET.get("status", ""),
+        }
 
 
 class AssetProgramCoverageView(ObjectView):
@@ -95,24 +137,6 @@ class AssetProgramCoverageDeleteView(ObjectDeleteView):
     queryset = AssetProgramCoverage.objects.all()
 
 
-@register_model_view(Asset, name="program_coverage")
-class AssetProgramCoverageTabView(ObjectView):
-    """Render Program Coverage as a NetBox-native tab on the Asset detail view."""
-    queryset = Asset.objects.all()
-    template_name = "netbox_inventory/asset/program_coverage.html"
-
-    def get_extra_context(self, request, instance):
-        qs = (
-            AssetProgramCoverage.objects.filter(asset=instance)
-            .select_related("program")
-            .order_by("program__name", "-effective_start", "-created")
-        )
-        table = AssetProgramCoverageForAssetTable(qs)
-        RequestConfig(request, paginate={"per_page": 50}).configure(table)
-        return {
-            "table": table,
-            "add_url": reverse("plugins:netbox_inventory:assetprogramcoverage_add") + f"?asset={instance.pk}",
-        }
 
 
 @register_model_view(AssetProgramCoverage, name="activate", path="activate")
@@ -203,3 +227,23 @@ class AssetProgramCoverageActivateView(ObjectView):
         coverage.effective_end = None
         coverage.full_clean()
         coverage.save()
+
+
+@register_model_view(Asset, name="program_coverage")
+class AssetProgramCoverageTabView(ObjectView):
+    queryset = Asset.objects.all()
+    template_name = "netbox_inventory/asset/program_coverage.html"
+
+    def get_extra_context(self, request, instance):
+        qs = (
+            AssetProgramCoverage.objects.filter(asset=instance)
+            .select_related("program")
+            .order_by("program__name", "-effective_start", "-created")
+        )
+        table = AssetProgramCoverageForAssetTable(qs)
+        RequestConfig(request, paginate={"per_page": 50}).configure(table)
+
+        return {
+            "table": table,
+            "add_url": reverse("plugins:netbox_inventory:assetprogramcoverage_add") + f"?asset={instance.pk}",
+        }
