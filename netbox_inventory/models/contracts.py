@@ -300,6 +300,9 @@ class Contract(PrimaryModel):
             return 0
         return min(100, (self.days_elapsed / self.contract_duration_days) * 100)
 
+    def get_status_color(self):
+        return ContractStatusChoices.colors.get(self.status)
+
     def update_status_based_on_dates(self):
         """
         Update contract status based on current date and contract dates.

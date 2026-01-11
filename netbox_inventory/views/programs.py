@@ -1,7 +1,7 @@
 from datetime import date
 
 from django.contrib import messages
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -114,9 +114,14 @@ class AssetProgramCoverageActivateView(ObjectView):
     NetBox-native action: /<coverage_pk>/activate/
     Uses a form to create/update ContractAssignment (canonical), then flips coverage ACTIVE.
     """
+    EA = "support-ea"
 
     def dispatch(self, request, pk):
         coverage = get_object_or_404(AssetProgramCoverage.objects.select_related("asset", "program"), pk=pk)
+
+        # EA-only gate
+        if getattr(coverage.program, "contract_type", None) != self.EA:
+            raise PermissionDenied("Activation is only available for EA contracts.")
 
         if request.method == "POST":
             form = ActivateCoverageForm(request.POST, coverage=coverage)
@@ -142,6 +147,8 @@ class AssetProgramCoverageActivateView(ObjectView):
             raise ValidationError(_("This record is INELIGIBLE and cannot be activated."))
 
         program = coverage.program
+        if getattr(program, "contract_type", None) != self.EA:
+            raise ValidationError(_("Activation is only available for EA contracts."))
         program_mfr = getattr(program, "manufacturer", None)
         program_contract_type = getattr(program, "contract_type", None)
 

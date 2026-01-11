@@ -121,12 +121,12 @@ contract_buttons = [
         icon_class='mdi mdi-plus-thick',
         permissions=['netbox_inventory.add_contract'],
     ),
-    PluginMenuButton(
-        link='plugins:netbox_inventory:contract_bulk_import',
-        title='Import',
-        icon_class='mdi mdi-upload',
-        permissions=['netbox_inventory.add_contract'],
-    ),
+    # PluginMenuButton(
+    #    link='plugins:netbox_inventory:contract_bulk_import',
+    #    title='Import',
+    #    icon_class='mdi mdi-upload',
+    #    permissions=['netbox_inventory.add_contract'],
+    # ),
 ]
 
 contracts_items = (
@@ -312,9 +312,9 @@ audit_admin_items = (
 if get_plugin_config('netbox_inventory', 'top_level_menu'):
     # add a top level entry
     menu = PluginMenu(
-        label='Inventory Lifecycle',
+        label='Inventory Management',
         groups=(
-            ('Asset Management', assets_items),
+            ('Assets', assets_items),
             ('Contracts', contracts_items),
             ('Lifecycle', lifecycle_items),
             ('Purchases', purchases_items),

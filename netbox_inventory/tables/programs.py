@@ -40,7 +40,7 @@ class AssetProgramCoverageTable(NetBoxTable):
 
     activate = tables.TemplateColumn(
         template_code="""
-        {% if record.status == 'planned' and record.eligibility != 'ineligible' %}
+        {% if record.program and record.program.contract_type == 'support-ea' and record.status == 'planned' and record.eligibility != 'ineligible' %}
           <a class="btn btn-sm btn-primary"
              href="{% url 'plugins:netbox_inventory:assetprogramcoverage_activate' record.pk %}">
             Activate

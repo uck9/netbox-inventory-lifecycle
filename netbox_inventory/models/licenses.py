@@ -38,7 +38,7 @@ class LicenseSKU(NetBoxModel):
         max_length=16,
         choices=LicenseKindChoices.choices,
         default=LicenseKindChoices.SUBSCRIPTION,
-        verbose_name=_("License kind"),
+        verbose_name=_("License Type"),
     )
     description = models.CharField(
         max_length=200,

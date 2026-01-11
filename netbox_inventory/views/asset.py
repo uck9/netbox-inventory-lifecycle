@@ -43,6 +43,12 @@ class AssetView(generic.ObjectView):
     def get_extra_context(self, request, instance):
         context = super().get_extra_context(request, instance)
         context['warranty_progressbar'] = Template(WARRANTY_PROGRESSBAR)
+        context['contracts'] = (
+            models.ContractAssignment.objects
+            .filter(asset=instance)
+            .select_related('contract')
+            .order_by('contract__contract_id', 'end_date')
+        )
         return context
 
 

@@ -127,6 +127,7 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
             'order_id',
             'purchase_id',
             'supplier_id',
+            'contract_id',
             'purchase_date_after',
             'purchase_date_before',
             'warranty_start_after',
@@ -358,6 +359,12 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
         },
         label='Located at location',
         help_text='Currently installed or stored here',
+    )
+    contract_id = DynamicModelMultipleChoiceField(
+        queryset=Contract.objects.all(),
+        required=False,
+        null_option='None',
+        label='Contract',
     )
     tag = TagFilterField(model)
 

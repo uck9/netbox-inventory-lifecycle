@@ -3,6 +3,7 @@ from datetime import date
 from django.db import models
 from django.forms import ValidationError
 
+
 from netbox.models import NestedGroupModel
 from netbox.models.features import ImageAttachmentsMixin
 
@@ -142,14 +143,17 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     status = models.CharField(
         max_length=30,
         choices=AssetStatusChoices,
-        help_text='Asset lifecycle status',
+        help_text='Asset physicallifecycle status',
+        verbose_name='Physical Status',
     )
     allocation_status = models.CharField(
         max_length=30,
         choices=AssetAllocationStatusChoices,
-        help_text='Asset allocation status',
-        default=AssetAllocationStatusChoices.UNALLOCATED,
-        null=True
+        help_text='Asset logical allocation status',
+        verbose_name='Allocation Status',
+        default=None,
+        null=True,
+        blank=True,
     )
 
     #
@@ -236,7 +240,6 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         blank=True,
         null=True,
     )
-
     storage_location = models.ForeignKey(
         help_text='Where is this asset stored when not in use',
         to='dcim.Location',
@@ -246,7 +249,17 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         null=True,
         verbose_name='Storage Location',
     )
-
+    installed_site_override = models.ForeignKey(
+        to='dcim.Site',
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="assets_with_installed_site_override",
+        help_text=(
+            "Manual site for deployed assets when no installed device exists. "
+            "Ignored if asset is assigned to a device."
+        ),
+    )
     #
     # purchase info
     #
@@ -267,7 +280,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         null=True,
     )
     purchase = models.ForeignKey(
-        help_text='Purchase through which this asset was purchased',
+        help_text='Purchase through which this asset was procured.',
         to='netbox_inventory.Purchase',
         on_delete=models.PROTECT,
         related_name='assets',
@@ -389,11 +402,25 @@ class Asset(NamedModel, ImageAttachmentsMixin):
 
     @property
     def installed_site(self):
+        """
+        Effective installed site for this asset.
+
+        Precedence:
+        1) installed_device.site (device/module/inventoryitem's device site)
+        2) installed_site_override (manual, e.g. OT assets)
+        3) rack.site (if the asset itself is a rack)
+        """
         device = self.installed_device
-        if device:
+        if device and device.site:
             return device.site
-        if self.rack:
+
+        if self.installed_site_override:
+            return self.installed_site_override
+
+        if self.rack and self.rack.site:
             return self.rack.site
+
+        return None
 
     @property
     def installed_location(self):
@@ -483,9 +510,14 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         self.validate_hardware_types()
         self.validate_hardware()
         self.update_status()
+        self.update_allocation_status()
+        self.validate_storage_location_required()
+        self.clean_storage_fields()
+        self.clean_installed_site_override()
         return super().clean()
 
     def save(self, clear_old_hw=True, *args, **kwargs):
+        self.update_allocation_status()
         self.update_hardware_used(clear_old_hw)
         return super().save(*args, **kwargs)
 
@@ -566,6 +598,30 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         elif stored_status and not new_hw and old_hw:
             self.status = stored_status
 
+    def update_allocation_status(self):
+        """
+        Enforce allocation_status rules:
+
+        - If the asset is assigned to a *device* and physical status is 'used',
+        allocation_status must be 'consumed'.
+        - If no device is assigned, do not force allocation_status.
+        But if the record still has the default UNALLOCATED and status is 'used',
+        clear it to NULL so manual "used but not deployed" is clean.
+        """
+        USED = "used"
+        CONSUMED = "consumed"
+
+        # If assigned to a device and used -> consumed (hard rule)
+        if self.device_id and self.status == USED:
+            self.allocation_status = CONSUMED
+            return
+
+        # If no device, allow allocation_status to remain NULL.
+        # Also normalize: if status is used and allocation_status is the default UNALLOCATED, clear it.
+        if not self.device_id and self.status == USED:
+            if self.allocation_status == AssetAllocationStatusChoices.UNALLOCATED:
+                self.allocation_status = None
+
     def update_hardware_used(self, clear_old_hw=True):
         """
         If assigning as device, module, inventoryitem or rack set serial and
@@ -610,6 +666,52 @@ class Asset(NamedModel, ImageAttachmentsMixin):
             raise ValidationError(
                 {'warranty_end': 'Warranty end date must be after warranty start date.'}
             )
+
+    def clean_installed_site_override(self):
+        """
+        Keep installed_site_override meaningful and non-conflicting.
+
+        - If a device is associated (directly or indirectly), override is ignored -> clear it.
+        - If not in deployed state (used+allocated), override is meaningless -> clear it.
+        """
+        deployed_without_device = (
+            self.status == 'used'
+            and self.allocation_status == 'allocated'
+            and self.installed_device is None
+        )
+
+        # If any installed device exists, device.site is authoritative
+        if self.installed_device is not None and self.installed_site_override_id is not None:
+            self.installed_site_override = None
+            return
+
+        # Only keep override in the specific OT scenario we care about
+        if not deployed_without_device and self.installed_site_override_id is not None:
+            self.installed_site_override = None
+            return
+
+        # Optional HARD enforcement (uncomment if you want to block saving)
+        # if deployed_without_device and self.installed_site_override_id is None:
+        #     raise ValidationError({
+        #         'installed_site_override': "Required when Status is 'used' and Allocation Status is 'allocated' and no device is assigned."
+        #     })
+
+    def clean_storage_fields(self):
+        """
+        Storage fields are only meaningful when status == stored.
+        Clear them otherwise to avoid conflicting state.
+        """
+        if self.status != 'stored':
+            # storage_site is derived from storage_location, so only clear storage_location
+            if self.storage_location_id is not None:
+                self.storage_location = None
+
+
+    def validate_storage_location_required(self):
+        if self.status == 'stored' and self.storage_location_id is None:
+            raise ValidationError({
+                'storage_location': "Storage Location is required when Status is 'stored'."
+            })
 
     def get_status_color(self):
         return AssetStatusChoices.colors.get(self.status)

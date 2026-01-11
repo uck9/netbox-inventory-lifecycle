@@ -280,6 +280,7 @@ class AssetForm(NetBoxModelForm):
             'description',
             'comments',
             'storage_site',
+            'installed_site_override',
         )
         widgets = {
             'vendor_ship_date': DatePicker(),
@@ -360,12 +361,63 @@ class AssetForm(NetBoxModelForm):
 
     def clean(self):
         super().clean()
-        # if only order set, infer purchase from it
-        order = self.cleaned_data['order']
-        purchase = self.cleaned_data['purchase']
-        if order and not purchase:
-            self.cleaned_data['purchase'] = order.purchase
 
+        # ----------------------------
+        # Storage logic
+        # ----------------------------
+        status = self.cleaned_data.get("status")
+        if status != "stored":
+            self.cleaned_data["storage_location"] = None
+
+        # ----------------------------
+        # Infer purchase
+        # ----------------------------
+        order = self.cleaned_data.get("order")
+        purchase = self.cleaned_data.get("purchase")
+
+        if order and not purchase:
+            self.cleaned_data["purchase"] = order.purchase
+
+        # ----------------------------
+        # Installed Site logic
+        # ----------------------------
+        status = self.cleaned_data.get("status")
+        storage_location = self.cleaned_data.get("storage_location")
+
+        # Enforce: stored => must have storage location
+        if status == "stored" and not storage_location:
+            self.add_error("storage_location", "Storage Location is required when Status is 'stored'.")
+
+        # Clear storage fields unless stored (keeps data consistent)
+        if status != "stored":
+            self.cleaned_data["storage_location"] = None
+
+        allocation = self.cleaned_data.get("allocation_status")
+        device = self.cleaned_data.get("installed_device")
+        site_override = self.cleaned_data.get("installed_site_override")
+
+        is_deployed_without_device = (
+            status == "used"
+            and allocation == "allocated"
+            and device is None
+        )
+
+        # Device always wins — clear manual site if device exists
+        if device and site_override:
+            self.cleaned_data["installed_site_override"] = None
+
+        # Warn if OT-style deployed asset has no site info
+        if is_deployed_without_device and site_override is None:
+            self.add_error(
+                "installed_site_override",
+                "Required when Status is 'used', Allocation is 'allocated', and no device is assigned."
+            )
+
+        # If the asset is not in a state where the override is meaningful, clear it
+        if not is_deployed_without_device:
+            self.cleaned_data["installed_site_override"] = None
+
+        return self.cleaned_data
 
 #
 # Contract
@@ -775,6 +827,18 @@ class VendorProgramForm(NetBoxModelForm):
 
 class AssetProgramCoverageForm(NetBoxModelForm):
     comments = CommentField()
+    program = DynamicModelChoiceField(
+        queryset=VendorProgram.objects.all(),
+        required=True,
+    )
+    asset = DynamicModelChoiceField(
+        queryset=Asset.objects.all(),
+        required=True,
+        query_params={
+            # This will call the Asset API with ?program_id=<selected_program_id>
+            "program_id": "$program",
+        },
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -800,8 +864,8 @@ class AssetProgramCoverageForm(NetBoxModelForm):
     class Meta:
         model = AssetProgramCoverage
         fields = (
-            "asset",
             "program",
+            "asset",
             "status",
             "eligibility",
             "effective_start",

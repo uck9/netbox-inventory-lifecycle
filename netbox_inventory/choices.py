@@ -11,6 +11,8 @@ class AssetStatusChoices(ChoiceSet):
     CHOICES = [
         ('stored', 'Stored', 'green'),
         ('used', 'Used', 'blue'),
+        ('in-transit', 'In Transit', 'cyan'),
+        ('disposed', 'Disposed', 'red'),
         ('retired', 'Retired', 'gray'),
     ]
 

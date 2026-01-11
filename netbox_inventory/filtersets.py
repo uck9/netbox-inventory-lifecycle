@@ -423,10 +423,16 @@ class AssetFilterSet(NetBoxModelFilterSet):
         field_name='slug',
         label='Any tenant (slug)',
     )
+    contract_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Contract.objects.all(),
+        field_name="contract",
+        label="Contract (ID)",
+    )
+    program_id = django_filters.NumberFilter(method="filter_program_id")
 
     class Meta:
         model = Asset
-        fields = ('id', 'name', 'serial', 'asset_tag', 'description')
+        fields = ('id', 'name', 'serial', 'asset_tag', 'description', 'program_id')
 
     def search(self, queryset, name, value):
         query = (
@@ -447,6 +453,7 @@ class AssetFilterSet(NetBoxModelFilterSet):
             | Q(purchase__supplier__name__icontains=value)
             | Q(tenant__name__icontains=value)
             | Q(owner__name__icontains=value)
+            | Q(contract__contract_id__icontains=value)
         )
         custom_field_filters = get_asset_custom_fields_search_filters()
         for custom_field_filter in custom_field_filters:
@@ -486,18 +493,18 @@ class AssetFilterSet(NetBoxModelFilterSet):
 
     def filter_is_assigned(self, queryset, name, value):
         if value:
-            # is assigned to any hardware
             return queryset.filter(
                 Q(device__isnull=False)
                 | Q(module__isnull=False)
                 | Q(inventoryitem__isnull=False)
+                | Q(rack__isnull=False)
             )
         else:
-            # is not assigned to hardware kind
             return queryset.filter(
                 Q(device__isnull=True)
                 & Q(module__isnull=True)
                 & Q(inventoryitem__isnull=True)
+                & Q(rack__isnull=True)
             )
 
     def filter_installed(self, queryset, name, value):
@@ -522,6 +529,24 @@ class AssetFilterSet(NetBoxModelFilterSet):
             q_list = (Q(tenant__pk=n) | Q(owner__pk=n) for n in value)
         q_list = reduce(lambda a, b: a | b, q_list)
         return queryset.filter(q_list)
+
+    def filter_program_id(self, queryset, name, value):
+        """
+        Filter assets to only those whose manufacturer matches the selected program's manufacturer.
+        """
+        try:
+            program = VendorProgram.objects.only("id", "manufacturer_id").get(pk=value)
+        except VendorProgram.DoesNotExist:
+            return queryset.none()
+
+        # If your Program.manufacturer is optional, decide your behavior:
+        if not program.manufacturer_id:
+            return queryset.none()  # or: return queryset
+
+        # --- IMPORTANT ---
+        # Your asset's manufacturer is derived via asset.device.device_type.manufacturer
+        # So we filter via relations.
+        return queryset.filter(device__device_type__manufacturer_id=program.manufacturer_id)
 
 
 class HasAssetFilterMixin(NetBoxModelFilterSet):

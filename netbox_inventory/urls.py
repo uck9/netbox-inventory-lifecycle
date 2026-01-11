@@ -65,20 +65,14 @@ urlpatterns = [
     path('suppliers/<int:pk>/', include(get_model_urls('netbox_inventory', 'supplier'))),
 
     # Purchases
-    path('purchases/',
-        include(get_model_urls('netbox_inventory', 'purchase', detail=False)),
-    ),
-    path('purchases/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'purchase')),
-    ),
-    # Orders
-    path('orders/',
-        include(get_model_urls('netbox_inventory', 'order', detail=False)),
-    ),
-    path('orders/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'order')),
-    ),
+    path('purchases/', include(get_model_urls('netbox_inventory', 'purchase', detail=False))),
+    path('purchases/<int:pk>/',include(get_model_urls('netbox_inventory', 'purchase'))),
 
+    # Orders
+    path('orders/', include(get_model_urls('netbox_inventory', 'order', detail=False))),
+    path('orders/<int:pk>/', include(get_model_urls('netbox_inventory', 'order'))),
+
+    # Hardware Lifecycles
     path('lifecycle/', views.HardwareLifecycleListView.as_view(),
         name='hardwarelifecycle_list',
     ),
@@ -106,52 +100,24 @@ urlpatterns = [
     ),
 
     # AuditFlows (for clarity above AuditFlowPages)
-    path(
-        'audit-flows/',
-        include(get_model_urls('netbox_inventory', 'auditflow', detail=False)),
-    ),
-    path(
-        'audit-flows/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'auditflow')),
-    ),
+    path('audit-flows/', include(get_model_urls('netbox_inventory', 'auditflow', detail=False))),
+    path('audit-flows/<int:pk>/', include(get_model_urls('netbox_inventory', 'auditflow'))),
+
     # AuditFlowPages
-    path(
-        'audit-flowpages/',
-        include(get_model_urls('netbox_inventory', 'auditflowpage', detail=False)),
-    ),
-    path(
-        'audit-flowpages/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'auditflowpage')),
-    ),
+    path('audit-flowpages/', include(get_model_urls('netbox_inventory', 'auditflowpage', detail=False))),
+    path('audit-flowpages/<int:pk>/', include(get_model_urls('netbox_inventory', 'auditflowpage'))),
+
     # AuditFlowPageAssignments
-    path(
-        'audit-flowpage-assignments/',
-        include(
-            get_model_urls('netbox_inventory', 'auditflowpageassignment', detail=False)
-        ),
-    ),
-    path(
-        'audit-flowpage-assignments/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'auditflowpageassignment')),
-    ),
+    path('audit-flowpage-assignments/', include(get_model_urls('netbox_inventory', 'auditflowpageassignment', detail=False))),
+    path('audit-flowpage-assignments/<int:pk>/', include(get_model_urls('netbox_inventory', 'auditflowpageassignment'))),
+
     # AuditTrailSources
-    path(
-        'audit-trail-sources/',
-        include(get_model_urls('netbox_inventory', 'audittrailsource', detail=False)),
-    ),
-    path(
-        'audit-trail-sources/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'audittrailsource')),
-    ),
+    path('audit-trail-sources/',include(get_model_urls('netbox_inventory', 'audittrailsource', detail=False))),
+    path('audit-trail-sources/<int:pk>/', include(get_model_urls('netbox_inventory', 'audittrailsource'))),
+
     # AuditTrails
-    path(
-        'audit-trails/',
-        include(get_model_urls('netbox_inventory', 'audittrail', detail=False)),
-    ),
-    path(
-        'audit-trails/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'audittrail')),
-    ),
+    path('audit-trails/', include(get_model_urls('netbox_inventory', 'audittrail', detail=False))),
+    path('audit-trails/<int:pk>/', include(get_model_urls('netbox_inventory', 'audittrail'))),
 
     # Vendor Programs
     path("vendor-programs/", views.VendorProgramListView.as_view(), name="vendorprogram_list"),

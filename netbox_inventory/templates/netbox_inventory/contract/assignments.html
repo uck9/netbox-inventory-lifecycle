@@ -3,6 +3,15 @@
 {% load helpers %}
 {% load static %}
 
+{% if perms.netbox_inventory.add_contractassignment %}
+  {% block extra_controls %}
+    <a href="{% url 'plugins:netbox_inventory:contractassignment_add' %}?contract={{ object.pk }}"
+      class="btn btn-primary">
+      <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Assignment
+    </a>
+  {% endblock %}
+{% endif %}
+
 {% block content %}
   {% include 'inc/table_controls_htmx.html' with table_modal="ObjectTable_config" %}
   

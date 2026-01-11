@@ -1,5 +1,6 @@
 import django_tables2 as tables
 from django.db.models.functions import Coalesce
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from dcim.tables import (
@@ -51,10 +52,12 @@ class ContractTable(NetBoxTable):
     start_date = columns.DateColumn()
     end_date = columns.DateColumn()
     renewal_date = columns.DateColumn()
-    asset_count = columns.LinkedCountColumn(
-        viewname='plugins:netbox_inventory:asset_list',
-        url_params={'contract_id': 'pk'},
+    asset_count = tables.Column(
+        accessor='asset_count',
         verbose_name='Assets',
+        linkify=lambda record: (
+            reverse('plugins:netbox_inventory:contract_assignments', kwargs={'pk': record.pk})
+        ),
     )
     is_active = columns.BooleanColumn(
         accessor='is_active',
@@ -115,6 +118,7 @@ class ContractTable(NetBoxTable):
             'actions',
         )
         default_columns = (
+            'pk',
             'contract_id',
             'vendor',
             'contract_type',
@@ -173,9 +177,9 @@ class ContractAssignmentTable(NetBoxTable):
         linkify=True,
     )
     asset_name = tables.Column(
-        verbose_name=_('Device Name'),
+        verbose_name=_('Asset Name'),
         accessor='asset__name',
-        linkify=True,
+        linkify=('plugins:netbox_inventory:asset', [tables.A('asset__pk')]),
         orderable=True,
     )
     asset_serial = tables.Column(
