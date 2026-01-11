@@ -1,0 +1,24 @@
+{% extends 'generic/object.html' %}
+{% load buttons %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <strong>Program Coverage</strong>
+
+          <div class="float-end">
+            <a class="btn btn-sm btn-primary" href="{{ add_url }}">
+              <i class="mdi mdi-plus-thick"></i> Add
+            </a>
+          </div>
+        </div>
+
+        <div class="card-body">
+          {% include 'inc/table.html' with table=table %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

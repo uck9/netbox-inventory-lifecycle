@@ -128,6 +128,7 @@ class AssetTable(NetBoxTable):
         verbose_name='Inventory Item Group',
     )
     status = columns.ChoiceFieldColumn()
+    allocation_status = columns.ChoiceFieldColumn()
     hardware = tables.Column(
         linkify=True,
         order_by=('device', 'module'),
@@ -206,7 +207,7 @@ class AssetTable(NetBoxTable):
         template_code=WARRANTY_PROGRESSBAR,
         order_by='warranty_end',
         # orderable=False,
-        verbose_name='Warranty remaining',
+        verbose_name='Warranty Remaining',
     )
     comments = columns.MarkdownColumn()
     tags = columns.TagColumn()
@@ -357,6 +358,7 @@ class AssetTable(NetBoxTable):
             'asset_tag',
             'serial',
             'status',
+            'allocation_status',
             'kind',
             'manufacturer',
             'hardware_type',
@@ -382,6 +384,9 @@ class AssetTable(NetBoxTable):
             'warranty_start',
             'warranty_end',
             'warranty_progress',
+            'disposal_date',
+            'disposal_reason',
+            'disposal_reference',
             'description',
             'comments',
             'tags',
@@ -398,7 +403,7 @@ class AssetTable(NetBoxTable):
             'hardware_type',
             'asset_tag',
             'status',
+            'allocation_status',
             'order',
             'hardware',
-            'tags',
         )

@@ -197,6 +197,7 @@ class AssetSerializer(NetBoxModelSerializer):
             'asset_tag',
             'serial',
             'status',
+            'allocation_status',
             'kind',
             'device_type',
             'device',
@@ -229,6 +230,7 @@ class AssetSerializer(NetBoxModelSerializer):
             'serial',
             'name',
             'description',
+            'status'
         )
         # DRF autiomatically creates validator from model's unique_together contraints
         # that doesn't work if we allow some filelds in a unique_together to be null

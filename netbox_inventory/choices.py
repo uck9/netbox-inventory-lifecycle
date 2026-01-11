@@ -15,6 +15,19 @@ class AssetStatusChoices(ChoiceSet):
     ]
 
 
+class AssetAllocationStatusChoices(ChoiceSet):
+    key = 'Asset.allocation'
+
+    UNALLOCATED = 'unallocated'
+    ALLOCATED = 'allocated'
+    CONSUMED = 'consumed'
+
+    CHOICES = [
+        (UNALLOCATED, 'Unallocated', 'yellow'),
+        (ALLOCATED, 'Allocated', 'green'),
+        (CONSUMED, 'Consumed', 'blue'),
+    ]
+
 class HardwareKindChoices(ChoiceSet):
     CHOICES = [
         ('device', 'Device'),
@@ -105,4 +118,27 @@ class ProgramCoverageSourceChoices(ChoiceSet):
         (MANUAL, "Manual", "blue"),
         (SYNC, "Sync", "cyan"),
         (IMPORT, "Import", "purple"),
+    ]
+
+
+#
+# Disposals
+#
+
+
+class AssetDisposalReasonhoices(ChoiceSet):
+    key = 'AssetDisposal.reason'
+
+    SCRAPPED = 'scrapped'
+    SOLD = 'sold'
+    LOST= 'lost'
+    RETURNED_TO_VENDOR = 'returned_to_vendor'
+    OTHER = 'other'
+
+    CHOICES = [
+        (SCRAPPED, 'Scrapped', 'red'),
+        (SOLD, 'Sold', 'green'),
+        (LOST, 'Lost', 'orange'),
+        (RETURNED_TO_VENDOR, 'Returned to Vendor', 'blue'),
+        (OTHER, 'Other', 'gray'),
     ]

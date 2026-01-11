@@ -1071,7 +1071,7 @@ class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
         queryset=Tenant.objects.all(),
         label="Tenant",
     )
-    
+
     # Effective dates (range)
     effective_start = django_filters.DateFromToRangeFilter(
         field_name="effective_start",

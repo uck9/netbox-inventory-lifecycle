@@ -14,7 +14,7 @@ from netbox.views.generic import (
     ObjectListView,
     ObjectView,
 )
-from utilities.views import register_model_view
+from utilities.views import ViewTab, register_model_view
 
 from ..choices import ProgramCoverageStatusChoices, ProgramEligibilityChoices
 from ..filtersets import AssetProgramCoverageFilterSet, VendorProgramFilterSet
@@ -47,7 +47,6 @@ __all__ = (
     'AssetProgramCoverageView',
     'AssetProgramCoverageEditView',
     'AssetProgramCoverageDeleteView',
-    'AssetProgramCoverageTabView',
     'AssetProgramCoverageActivateView',
 )
 
@@ -132,7 +131,7 @@ class AssetProgramCoverageActivateView(ObjectView):
         else:
             form = ActivateCoverageForm(coverage=coverage, initial={"start_date": date.today()})
 
-        return render(request, "netbox_inventory/assetprogramcoverage/activate.html", {
+        return render(request, "netbox_inventory/asset/program_coverage_activate.html", {
             "object": coverage,
             "form": form,
         })
@@ -197,23 +196,3 @@ class AssetProgramCoverageActivateView(ObjectView):
         coverage.effective_end = None
         coverage.full_clean()
         coverage.save()
-
-
-@register_model_view(Asset, name="program_coverage")
-class AssetProgramCoverageTabView(ObjectView):
-    queryset = Asset.objects.all()
-    template_name = "netbox_inventory/asset/program_coverage.html"
-
-    def get_extra_context(self, request, instance):
-        qs = (
-            AssetProgramCoverage.objects.filter(asset=instance)
-            .select_related("program")
-            .order_by("program__name", "-effective_start", "-created")
-        )
-        table = AssetProgramCoverageForAssetTable(qs)
-        RequestConfig(request, paginate={"per_page": 50}).configure(table)
-
-        return {
-            "table": table,
-            "add_url": reverse("plugins:netbox_inventory:assetprogramcoverage_add") + f"?asset={instance.pk}",
-        }

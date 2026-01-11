@@ -35,13 +35,22 @@
             <td class="font-monospace">{{ object.serial|placeholder }}</td>
           </tr>
           <tr>
-            <th scope="row">Status</th>
-            <td>{% badge object.get_status_display bg_color=object.get_status_color %}</td>
-          </tr>
-          <tr>
             <th scope="row">{{ object.get_kind_display }} Type</th>
             <td><a href="{{object.hardware_type.get_absolute_url}}">{{ object.hardware_type.manufacturer }} {{ object.hardware_type }}</a></td>
           </tr>
+        </table>
+      </div>
+      <div class="card">
+        <h5 class="card-header">Asset Status & Storage</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Physical Status</th>
+            <td>{% badge object.get_status_display bg_color=object.get_status_color %}</td>
+          </tr>
+          <tr>
+            <th scope="row">Allocation Status</th>
+            <td>{% badge object.get_allocation_status_display bg_color=object.get_allocation_status_color %}</td>
+          </tr>       
           {% if object.kind == 'inventoryitem' %}
           <tr>
             <th scope="row">Inventory Item Group</th>
@@ -152,7 +161,7 @@
     </div>
     <div class="col col-md-6">
       <div class="card">
-        <h5 class="card-header">Purchase & Warranty</h5>
+        <h5 class="card-header">Purchase Details</h5>
         <table class="table table-hover attr-table">
           <tr>
             <th scope="row">Owner</th>
@@ -188,13 +197,32 @@
             <td>{{ object.warranty_end|isodate|placeholder }}</td>
           </tr>
           <tr>
-            <th scope="row">Warranty remaining</th>
+            <th scope="row">Warranty Remaining</th>
             <td>
               {% include warranty_progressbar with record=object %}
             </td>
           </tr>
         </table>
       </div>
+      {% if object.status == "disposed" %}
+      <div class="card">
+        <h5 class="card-header">Disposal Details</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Disposal Date</th>
+            <td>{{ object.disposal_date|isodate|placeholder }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Disposal Reason</th>
+            <td>{{ object.disposal_reason|placeholder }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Disposal Reference</th>
+            <td>{{ object.disposal_reference|placeholder }}</td>
+          </tr>
+        </table>
+      </div>
+      {% endif %}
       {% include 'inc/panels/tags.html' %}
       {% include 'inc/panels/comments.html' %}
       {% include 'inc/panels/image_attachments.html' %}

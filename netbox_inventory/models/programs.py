@@ -164,6 +164,15 @@ class AssetProgramCoverage(PrimaryModel):
             ),
         ]
 
+    def get_status_color(self):
+        return ProgramCoverageStatusChoices.colors.get(self.status)
+
+    def get_eligibility_color(self):
+        return ProgramEligibilityChoices.colors.get(self.eligibility)
+
+    def get_source_color(self):
+        return ProgramCoverageSourceChoices.colors.get(self.source)
+
     def __str__(self):
         return f"{self.asset} / {self.program}"
 

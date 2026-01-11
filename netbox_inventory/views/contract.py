@@ -117,8 +117,9 @@ class ContractSKUView(GetRelatedModelsMixin, ObjectView):
             'related_models': self.get_related_models(
                 request, instance
             ),
-        } 
-    
+        }
+
+
 @register_model_view(models.ContractSKU, 'add', detail=False)
 @register_model_view(models.ContractSKU, 'edit')
 class ContractSKUEditView(ObjectEditView):

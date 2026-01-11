@@ -166,7 +166,6 @@ urlpatterns = [
 
     # Asset Program Coverage
     path("asset-program-coverages/", views.AssetProgramCoverageListView.as_view(), name="assetprogramcoverage_list"),
-    path("asset-program-coverages/tabbed/", views.AssetProgramCoverageTabbedListView.as_view(), name="assetprogramcoverage_tabbed",),
     path("asset-program-coverages/add/", views.AssetProgramCoverageEditView.as_view(), name="assetprogramcoverage_add"),
     path("asset-program-coverages/<int:pk>/", views.AssetProgramCoverageView.as_view(), name="assetprogramcoverage"),
     path("asset-program-coverages/<int:pk>/edit/", views.AssetProgramCoverageEditView.as_view(), name="assetprogramcoverage_edit"),

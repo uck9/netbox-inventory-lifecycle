@@ -6,7 +6,7 @@ from django.forms import ValidationError
 from netbox.models import NestedGroupModel
 from netbox.models.features import ImageAttachmentsMixin
 
-from ..choices import AssetStatusChoices, HardwareKindChoices
+from ..choices import AssetStatusChoices, AssetAllocationStatusChoices, AssetDisposalReasonhoices, HardwareKindChoices
 from ..managers import AssetManager
 from ..utils import (
     asset_clear_old_hw,
@@ -143,6 +143,13 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         max_length=30,
         choices=AssetStatusChoices,
         help_text='Asset lifecycle status',
+    )
+    allocation_status = models.CharField(
+        max_length=30,
+        choices=AssetAllocationStatusChoices,
+        help_text='Asset allocation status',
+        default=AssetAllocationStatusChoices.UNALLOCATED,
+        null=True
     )
 
     #
@@ -301,17 +308,30 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         verbose_name='Base license SKU',
         help_text='Perpetual/base entitlement tied to the hardware.',
     )
-    base_license_source = models.CharField(
-        max_length=32,
+
+    #
+    # Disposal Info
+    #
+    disposal_date = models.DateField(
+        help_text='Date this asset was disposed',
         blank=True,
-        verbose_name='Base license source',
-        help_text='e.g. ORDER, UPGRADE, MANUAL, DISCOVERED',
+        null=True,
+        verbose_name='Disposal Date',
     )
-    base_license_source_ref = models.CharField(
-        max_length=100,
+    disposal_reason = models.CharField(
+        max_length=30,
+        choices=AssetDisposalReasonhoices,
+        help_text='Asset disposal reason',
         blank=True,
-        verbose_name='Base license source ref',
-        help_text='SO number, transaction ID, evidence link, etc.',
+        null=True,
+    )
+    disposal_reference = models.CharField(
+        help_text='Disposal reference number or notes',
+        max_length=100,
+        verbose_name='Disposal Reference',
+        blank=True,
+        null=True,
+        default=None,
     )
 
     clone_fields = [
@@ -594,11 +614,21 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     def get_status_color(self):
         return AssetStatusChoices.colors.get(self.status)
 
+    def get_allocation_status_color(self):
+        return AssetAllocationStatusChoices.colors.get(self.allocation_status)
+
     def __str__(self):
-        if self.serial:
-            return f'{self.hardware_type} {self.serial}'
-        else:
-            return f'{self.hardware_type} (id:{self.id})'
+        parts = [
+            self.asset_tag,
+            self.hardware_type,
+            self.serial,
+        ]
+
+        # Keep only truthy values (None, "", etc. are dropped)
+        label = " - ".join(str(p) for p in parts if p)
+
+        # Absolute fallback so __str__ never returns empty
+        return label or f'{self.hardware_type} (id:{self.id})'
 
     class Meta:
         ordering = (

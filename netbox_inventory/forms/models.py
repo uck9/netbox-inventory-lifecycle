@@ -1,3 +1,4 @@
+from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from core.models import ObjectType
@@ -9,6 +10,7 @@ from dcim.models import (  # pyright: ignore[reportMissingImports]
     RackType,
     Site,
 )
+from extras.models import CustomField
 from netbox.forms import NetBoxModelForm
 from tenancy.models import Contact, ContactGroup, Tenant
 from utilities.forms.fields import (
@@ -257,6 +259,7 @@ class AssetForm(NetBoxModelForm):
             'asset_tag',
             'serial',
             'status',
+            'allocation_status',
             'manufacturer',
             'device_type',
             'module_type',
@@ -289,6 +292,29 @@ class AssetForm(NetBoxModelForm):
 
         self._disable_fields_by_tags()
 
+        # Only apply the cf_ filter if the custom field exists on dcim.Location
+        has_storage_cf = CustomField.objects.filter(
+            name="asset_storage_location",
+            object_types__app_label="dcim",
+            object_types__model="location",
+        ).exists()
+
+        if not has_storage_cf:
+            return
+
+        field = self.fields["storage_location"]
+        widget = field.widget
+
+        # Prefer the widget helper if available (NetBox uses this internally)
+        if hasattr(widget, "add_query_param"):
+            widget.add_query_param("cf_asset_storage_location", "true")
+        else:
+            # Fallbacks across widget variants
+            if hasattr(widget, "static_params"):
+                widget.static_params["cf_asset_storage_location"] = "true"
+            else:
+                widget.attrs["data-query-param-cf_asset_storage_location"] = "true"
+
         # Used for picking the default active tab for hardware type selection
         self.no_hardware_type = True
         if self.instance:
@@ -310,6 +336,7 @@ class AssetForm(NetBoxModelForm):
             self.fields['manufacturer'].disabled = True
             for kind in HardwareKindChoices.values():
                 self.fields[f'{kind}_type'].disabled = True
+
 
     def _disable_fields_by_tags(self):
         """
@@ -461,13 +488,18 @@ class PurchaseForm(NetBoxModelForm):
 
 
 class OrderForm(NetBoxModelForm):
+    name = forms.CharField(
+        label="Order ID",
+        help_text="Manufacturer-specific order identifier",
+        required=True,
+    )
     comments = CommentField()
 
     fieldsets = (
         FieldSet(
             'purchase',
-            'name',
             'manufacturer',
+            'name',
             'description',
             'tags',
             name='Order',
@@ -478,8 +510,8 @@ class OrderForm(NetBoxModelForm):
         model = Order
         fields = (
             'purchase',
-            'name',
             'manufacturer',
+            'name',
             'description',
             'comments',
             'tags',
