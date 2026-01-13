@@ -228,6 +228,7 @@ class AssetForm(NetBoxModelForm):
         FieldSet('name', 'asset_tag', 'description', 'tags', 'status', name='General'),
         FieldSet(
             'serial',
+            'vendor_instance_id',
             'manufacturer',
             'device_type',
             'module_type',
@@ -258,6 +259,7 @@ class AssetForm(NetBoxModelForm):
             'name',
             'asset_tag',
             'serial',
+            'vendor_instance_id',
             'status',
             'allocation_status',
             'manufacturer',

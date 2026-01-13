@@ -29,6 +29,12 @@ class VendorProgramSerializer(NetBoxModelSerializer):
             "created",
             "last_updated",
         )
+        breif_fields = (
+            "id",
+            "url",
+            "display",
+            "name",
+        )
 
 
 class AssetProgramCoverageSerializer(NetBoxModelSerializer):

@@ -34,6 +34,12 @@
             <th scope="row">Serial Number</th>
             <td class="font-monospace">{{ object.serial|placeholder }}</td>
           </tr>
+          {% if object.vendor_instance_id %}
+          <tr>
+            <th scope="row">Vendor Instance ID</th>
+            <td>{{ object.vendor_instance_id|placeholder }}</td>
+          </tr>
+          {% endif %}
           <tr>
             <th scope="row">{{ object.get_kind_display }} Type</th>
             <td><a href="{{object.hardware_type.get_absolute_url}}">{{ object.hardware_type.manufacturer }} {{ object.hardware_type }}</a></td>

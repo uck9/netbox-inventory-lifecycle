@@ -209,6 +209,10 @@ class AssetTable(NetBoxTable):
         # orderable=False,
         verbose_name='Warranty Remaining',
     )
+    vendor_instance_id = tables.Column(
+        verbose_name='Vendor Instance ID',
+    )
+    disposal_date = columns.DateColumn()
     comments = columns.MarkdownColumn()
     tags = columns.TagColumn()
     actions = columns.ActionsColumn(
@@ -387,6 +391,7 @@ class AssetTable(NetBoxTable):
             'disposal_date',
             'disposal_reason',
             'disposal_reference',
+            'vendor_instance_id',
             'description',
             'comments',
             'tags',

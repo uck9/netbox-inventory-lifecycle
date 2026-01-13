@@ -104,7 +104,7 @@ class Order(NamedModel):
     manufacturer = models.ForeignKey(
         to='dcim.Manufacturer',
         on_delete=models.CASCADE,
-        related_name='skus',
+        related_name='order_manufacturer',
     )
 
     clone_fields = ['purchase', 'manufacturer', 'description', 'comments']

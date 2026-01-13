@@ -9,7 +9,7 @@ from dcim.tables import (
     ModuleTypeTable,
     RackTypeTable,
 )
-from netbox.tables import NetBoxTable, columns, ChoiceFieldColumn
+from netbox.tables import ChoiceFieldColumn, NetBoxTable, columns
 from tenancy.tables import ContactsColumnMixin
 from utilities.tables import register_table_column
 
@@ -160,10 +160,10 @@ class ContractSKUTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = ContractSKU
         fields = (
-            'id', 'pk', 'manufacturer', 'sku', 'description', 'comments',
+            'id', 'pk', 'manufacturer', 'sku', 'contract_type','description', 'comments',
         )
         default_columns = (
-            'id', 'pk', 'manufacturer', 'sku',
+            'id', 'pk', 'manufacturer', 'sku', 'contract_type',
         )
 
 

@@ -196,6 +196,7 @@ class AssetSerializer(NetBoxModelSerializer):
             'description',
             'asset_tag',
             'serial',
+            'vendor_instance_id',
             'status',
             'allocation_status',
             'kind',

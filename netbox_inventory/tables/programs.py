@@ -1,11 +1,9 @@
 import django_tables2 as tables
 
-from netbox.tables import ChoiceFieldColumn, columns, NetBoxTable
+from netbox.tables import ChoiceFieldColumn, NetBoxTable, columns
 
-
-from ..models.programs import AssetProgramCoverage, VendorProgram
 from ..choices import ProgramCoverageStatusChoices
-
+from ..models.programs import AssetProgramCoverage, VendorProgram
 
 _all__ = (
     'VendorProgramTable',

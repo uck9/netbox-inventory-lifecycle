@@ -6,6 +6,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
+from taggit.managers import TaggableManager
 
 from dcim.models import Device, DeviceType, Module, ModuleType
 from netbox.models import PrimaryModel
@@ -59,6 +60,10 @@ class HardwareLifecycle(PrimaryModel):
         max_length=16,
         choices=SupportBasisChoices,
         default=SupportBasisChoices.DEFAULT_KEY,
+    )
+    tags = TaggableManager(
+        blank=True,
+        related_name="lcm_hardwarelifecycles"
     )
 
     class Meta:

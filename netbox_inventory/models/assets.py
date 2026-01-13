@@ -321,6 +321,14 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         verbose_name='Base license SKU',
         help_text='Perpetual/base entitlement tied to the hardware.',
     )
+    vendor_instance_id = models.CharField(
+        help_text='A vendor-assigned unique identifier for the physical device instance, distinct from serial number.',
+        max_length=100,
+        verbose_name='Vendor Instance ID',
+        blank=True,
+        null=True,
+        default=None,
+    )
 
     #
     # Disposal Info

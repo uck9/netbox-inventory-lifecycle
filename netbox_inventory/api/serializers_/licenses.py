@@ -17,3 +17,6 @@ class LicenseSKUSerializer(NetBoxModelSerializer):
             "sku", "name", "license_kind", "description",
             "tags", "custom_fields", "created", "last_updated",
         )
+        brief_fields = (
+            "id", "url", "display", "manufacturer", "sku", "name",
+        )
