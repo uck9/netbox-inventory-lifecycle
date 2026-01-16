@@ -1,17 +1,25 @@
 from datetime import date
+
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+
+# from django.db.models import Q
 from django.db.models.functions import Lower
 from django.db.models.signals import pre_save
-from django.urls import NoReverseMatch, reverse
 from django.dispatch import receiver
-
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from netbox.models import PrimaryModel
-from dcim.choices import DeviceStatusChoices
-from netbox_inventory.choices import ContractTypeChoices, ContractStatusChoices
+
+from netbox_inventory.choices import (
+    AssetStatusChoices,
+    ContractStatusChoices,
+    ContractTypeChoices,
+)
+
+# from netbox_inventory.models.programs import VendorProgram
 
 __all__ = (
     'ContractVendor',
@@ -45,7 +53,7 @@ class ContractVendor(PrimaryModel):
 class ContractSKU(PrimaryModel):
     """
     A single support SKU.
-    This is the atomic unit of coverage that can be assigned to devices.
+    This is the atomic unit of coverage that can be assigned to assets.
     """
     manufacturer = models.ForeignKey(
         to='dcim.Manufacturer',
@@ -58,16 +66,22 @@ class ContractSKU(PrimaryModel):
         verbose_name=_('SKU'),
         help_text=_('Vendor SKU identifier (e.g. L-AC-OPT-5Y-SUP)'),
     )
-    description = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name=_('Description'),
+    contract_type = models.CharField(
+        max_length=16,
+        choices=ContractTypeChoices,
+        verbose_name=_("Contract Type"),
+        help_text=_("Which contract type this SKU is valid for (EA, ALC, etc.)"),
     )
     service_level = models.CharField(
         max_length=64,
         blank=True,
         verbose_name=_('Service Level'),
         help_text=_('e.g. TAC 24x7, NBD, DNA Advantage, etc.'),
+    )
+    description = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_('Description'),
     )
     notes = models.TextField(
         blank=True,
@@ -187,7 +201,7 @@ class Contract(PrimaryModel):
 
     def get_absolute_url(self):
         return reverse('plugins:netbox_inventory:contract', args=[self.pk])
-    
+
     @property
     def is_active(self):
         """Check if the contract is currently active based on dates."""
@@ -217,7 +231,7 @@ class Contract(PrimaryModel):
             return False
         from datetime import date
         return date.today() >= self.renewal_date
-    
+
     @property
     def remaining_time_display(self):
         """Get a user-friendly display of remaining contract time."""
@@ -230,7 +244,7 @@ class Contract(PrimaryModel):
             return "1 day remaining"
         else:
             return f"{self.days_until_expiry} days remaining"
-    
+
     @property
     def remaining_time_class(self):
         """Get the CSS class for the remaining time badge."""
@@ -285,7 +299,10 @@ class Contract(PrimaryModel):
         if self.days_elapsed is None or self.days_elapsed < 0:
             return 0
         return min(100, (self.days_elapsed / self.contract_duration_days) * 100)
-    
+
+    def get_status_color(self):
+        return ContractStatusChoices.colors.get(self.status)
+
     def update_status_based_on_dates(self):
         """
         Update contract status based on current date and contract dates.
@@ -334,8 +351,15 @@ class ContractAssignment(PrimaryModel):
         blank=True,
         related_name='assignments',
     )
+    program = models.ForeignKey(
+        to='netbox_inventory.VendorProgram',
+        on_delete=models.PROTECT,
+        related_name='contract_assignments',
+        null=True,
+        blank=True,
+    )
     asset = models.ForeignKey(
-        to='netbox_inventory.asset',
+        to='netbox_inventory.Asset',
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -418,7 +442,7 @@ class ContractAssignment(PrimaryModel):
         if self.contract and self.contract.end_date:
             return self.contract.end_date
         return None  # open-ended
-    
+
     @property
     def effective_renewal_date(self):
         """
@@ -432,8 +456,8 @@ class ContractAssignment(PrimaryModel):
             return self.contract.renewal_date
         return None  # truly unknown
 
-    def get_device_status_color(self):
-        return DeviceStatusChoices.colors.get(self.device.status)
+    def get_asset_status_color(self):
+        return AssetStatusChoices.colors.get(self.asset.status)
 
     def get_coverage_status_color(self):
         return ContractStatusChoices.colors.get(self.support_coverage_status)
@@ -445,6 +469,8 @@ class ContractAssignment(PrimaryModel):
     @property
     def is_active(self):
         """Check if the contract assignment is currently active based on dates."""
+        if not self.start_date or not self.end_date:
+            return False
         from datetime import date
         today = date.today()
         return self.effective_start_date <= today <= self.effective_end_date
@@ -452,6 +478,8 @@ class ContractAssignment(PrimaryModel):
     @property
     def days_until_expiry(self):
         """Calculate days until contract assignment expires."""
+        if not self.effective_end_date:
+            return False
         from datetime import date
         today = date.today()
         if self.effective_end_date > today:
@@ -461,6 +489,8 @@ class ContractAssignment(PrimaryModel):
     @property
     def is_expired(self):
         """Check if the contract assignment has expired."""
+        if not self.effective_end_date:
+            return False
         from datetime import date
         return self.effective_end_date < date.today()
 
@@ -471,7 +501,7 @@ class ContractAssignment(PrimaryModel):
             return False
         from datetime import date
         return date.today() >= self.effective_renewal_date
-    
+
     @property
     def remaining_time_display(self):
         """Get a user-friendly display of remaining contract time."""
@@ -484,7 +514,7 @@ class ContractAssignment(PrimaryModel):
             return "1 day remaining"
         else:
             return f"{self.days_until_expiry} days remaining"
-    
+
     @property
     def remaining_time_class(self):
         """Get the CSS class for the remaining time badge."""
@@ -539,7 +569,7 @@ class ContractAssignment(PrimaryModel):
         if self.days_elapsed is None or self.days_elapsed < 0:
             return 0
         return min(100, (self.days_elapsed / self.contract_duration_days) * 100)
-    
+
     def update_status_based_on_dates(self):
         """
         Update contract status based on current date and contract dates.
@@ -595,6 +625,22 @@ class ContractAssignment(PrimaryModel):
 
         # Normalize "open" end as max date for comparison
         this_end = end or date.max
+
+        # Set Contract and Program if not set
+        if self.contract and self.sku and not self.program:
+            VendorProgram = apps.get_model('netbox_inventory', 'VendorProgram')
+            self.program = VendorProgram.objects.filter(
+                manufacturer=self.sku.manufacturer,
+                contract_type=self.contract.contract_type,
+            ).first()
+
+        # Ensure SKU contract_type matches Contract contract_type
+        if self.contract and self.sku:
+            if self.contract.contract_type and self.sku.contract_type:
+                if self.contract.contract_type != self.sku.contract_type:
+                    raise ValidationError({
+                        'sku': _(f'SKU type ({self.sku.contract_type}) does not match contract type ({self.contract.contract_type}).')
+                    })
 
         qs = ContractAssignment.objects.filter(
             asset=self.asset,

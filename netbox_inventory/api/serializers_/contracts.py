@@ -30,7 +30,7 @@ class ContractSKUSerializer(NetBoxModelSerializer):
 
     class Meta:
         model = ContractSKU
-        fields = ('url', 'id', 'display', 'manufacturer', 'sku', 'service_level','description', 'comments', 'tags', 'custom_fields' )
+        fields = ('url', 'id', 'display', 'manufacturer', 'sku', 'contract_type', 'service_level', 'description', 'comments', 'tags', 'custom_fields')
         brief_fields = ('url', 'id', 'display', 'manufacturer', 'sku', )
 
 class ContractSerializer(NetBoxModelSerializer):

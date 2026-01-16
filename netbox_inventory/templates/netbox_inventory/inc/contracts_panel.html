@@ -1,0 +1,49 @@
+{% load inventory_filters %}
+{% load helpers %}
+
+<div class="card">
+  <h2 class="card-header">Contracts</h2>
+
+  {% if contracts %}
+    <table class="table table-hover attr-table">
+      <thead>
+        <tr class="border-bottom">
+          <th>Contract ID</th>
+          <th>Type</th>
+          <th>SKU</th>
+          <th>End Date</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for contract in contracts %}
+          <tr>
+            <td>
+              <a href="{% url 'plugins:netbox_inventory:contract' contract.contract.pk %}">
+                {{ contract.contract }}
+              </a>
+            </td>
+            <td>{{ contract.contract.get_contract_type_display }}</td>
+            <td>{{ contract.sku }}</td>
+
+            {% if contract.effective_end_date == None %}
+              <td>No End Date</td>
+            {% else %}
+              <td><span {{ contract.effective_end_date|date_badge_class }}>{{ contract.effective_end_date }}</span></td>
+            {% endif %}
+
+            <td>
+              <a href="{% url 'plugins:netbox_inventory:contractassignment' contract.pk %}">
+                <i class="mdi mdi-chevron-right-box-outline" aria-hidden="true"></i>
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="card-body">
+      <span class="text-muted">No contract assignments</span>
+    </div>
+  {% endif %}
+</div>

@@ -4,13 +4,13 @@ from netbox.views.generic import ObjectChangeLogView
 from utilities.urls import get_model_urls
 
 from . import views
-from netbox_inventory.models import ContractAssignment, HardwareLifecycle
+from .models import ContractAssignment, HardwareLifecycle, VendorProgram, AssetProgramCoverage
 
 urlpatterns = [
     # InventoryItemGroups
     path('inventory-item-groups/', include(get_model_urls('netbox_inventory', 'inventoryitemgroup', detail=False))),
     path('inventory-item-groups/<int:pk>/',include(get_model_urls('netbox_inventory', 'inventoryitemgroup'))),
-    
+
     # InventoryItemTypes
     path('inventory-item-types/', include(get_model_urls('netbox_inventory', 'inventoryitemtype', detail=False))),
     path('inventory-item-types/<int:pk>/', include(get_model_urls('netbox_inventory', 'inventoryitemtype'))),
@@ -65,20 +65,14 @@ urlpatterns = [
     path('suppliers/<int:pk>/', include(get_model_urls('netbox_inventory', 'supplier'))),
 
     # Purchases
-    path('purchases/',
-        include(get_model_urls('netbox_inventory', 'purchase', detail=False)),
-    ),
-    path('purchases/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'purchase')),
-    ),
-    # Orders
-    path('orders/',
-        include(get_model_urls('netbox_inventory', 'order', detail=False)),
-    ),
-    path('orders/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'order')),
-    ),
+    path('purchases/', include(get_model_urls('netbox_inventory', 'purchase', detail=False))),
+    path('purchases/<int:pk>/',include(get_model_urls('netbox_inventory', 'purchase'))),
 
+    # Orders
+    path('orders/', include(get_model_urls('netbox_inventory', 'order', detail=False))),
+    path('orders/<int:pk>/', include(get_model_urls('netbox_inventory', 'order'))),
+
+    # Hardware Lifecycles
     path('lifecycle/', views.HardwareLifecycleListView.as_view(),
         name='hardwarelifecycle_list',
     ),
@@ -106,50 +100,52 @@ urlpatterns = [
     ),
 
     # AuditFlows (for clarity above AuditFlowPages)
-    path(
-        'audit-flows/',
-        include(get_model_urls('netbox_inventory', 'auditflow', detail=False)),
-    ),
-    path(
-        'audit-flows/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'auditflow')),
-    ),
+    path('audit-flows/', include(get_model_urls('netbox_inventory', 'auditflow', detail=False))),
+    path('audit-flows/<int:pk>/', include(get_model_urls('netbox_inventory', 'auditflow'))),
+
     # AuditFlowPages
-    path(
-        'audit-flowpages/',
-        include(get_model_urls('netbox_inventory', 'auditflowpage', detail=False)),
-    ),
-    path(
-        'audit-flowpages/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'auditflowpage')),
-    ),
+    path('audit-flowpages/', include(get_model_urls('netbox_inventory', 'auditflowpage', detail=False))),
+    path('audit-flowpages/<int:pk>/', include(get_model_urls('netbox_inventory', 'auditflowpage'))),
+
     # AuditFlowPageAssignments
-    path(
-        'audit-flowpage-assignments/',
-        include(
-            get_model_urls('netbox_inventory', 'auditflowpageassignment', detail=False)
-        ),
-    ),
-    path(
-        'audit-flowpage-assignments/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'auditflowpageassignment')),
-    ),
+    path('audit-flowpage-assignments/', include(get_model_urls('netbox_inventory', 'auditflowpageassignment', detail=False))),
+    path('audit-flowpage-assignments/<int:pk>/', include(get_model_urls('netbox_inventory', 'auditflowpageassignment'))),
+
     # AuditTrailSources
-    path(
-        'audit-trail-sources/',
-        include(get_model_urls('netbox_inventory', 'audittrailsource', detail=False)),
-    ),
-    path(
-        'audit-trail-sources/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'audittrailsource')),
-    ),
+    path('audit-trail-sources/',include(get_model_urls('netbox_inventory', 'audittrailsource', detail=False))),
+    path('audit-trail-sources/<int:pk>/', include(get_model_urls('netbox_inventory', 'audittrailsource'))),
+
     # AuditTrails
-    path(
-        'audit-trails/',
-        include(get_model_urls('netbox_inventory', 'audittrail', detail=False)),
+    path('audit-trails/', include(get_model_urls('netbox_inventory', 'audittrail', detail=False))),
+    path('audit-trails/<int:pk>/', include(get_model_urls('netbox_inventory', 'audittrail'))),
+
+    # Vendor Programs
+    path("vendor-programs/", views.VendorProgramListView.as_view(), name="vendorprogram_list"),
+    path("vendor-programs/add/", views.VendorProgramEditView.as_view(), name="vendorprogram_add"),
+    path("vendor-programs/<int:pk>/", views.VendorProgramView.as_view(), name="vendorprogram"),
+    path("vendor-programs/<int:pk>/edit/", views.VendorProgramEditView.as_view(), name="vendorprogram_edit"),
+    path("vendor-programs/<int:pk>/delete/", views.VendorProgramDeleteView.as_view(), name="vendorprogram_delete"),
+    path('vendor-programs/<int:pk>/changelog', ObjectChangeLogView.as_view(),
+        name='vendorprogram_changelog',
+        kwargs={'model': VendorProgram},
     ),
-    path(
-        'audit-trails/<int:pk>/',
-        include(get_model_urls('netbox_inventory', 'audittrail')),
-    ),
+
+    # Asset Program Coverage
+    path("asset-program-coverages/", views.AssetProgramCoverageListView.as_view(), name="assetprogramcoverage_list"),
+    path("asset-program-coverages/add/", views.AssetProgramCoverageEditView.as_view(), name="assetprogramcoverage_add"),
+    path("asset-program-coverages/<int:pk>/", views.AssetProgramCoverageView.as_view(), name="assetprogramcoverage"),
+    path("asset-program-coverages/<int:pk>/edit/", views.AssetProgramCoverageEditView.as_view(), name="assetprogramcoverage_edit"),
+    path("asset-program-coverages/<int:pk>/delete/", views.AssetProgramCoverageDeleteView.as_view(), name="assetprogramcoverage_delete"),
+    path("asset-program-coverages/<int:pk>/activate/", views.AssetProgramCoverageActivateView.as_view(), name="assetprogramcoverage_activate"),
+    path('asset-program-coverages/<int:pk>/changelog', ObjectChangeLogView.as_view(),
+            name='assetprogramcoverage_changelog',
+            kwargs={'model': AssetProgramCoverage},
+        ),
+
+    # License SKUs
+    path("license-skus/", views.LicenseSKUListView.as_view(), name="licensesku_list"),
+    path("license-skus/add/", views.LicenseSKUEditView.as_view(), name="licensesku_add"),
+    path("license-skus/<int:pk>/", views.LicenseSKUView.as_view(), name="licensesku"),
+    path("license-skus/<int:pk>/edit/", views.LicenseSKUEditView.as_view(), name="licensesku_edit"),
+    path("license-skus/<int:pk>/delete/", views.LicenseSKUDeleteView.as_view(), name="licensesku_delete"),
 ]

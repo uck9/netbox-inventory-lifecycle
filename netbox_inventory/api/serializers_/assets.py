@@ -15,6 +15,7 @@ from netbox.api.serializers import NestedGroupModelSerializer, NetBoxModelSerial
 from tenancy.api.serializers import ContactSerializer, TenantSerializer
 
 from .purchases import *
+from .licenses import *
 from .nested import *
 from netbox_inventory.models import Asset, InventoryItemGroup, InventoryItemType
 
@@ -137,13 +138,19 @@ class AssetSerializer(NetBoxModelSerializer):
         allow_null=True,
         default=None,
     )
+    purchase = PurchaseSerializer(
+        nested=True,
+        required=False,
+        allow_null=True,
+        default=None,
+    )
     order = OrderSerializer(
         nested=True,
         required=False,
         allow_null=True,
         default=None,
     )
-    purchase = PurchaseSerializer(
+    base_license_sku = LicenseSKUSerializer(
         nested=True,
         required=False,
         allow_null=True,
@@ -189,7 +196,9 @@ class AssetSerializer(NetBoxModelSerializer):
             'description',
             'asset_tag',
             'serial',
+            'vendor_instance_id',
             'status',
+            'allocation_status',
             'kind',
             'device_type',
             'device',
@@ -205,6 +214,8 @@ class AssetSerializer(NetBoxModelSerializer):
             'owner',
             'order',
             'purchase',
+            'base_license_sku',
+            'vendor_ship_date',
             'warranty_start',
             'warranty_end',
             'comments',
@@ -220,6 +231,7 @@ class AssetSerializer(NetBoxModelSerializer):
             'serial',
             'name',
             'description',
+            'status'
         )
         # DRF autiomatically creates validator from model's unique_together contraints
         # that doesn't work if we allow some filelds in a unique_together to be null

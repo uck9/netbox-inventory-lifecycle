@@ -1,0 +1,32 @@
+{% extends 'base/layout.html' %}
+{% load form_helpers %}
+
+{% block content %}
+<div class="row">
+  <div class="col col-md-8 offset-md-2">
+
+    <div class="card">
+      <div class="card-header">
+        <strong>Activate Coverage</strong>
+      </div>
+      <div class="card-body">
+        <p>
+          Activating will create a Contract Assignment for:
+          <strong>{{ object.asset }}</strong> under program <strong>{{ object.program }}</strong>.
+        </p>
+
+        <form method="post">
+          {% csrf_token %}
+          {% render_form form %}
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary">Activate</button>
+            <a href="{{ object.asset.get_absolute_url }}?tab=program_coverage" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -54,6 +54,24 @@ asset_buttons = [
     ),
 ]
 
+program_buttons = [
+    PluginMenuButton(
+        link="plugins:netbox_inventory:vendorprogram_add",
+        title="Add",
+        icon_class="mdi mdi-plus-thick",
+        permissions=["netbox_inventory.add_vendorprogram"],
+    ),
+]
+
+coverage_buttons = [
+    PluginMenuButton(
+        link="plugins:netbox_inventory:assetprogramcoverage_add",
+        title="Add",
+        icon_class="mdi mdi-plus-thick",
+        permissions=["netbox_inventory.add_assetprogramcoverage"],
+    ),
+]
+
 assets_items = (
     PluginMenuItem(
         link='plugins:netbox_inventory:asset_list',
@@ -62,17 +80,34 @@ assets_items = (
         buttons=asset_buttons,
     ),
     PluginMenuItem(
-        link='plugins:netbox_inventory:inventoryitemtype_list',
-        link_text='Inventory Item Types',
-        permissions=['netbox_inventory.view_inventoryitemtype'],
-        buttons=inventoryitemtype_buttons,
+        link="plugins:netbox_inventory:vendorprogram_list",
+        link_text="Vendor Programs",
+        buttons=program_buttons,
+        permissions=["netbox_inventory.view_vendorprogram"],
     ),
     PluginMenuItem(
-        link='plugins:netbox_inventory:inventoryitemgroup_list',
-        link_text='Inventory Item Groups',
-        permissions=['netbox_inventory.view_inventoryitemgroup'],
-        buttons=inventoryitemgroup_buttons,
+        link="plugins:netbox_inventory:assetprogramcoverage_list",
+        link_text="Program Coverage",
+        buttons=coverage_buttons,
+        permissions=["netbox_inventory.view_assetprogramcoverage"],
     ),
+    PluginMenuItem(
+        link="plugins:netbox_inventory:licensesku_list",
+        link_text="License SKUs",
+        permissions=["netbox_inventory.view_licensesku"],
+    ),
+    #PluginMenuItem(
+    #    link='plugins:netbox_inventory:inventoryitemtype_list',
+    #    link_text='Inventory Item Types',
+    #    permissions=['netbox_inventory.view_inventoryitemtype'],
+    #    buttons=inventoryitemtype_buttons,
+    #),
+    #PluginMenuItem(
+    #    link='plugins:netbox_inventory:inventoryitemgroup_list',
+    #    link_text='Inventory Item Groups',
+    #    permissions=['netbox_inventory.view_inventoryitemgroup'],
+    #    buttons=inventoryitemgroup_buttons,
+    #),
 )
 
 #
@@ -86,12 +121,12 @@ contract_buttons = [
         icon_class='mdi mdi-plus-thick',
         permissions=['netbox_inventory.add_contract'],
     ),
-    PluginMenuButton(
-        link='plugins:netbox_inventory:contract_bulk_import',
-        title='Import',
-        icon_class='mdi mdi-upload',
-        permissions=['netbox_inventory.add_contract'],
-    ),
+    # PluginMenuButton(
+    #    link='plugins:netbox_inventory:contract_bulk_import',
+    #    title='Import',
+    #    icon_class='mdi mdi-upload',
+    #    permissions=['netbox_inventory.add_contract'],
+    # ),
 ]
 
 contracts_items = (
@@ -277,9 +312,9 @@ audit_admin_items = (
 if get_plugin_config('netbox_inventory', 'top_level_menu'):
     # add a top level entry
     menu = PluginMenu(
-        label='Inventory',
+        label='Inventory Management',
         groups=(
-            ('Asset Management', assets_items),
+            ('Assets', assets_items),
             ('Contracts', contracts_items),
             ('Lifecycle', lifecycle_items),
             ('Purchases', purchases_items),

@@ -107,23 +107,15 @@ class PurchaseTable(NetBoxTable):
 
 
 class OrderTable(NetBoxTable):
-    supplier = tables.Column(
-        accessor=columns.Accessor('purchase__supplier'),
+    name = tables.Column(
         linkify=True,
+        verbose_name='Order ID',
     )
     purchase = tables.Column(
         linkify=True,
     )
-    purchase_date = columns.DateColumn(
-        accessor=columns.Accessor('purchase__date'),
-        verbose_name='Purchase Date',
-    )
     manufacturer = tables.Column(
         linkify=True,
-    )
-    name = tables.Column(
-        linkify=True,
-        verbose_name='Vendor ID',
     )
     asset_count = columns.LinkedCountColumn(
         viewname='plugins:netbox_inventory:asset_list',
@@ -152,7 +144,7 @@ class OrderTable(NetBoxTable):
         )
         default_columns = (
             'name',
-            'purchase',
-            'date',
+            'manufacturer',
+            'description',
             'asset_count',
         )

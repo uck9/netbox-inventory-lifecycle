@@ -8,10 +8,12 @@ from .auditflowpageassignments import *
 from .audittrail import *
 from .audittrailsource import *
 from .contract import *
-from .order import *
 from .hardwarelifecycle import *
 from .htmx import *
 from .inventoryitem_group import *
 from .inventoryitem_type import *
+from .licenses import *
+from .order import *
+from .programs import *
 from .purchase import *
 from .supplier import *

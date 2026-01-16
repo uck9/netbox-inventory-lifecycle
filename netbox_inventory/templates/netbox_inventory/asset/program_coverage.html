@@ -1,0 +1,18 @@
+{% extends 'generic/object.html' %}
+{% load buttons %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <strong>Program Coverage</strong>
+        </div>
+
+        <div class="card-body">
+          {% include 'inc/table.html' with table=table %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

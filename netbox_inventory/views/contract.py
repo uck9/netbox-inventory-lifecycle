@@ -1,7 +1,7 @@
 from netbox.views.generic import ObjectListView, ObjectEditView, ObjectDeleteView, ObjectView, ObjectChildrenView, \
     BulkImportView, BulkDeleteView, BulkEditView
 from utilities.views import ViewTab, register_model_view, GetRelatedModelsMixin
-
+from django.db.models import Count
 from .. import filtersets, forms, models, tables
 
 
@@ -100,6 +100,10 @@ class ContractVendorBulkDeleteView(BulkDeleteView):
     table = tables.ContractVendorTable
 
 
+#
+# Contract SKUs
+#
+
 @register_model_view(models.ContractSKU, 'list', path='', detail=False)
 class ContractSKUListView(ObjectListView):
     queryset = models.ContractSKU.objects.all()
@@ -117,8 +121,9 @@ class ContractSKUView(GetRelatedModelsMixin, ObjectView):
             'related_models': self.get_related_models(
                 request, instance
             ),
-        } 
-    
+        }
+
+
 @register_model_view(models.ContractSKU, 'add', detail=False)
 @register_model_view(models.ContractSKU, 'edit')
 class ContractSKUEditView(ObjectEditView):
@@ -126,7 +131,7 @@ class ContractSKUEditView(ObjectEditView):
     form = forms.ContractSKUForm
 
 
-@register_model_view(models.ContractSKU, 'bulk_edit')
+@register_model_view(models.ContractSKU, 'bulk_edit', detail=False)
 class ContractSKUBulkEditView(BulkEditView):
     queryset = models.ContractSKU.objects.all()
     filterset = filtersets.ContractSKUFilterSet
@@ -148,9 +153,15 @@ class ContractSKUBulkDeleteView(BulkDeleteView):
     table = tables.ContractSKUTable
 
 
+#
+# Contracts
+#
+
 @register_model_view(models.Contract, name='list', detail=False)
 class ContractListView(ObjectListView):
-    queryset = models.Contract.objects.all()
+    queryset = models.Contract.objects.annotate(
+        asset_count=Count('assignments__asset', distinct=True),
+    )
     table = tables.ContractTable
     filterset = filtersets.ContractFilterSet
     filterset_form = forms.ContractFilterForm
@@ -159,6 +170,8 @@ class ContractListView(ObjectListView):
         'export': {'view'},
         'edit': {'change'},
         'delete': {'delete'},
+        'bulk_edit': {'change'},
+        'bulk_delete': {'delete'},
     }
 
 
@@ -190,14 +203,14 @@ class ContractAssignmentsView(ObjectChildrenView):
         return self.child_model.objects.filter(contract=parent)
 
 
-@register_model_view(models.Contract, 'edit')
 @register_model_view(models.Contract, 'add', detail=False)
+@register_model_view(models.Contract, 'edit')
 class ContractEditView(ObjectEditView):
     queryset = models.Contract.objects.all()
     form = forms.ContractForm
 
 
-@register_model_view(models.Contract, 'bulk_edit')
+@register_model_view(models.Contract, 'bulk_edit', detail=False)
 class ContractBulkEditView(BulkEditView):
     queryset = models.Contract.objects.all()
     filterset = filtersets.ContractFilterSet
@@ -216,6 +229,7 @@ class ContractBulkDeleteView(BulkDeleteView):
     filterset = filtersets.ContractFilterSet
     table = tables.ContractTable
 
+
 #
 # Contract Assignments
 #
@@ -232,13 +246,14 @@ class ContractAssignmentListView(ObjectListView):
         'edit': {'change'},
         'delete': {'delete'},
         'bulk_edit': {'change'},
-        'bulk_delete': {'delete'},  
+        'bulk_delete': {'delete'},
     }
 
 
-@register_model_view(models.Contract)
+@register_model_view(models.ContractAssignment)
 class ContractAssignmentView(ObjectView):
     queryset = models.ContractAssignment.objects.all()
+
 
 @register_model_view(models.ContractAssignment, 'add', detail=False)
 @register_model_view(models.ContractAssignment, 'edit')
@@ -248,11 +263,7 @@ class ContractAssignmentEditView(ObjectEditView):
     form = forms.ContractAssignmentForm
 
 
-@register_model_view(models.ContractAssignment, 'delete')
-class ContractAssignmentDeleteView(ObjectDeleteView):
-    queryset = models.ContractAssignment.objects.all()
-
-
+@register_model_view(models.ContractAssignment, 'bulk_edit', detail=False)
 class ContractAssignmentBulkEditView(BulkEditView):
     queryset = models.ContractAssignment.objects.all()
     filterset = filtersets.ContractAssignmentFilterSet
@@ -260,6 +271,12 @@ class ContractAssignmentBulkEditView(BulkEditView):
     form = forms.ContractAssignmentBulkEditForm
 
 
+@register_model_view(models.ContractAssignment, 'delete')
+class ContractAssignmentDeleteView(ObjectDeleteView):
+    queryset = models.ContractAssignment.objects.all()
+
+
+@register_model_view(models.ContractAssignment, 'bulk_delete')
 class ContractAssignmentBulkDeleteView(BulkDeleteView):
     queryset = models.ContractAssignment.objects.all()
     filterset = filtersets.ContractAssignmentFilterSet

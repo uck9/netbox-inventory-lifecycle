@@ -13,7 +13,12 @@ from utilities.forms.fields import (
     CSVModelChoiceField,
 )
 
-from ..choices import AssetStatusChoices, ContractStatusChoices, HardwareKindChoices, PurchaseStatusChoices
+from ..choices import (
+    AssetStatusChoices,
+    ContractStatusChoices,
+    HardwareKindChoices,
+    PurchaseStatusChoices,
+)
 from ..constants import AUDITFLOW_OBJECT_TYPE_CHOICES
 from ..models import *
 from ..utils import get_plugin_setting
@@ -134,7 +139,7 @@ class AssetImportForm(NetBoxModelImportForm):
         required=False,
     )
     purchase = forms.CharField(
-        help_text='Purchase through which this asset was purchased. See "Import settings" for more info.',
+        help_text='Purchase through which this asset was procured. "Import settings" for more info.',
         required=False,
     )
     purchase_date = forms.DateField(

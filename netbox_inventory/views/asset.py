@@ -4,12 +4,19 @@ from django.contrib import messages
 from django.db import IntegrityError
 from django.shortcuts import redirect
 from django.template import Template
+from django.urls import reverse
+from django_tables2 import RequestConfig
 
 from netbox.views import generic
 from utilities.forms import ConfirmationForm, restrict_form_fields
-from utilities.views import register_model_view
+from utilities.views import ViewTab, register_model_view
 
 from .. import filtersets, forms, models, tables
+from ..choices import ProgramCoverageStatusChoices, ProgramEligibilityChoices
+from ..filtersets import AssetProgramCoverageFilterSet, VendorProgramFilterSet
+from ..forms.models import AssetProgramCoverageForm, VendorProgramForm
+from ..forms.programs import ActivateCoverageForm
+from ..models import AssetProgramCoverage, ContractAssignment
 from ..template_content import WARRANTY_PROGRESSBAR
 from ..utils import (
     get_tags_and_edit_protected_asset_fields,
@@ -25,6 +32,7 @@ __all__ = (
     'AssetBulkImportView',
     'AssetBulkEditView',
     'AssetBulkDeleteView',
+    'AssetProgramCoverageTabView',
 )
 
 
@@ -35,6 +43,12 @@ class AssetView(generic.ObjectView):
     def get_extra_context(self, request, instance):
         context = super().get_extra_context(request, instance)
         context['warranty_progressbar'] = Template(WARRANTY_PROGRESSBAR)
+        context['contracts'] = (
+            models.ContractAssignment.objects
+            .filter(asset=instance)
+            .select_related('contract')
+            .order_by('contract__contract_id', 'end_date')
+        )
         return context
 
 
@@ -240,3 +254,46 @@ class AssetBulkDeleteView(generic.BulkDeleteView):
             return redirect(self.get_return_url(request))
 
         return super().post(request, *args, **kwargs)
+
+
+def _program_badge(asset: models.Asset) -> int:
+    """
+    Badge value used by ViewTab.
+
+    Using an explicit query avoids relying on any related_name being present.
+    """
+    return AssetProgramCoverage.objects.filter(asset=asset).count()
+
+@register_model_view(models.Asset, name="program_coverage")
+class AssetProgramCoverageTabView(generic.ObjectView):
+    """
+    Programs tab on the Asset detail view, shown only when at least one program
+    is assigned (hide_if_empty=True).
+    """
+    queryset = models.Asset.objects.all()
+    template_name = "netbox_inventory/asset/program_coverage.html"
+
+    tab = ViewTab(
+        label="Program Coverage",
+        badge=_program_badge,
+        hide_if_empty=True,
+        weight=500,  # tweak ordering vs other tabs
+    )
+
+    def get_extra_context(self, request, instance: models.Asset):
+        qs = (
+            AssetProgramCoverage.objects.filter(asset=instance)
+            .select_related("program")
+            .order_by("program__name", "-effective_start", "-created")
+        )
+
+        table = tables.AssetProgramCoverageForAssetTable(qs)
+        RequestConfig(request, paginate={"per_page": 50}).configure(table)
+
+        return {
+            "table": table,
+            "add_url": (
+                reverse("plugins:netbox_inventory:assetprogramcoverage_add")
+                + f"?asset={instance.pk}"
+            ),
+        }

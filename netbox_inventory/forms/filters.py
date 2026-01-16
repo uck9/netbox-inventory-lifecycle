@@ -1,8 +1,7 @@
 from django import forms
-from django.utils.translation import gettext as _
 from django.contrib.contenttypes.models import ContentType
-
 from django.db.models import Q
+from django.utils.translation import gettext as _
 
 from core.models import ObjectType
 from dcim.models import (
@@ -30,11 +29,12 @@ from utilities.forms.fields import (
 from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import APISelectMultiple, DatePicker, DateTimePicker
 
-from ..choices import AssetStatusChoices, HardwareKindChoices, PurchaseStatusChoices
+from ..choices import AssetStatusChoices, ProgramCoverageStatusChoices, HardwareKindChoices, PurchaseStatusChoices
 from ..models import *
 
 __all__ = (
     'AssetFilterForm',
+    'AssetProgramCoverageFilterForm',
     'AuditFlowFilterForm',
     'AuditFlowPageFilterForm',
     'AuditTrailFilterForm',
@@ -49,6 +49,7 @@ __all__ = (
     'InventoryItemTypeFilterForm',
     'SupplierFilterForm',
     'PurchaseFilterForm',
+    'LicenseSKUFilterForm',
 )
 
 
@@ -126,6 +127,7 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
             'order_id',
             'purchase_id',
             'supplier_id',
+            'contract_id',
             'purchase_date_after',
             'purchase_date_before',
             'warranty_start_after',
@@ -357,6 +359,12 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
         },
         label='Located at location',
         help_text='Currently installed or stored here',
+    )
+    contract_id = DynamicModelMultipleChoiceField(
+        queryset=Contract.objects.all(),
+        required=False,
+        null_option='None',
+        label='Contract',
     )
     tag = TagFilterField(model)
 
@@ -658,4 +666,54 @@ class HardwareLifecycleFilterForm(NetBoxModelFilterSetForm):
         label=_('End of support before'),
         widget=DatePicker,
     )
+    tag = TagFilterField(model)
+
+
+class LicenseSKUFilterForm(NetBoxModelFilterSetForm):
+    model = LicenseSKU
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        label="Manufacturer",
+    )
+    fields = (FieldSet("q", "manufacturer_id", "license_kind"))
+
+
+class AssetProgramCoverageFilterForm(NetBoxModelFilterSetForm):
+    model = AssetProgramCoverage
+
+    q = forms.CharField(
+        required=False,
+        label="Search",
+    )
+    program_id = DynamicModelMultipleChoiceField(
+        queryset=VendorProgram.objects.all(),
+        required=False,
+        label="Program",
+    )
+    asset_id = DynamicModelMultipleChoiceField(
+        queryset=Asset.objects.all(),
+        required=False,
+        label="Asset",
+    )
+    device_id = DynamicModelMultipleChoiceField(
+        queryset=Device.objects.all(),
+        required=False,
+        label="Device",
+    )
+    site_id = DynamicModelMultipleChoiceField(
+        queryset=Site.objects.all(),
+        required=False,
+        label="Site",
+    )
+    tenant_id = DynamicModelMultipleChoiceField(
+        queryset=Tenant.objects.all(),
+        required=False,
+        label="Tenant",
+    )
+    status = forms.MultipleChoiceField(
+        choices=ProgramCoverageStatusChoices,
+        required=False,
+    )
+    # Optional: tags (if your model is taggable)
     tag = TagFilterField(model)

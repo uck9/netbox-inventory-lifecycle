@@ -110,11 +110,21 @@ class AssetLocationCounts(PluginTemplateExtension):
 
 class AssetContractInfoExtension(PluginTemplateExtension):
     def right_page(self):
-        object = self.context.get('object')
-        asset = Asset.objects.filter(**{self.kind: object}).first()
+        obj = self.context.get("object")
+
+        asset = Asset.objects.filter(**{self.kind: obj}).first()
+        if not asset:
+            return self.render(
+                "netbox_inventory/inc/contract_info.html",
+                extra_context={"asset": None, "contracts": []},
+            )
+
         contracts = asset.contracts.all()
-        context = {'asset': asset, 'contracts': contracts}
-        return self.render('netbox_inventory/inc/contract_info.html', extra_context=context)
+        return self.render(
+            "netbox_inventory/inc/contract_info.html",
+            extra_context={"asset": asset, "contracts": contracts},
+        )
+
 
 class DeviceAssetInfo(AssetInfoExtension):
     models = ['dcim.device']

@@ -1,3 +1,4 @@
+from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from core.models import ObjectType
@@ -9,6 +10,7 @@ from dcim.models import (  # pyright: ignore[reportMissingImports]
     RackType,
     Site,
 )
+from extras.models import CustomField
 from netbox.forms import NetBoxModelForm
 from tenancy.models import Contact, ContactGroup, Tenant
 from utilities.forms.fields import (
@@ -41,6 +43,10 @@ __all__ = (
     'InventoryItemTypeForm',
     'PurchaseForm',
     'SupplierForm',
+    'HardwareLifecycleForm',
+    'VendorProgramForm',
+    'AssetProgramCoverageForm',
+    'LicenseSKUForm',
 )
 
 
@@ -208,12 +214,21 @@ class AssetForm(NetBoxModelForm):
             'site_id': '$storage_site',
         },
     )
+    base_license_sku = DynamicModelChoiceField(
+        queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.PERPETUAL),
+        required=False,
+        query_params={
+            # Filter by manufacturer field on the Asset form if you have it:
+            "manufacturer_id": "$manufacturer",
+        },
+    )
     comments = CommentField()
 
     fieldsets = (
         FieldSet('name', 'asset_tag', 'description', 'tags', 'status', name='General'),
         FieldSet(
             'serial',
+            'vendor_instance_id',
             'manufacturer',
             'device_type',
             'module_type',
@@ -225,9 +240,14 @@ class AssetForm(NetBoxModelForm):
             'owner',
             'purchase',
             'order',
+            'base_license_sku',
+            name='Purchase',
+        ),
+        FieldSet(
+            'vendor_ship_date',
             'warranty_start',
             'warranty_end',
-            name='Purchase',
+            name='Key Hardware Dates',
         ),
         FieldSet('tenant', 'contact_group', 'contact', name='Assigned to'),
         FieldSet('storage_site', 'storage_location', name='Location'),
@@ -239,7 +259,9 @@ class AssetForm(NetBoxModelForm):
             'name',
             'asset_tag',
             'serial',
+            'vendor_instance_id',
             'status',
+            'allocation_status',
             'manufacturer',
             'device_type',
             'module_type',
@@ -249,6 +271,8 @@ class AssetForm(NetBoxModelForm):
             'owner',
             'purchase',
             'order',
+            'base_license_sku',
+            'vendor_ship_date',
             'warranty_start',
             'warranty_end',
             'tenant',
@@ -258,8 +282,10 @@ class AssetForm(NetBoxModelForm):
             'description',
             'comments',
             'storage_site',
+            'installed_site_override',
         )
         widgets = {
+            'vendor_ship_date': DatePicker(),
             'warranty_start': DatePicker(),
             'warranty_end': DatePicker(),
         }
@@ -268,6 +294,29 @@ class AssetForm(NetBoxModelForm):
         super().__init__(*args, **kwargs)
 
         self._disable_fields_by_tags()
+
+        # Only apply the cf_ filter if the custom field exists on dcim.Location
+        has_storage_cf = CustomField.objects.filter(
+            name="asset_storage_location",
+            object_types__app_label="dcim",
+            object_types__model="location",
+        ).exists()
+
+        if not has_storage_cf:
+            return
+
+        field = self.fields["storage_location"]
+        widget = field.widget
+
+        # Prefer the widget helper if available (NetBox uses this internally)
+        if hasattr(widget, "add_query_param"):
+            widget.add_query_param("cf_asset_storage_location", "true")
+        else:
+            # Fallbacks across widget variants
+            if hasattr(widget, "static_params"):
+                widget.static_params["cf_asset_storage_location"] = "true"
+            else:
+                widget.attrs["data-query-param-cf_asset_storage_location"] = "true"
 
         # Used for picking the default active tab for hardware type selection
         self.no_hardware_type = True
@@ -291,6 +340,7 @@ class AssetForm(NetBoxModelForm):
             for kind in HardwareKindChoices.values():
                 self.fields[f'{kind}_type'].disabled = True
 
+
     def _disable_fields_by_tags(self):
         """
         We need to disable fields that are not editable based on the tags that are assigned to the asset.
@@ -313,12 +363,63 @@ class AssetForm(NetBoxModelForm):
 
     def clean(self):
         super().clean()
-        # if only order set, infer purchase from it
-        order = self.cleaned_data['order']
-        purchase = self.cleaned_data['purchase']
-        if order and not purchase:
-            self.cleaned_data['purchase'] = order.purchase
 
+        # ----------------------------
+        # Storage logic
+        # ----------------------------
+        status = self.cleaned_data.get("status")
+        if status != "stored":
+            self.cleaned_data["storage_location"] = None
+
+        # ----------------------------
+        # Infer purchase
+        # ----------------------------
+        order = self.cleaned_data.get("order")
+        purchase = self.cleaned_data.get("purchase")
+
+        if order and not purchase:
+            self.cleaned_data["purchase"] = order.purchase
+
+        # ----------------------------
+        # Installed Site logic
+        # ----------------------------
+        status = self.cleaned_data.get("status")
+        storage_location = self.cleaned_data.get("storage_location")
+
+        # Enforce: stored => must have storage location
+        if status == "stored" and not storage_location:
+            self.add_error("storage_location", "Storage Location is required when Status is 'stored'.")
+
+        # Clear storage fields unless stored (keeps data consistent)
+        if status != "stored":
+            self.cleaned_data["storage_location"] = None
+
+        allocation = self.cleaned_data.get("allocation_status")
+        device = self.cleaned_data.get("installed_device")
+        site_override = self.cleaned_data.get("installed_site_override")
+
+        is_deployed_without_device = (
+            status == "used"
+            and allocation == "allocated"
+            and device is None
+        )
+
+        # Device always wins — clear manual site if device exists
+        if device and site_override:
+            self.cleaned_data["installed_site_override"] = None
+
+        # Warn if OT-style deployed asset has no site info
+        if is_deployed_without_device and site_override is None:
+            self.add_error(
+                "installed_site_override",
+                "Required when Status is 'used', Allocation is 'allocated', and no device is assigned."
+            )
+
+        # If the asset is not in a state where the override is meaningful, clear it
+        if not is_deployed_without_device:
+            self.cleaned_data["installed_site_override"] = None
+
+        return self.cleaned_data
 
 #
 # Contract
@@ -340,8 +441,7 @@ class ContractSKUForm(NetBoxModelForm):
 
     class Meta:
         model = ContractSKU
-        fields = ('manufacturer', 'sku', 'description', 'comments', 'tags', )
-
+        fields = ('manufacturer', 'sku', 'contract_type', 'description', 'comments', 'tags', )
 
 class ContractForm(NetBoxModelForm):
     vendor = DynamicModelChoiceField(
@@ -442,15 +542,18 @@ class PurchaseForm(NetBoxModelForm):
 
 
 class OrderForm(NetBoxModelForm):
-
-
+    name = forms.CharField(
+        label="Order ID",
+        help_text="Manufacturer-specific order identifier",
+        required=True,
+    )
     comments = CommentField()
 
     fieldsets = (
         FieldSet(
             'purchase',
-            'name',
             'manufacturer',
+            'name',
             'description',
             'tags',
             name='Order',
@@ -461,8 +564,8 @@ class OrderForm(NetBoxModelForm):
         model = Order
         fields = (
             'purchase',
-            'name',
             'manufacturer',
+            'name',
             'description',
             'comments',
             'tags',
@@ -684,3 +787,117 @@ class HardwareLifecycleForm(NetBoxModelForm):
             self.instance.assigned_object = self.cleaned_data[selected_objects[0]]
         else:
             self.instance.assigned_object = None
+
+
+class VendorProgramForm(NetBoxModelForm):
+    slug = SlugField(slug_source='name')
+    comments = CommentField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # If an asset is selected/known, constrain program choices to matching manufacturer
+        asset = self.initial.get('asset') or getattr(self.instance, 'asset', None)
+        if asset is None and 'asset' in self.data:
+            try:
+                asset = AssetProgramCoverage._meta.get_field('asset').remote_field.model.objects.get(pk=self.data.get('asset'))
+            except Exception:
+                asset = None
+
+        asset_mfr = None
+        asset_device = getattr(asset, 'device', None) if asset else None
+        if asset_device is not None:
+            device_type = getattr(asset_device, 'device_type', None)
+            if device_type is not None:
+                asset_mfr = getattr(device_type, 'manufacturer', None)
+
+        if asset_mfr is not None:
+            self.fields['program'].queryset = VendorProgram.objects.filter(manufacturer=asset_mfr).order_by('name')
+
+    class Meta:
+        model = VendorProgram
+        fields = (
+            "name",
+            "slug",
+            "manufacturer",
+            'contract_type',
+            "description",
+            "tags",
+            "comments",
+        )
+
+
+class AssetProgramCoverageForm(NetBoxModelForm):
+    comments = CommentField()
+    program = DynamicModelChoiceField(
+        queryset=VendorProgram.objects.all(),
+        required=True,
+    )
+    asset = DynamicModelChoiceField(
+        queryset=Asset.objects.all(),
+        required=True,
+        query_params={
+            # This will call the Asset API with ?program_id=<selected_program_id>
+            "program_id": "$program",
+        },
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # If an asset is selected/known, constrain program choices to matching manufacturer
+        asset = self.initial.get('asset') or getattr(self.instance, 'asset', None)
+        if asset is None and 'asset' in self.data:
+            try:
+                asset = AssetProgramCoverage._meta.get_field('asset').remote_field.model.objects.get(pk=self.data.get('asset'))
+            except Exception:
+                asset = None
+
+        asset_mfr = None
+        asset_device = getattr(asset, 'device', None) if asset else None
+        if asset_device is not None:
+            device_type = getattr(asset_device, 'device_type', None)
+            if device_type is not None:
+                asset_mfr = getattr(device_type, 'manufacturer', None)
+
+        if asset_mfr is not None:
+            self.fields['program'].queryset = VendorProgram.objects.filter(manufacturer=asset_mfr).order_by('name')
+
+    class Meta:
+        model = AssetProgramCoverage
+        fields = (
+            "program",
+            "asset",
+            "status",
+            "eligibility",
+            "effective_start",
+            "effective_end",
+            "decision_reason",
+            "evidence_url",
+            "source",
+            "last_synced",
+            "tags",
+            "comments",
+            "notes",
+        )
+        widgets = {
+            'effective_start': DatePicker(),
+            'effective_end': DatePicker(),
+        }
+
+
+class LicenseSKUForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all()
+    )
+
+    class Meta:
+        model = LicenseSKU
+        fields = (
+            "manufacturer",
+            "sku",
+            "name",
+            "license_kind",
+            "description",
+            "tags",
+        )

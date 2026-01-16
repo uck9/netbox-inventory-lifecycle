@@ -17,6 +17,7 @@
         {% render_field form.description %}
         {% render_field form.tags %}
         {% render_field form.status %}
+        {% render_field form.allocation_status %}
     </div>
 
     <div class="field-group my-5">
@@ -24,6 +25,7 @@
           <h5 class="offset-sm-3">Hardware</h5>
         </div>
         {% render_field form.serial %}
+        {% render_field form.vendor_instance_id %}
         {% render_field form.manufacturer %}
         <div class="row mb-2 offset-sm-3">
           <ul class="nav nav-pills" role="tablist">
@@ -72,6 +74,14 @@
         {% render_field form.owner %}
         {% render_field form.purchase %}
         {% render_field form.order %}
+        {% render_field form.base_license_sku %}
+    </div>
+
+    <div class="field-group my-5">
+        <div class="row mb-2">
+          <h5 class="offset-sm-3">Key Hardware Dates</h5>
+        </div>
+        {% render_field form.vendor_ship_date %}
         {% render_field form.warranty_start %}
         {% render_field form.warranty_end %}
     </div>
@@ -85,12 +95,14 @@
         {% render_field form.contact %}
     </div>
 
-    <div class="field-group my-5">
+    <div class="field-group my-5" id="asset-location-group">
         <div class="row mb-2">
-          <h5 class="offset-sm-3">Location</h5>
+          <h5 class="offset-sm-3">Locations</h5>
         </div>
+        {# Only meaningful for OT / manusal install site for assets that are used+allocated without hardware assigned #}
+        {% render_field form.installed_site_override %}
         {% render_field form.storage_site %}
-        {% render_field form.storage_location %}
+        {% render_field form.storage_location %}  
     </div>
 
     {% if form.custom_fields %}
@@ -107,4 +119,117 @@
         {% render_field form.comments %}
     </div>
 
+{% endblock %}
+
+{% block javascript %}
+  {{ block.super }}
+  <script>
+    function getEl(id) {
+      return document.getElementById(id);
+    }
+
+    function getVal(id) {
+      const el = getEl(id);
+      return el ? el.value : "";
+    }
+
+    function setVisibleById(id, visible) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = visible ? "" : "none";
+}
+
+    function setVisibleForField(fieldId, visible) {
+      const el = getEl(fieldId);
+      if (!el) return;
+
+      const row = el.closest(".mb-3") || el.closest(".form-group");
+      if (!row) return;
+
+      row.style.display = visible ? "" : "none";
+    }
+
+    function clearField(fieldId) {
+      const el = getEl(fieldId);
+      if (!el) return;
+      el.value = "";
+      // Trigger change so DynamicModelChoiceField dependencies update if needed
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function toggleAssetLocationUX() {
+      const status = getVal("id_status");
+      const allocation = getVal("id_allocation_status");
+
+      // Assigned hardware fields (may not exist on the form, hence safe reads)
+      const device = getVal("id_device");
+      const module = getVal("id_module");
+      const inventoryitem = getVal("id_inventoryitem");
+      const rack = getVal("id_rack");
+      const hasAssignedHardware = Boolean(device || module || inventoryitem || rack);
+
+      // ----- Storage fields UX -----
+      const showStorage = (status === "stored");
+
+      setVisibleForField("id_storage_site", showStorage);
+      setVisibleForField("id_storage_location", showStorage);
+
+      // Enforce UX: if not stored, clear storage fields to avoid stale data
+      if (!showStorage) {
+        // storage_site is derived from storage_location in your form setup, so just clear location
+        if (getEl("id_storage_location") && getVal("id_storage_location")) {
+          clearField("id_storage_location");
+        }
+      } else {
+        // Optional UX enforcement: mark storage_location as required in the browser UI
+        const locEl = getEl("id_storage_location");
+        if (locEl) locEl.required = true;
+      }
+
+      // If not stored, remove browser-required flag
+      if (!showStorage) {
+        const locEl = getEl("id_storage_location");
+        if (locEl) locEl.required = false;
+      }
+
+      // ----- Installed Site Override UX -----
+      const showOverride = (
+        status === "used" &&
+        allocation === "allocated" &&
+        !hasAssignedHardware
+      );
+
+      // ----- Location group visibility -----
+      // Show the whole section if ANY location-related field is relevant
+      const showLocationGroup = showStorage || showOverride;
+      setVisibleById("asset-location-group", showLocationGroup);
+
+
+      setVisibleForField("id_installed_site_override", showOverride);
+
+      // Clear override when it doesn't apply
+      if (!showOverride) {
+        if (getEl("id_installed_site_override") && getVal("id_installed_site_override")) {
+          clearField("id_installed_site_override");
+        }
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", toggleAssetLocationUX);
+
+    // Re-evaluate whenever key fields change
+    [
+      "id_status",
+      "id_allocation_status",
+      "id_device",
+      "id_module",
+      "id_inventoryitem",
+      "id_rack",
+      "id_storage_location",
+      "id_installed_site_override",
+    ].forEach((id) => {
+      const el = getEl(id);
+      if (el) el.addEventListener("change", toggleAssetLocationUX);
+    });
+  </script>
 {% endblock %}
