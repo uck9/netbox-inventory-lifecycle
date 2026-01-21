@@ -46,7 +46,7 @@ class ContractTable(NetBoxTable):
         ''',
         verbose_name='Status',
     )
-    description = columns.ChoiceFieldColumn(
+    description = tables.Column(
         verbose_name=_('Description'),
     )
     start_date = columns.DateColumn()
