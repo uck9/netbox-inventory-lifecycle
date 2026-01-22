@@ -83,7 +83,7 @@ class Purchase(NamedModel):
         return PurchaseStatusChoices.colors.get(self.status)
 
     def __str__(self):
-        return f'{self.supplier} {self.name}'
+        return f'{self.supplier} - {self.name}'
 
 
 class Order(NamedModel):
@@ -116,4 +116,4 @@ class Order(NamedModel):
         verbose_name_plural = 'orders'
 
     def __str__(self):
-        return f'{self.purchase} {self.name}'
+        return f'{self.purchase} - {self.name}'
