@@ -1,8 +1,8 @@
 from .schema import (
     AssetQuery,
-    OrderQuery,
     InventoryItemGroupQuery,
     InventoryItemTypeQuery,
+    OrderQuery,
     PurchaseQuery,
     SupplierQuery,
 )

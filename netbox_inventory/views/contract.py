@@ -1,11 +1,18 @@
-from netbox.views.generic import ObjectListView, ObjectEditView, ObjectDeleteView, ObjectView, ObjectChildrenView, \
-    BulkImportView, BulkDeleteView, BulkEditView
-from utilities.views import ViewTab, register_model_view, GetRelatedModelsMixin
 from django.db.models import Count
+
+from netbox.views.generic import (
+    BulkDeleteView,
+    BulkEditView,
+    BulkImportView,
+    ObjectChildrenView,
+    ObjectDeleteView,
+    ObjectEditView,
+    ObjectListView,
+    ObjectView,
+)
+from utilities.views import GetRelatedModelsMixin, ViewTab, register_model_view
+
 from .. import filtersets, forms, models, tables
-
-
-
 
 __all__ = (
     # Vendor
