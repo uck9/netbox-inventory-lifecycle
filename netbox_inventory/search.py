@@ -3,9 +3,9 @@ from netbox.search import SearchIndex
 from .models import (
     Asset,
     AuditTrailSource,
-    Order,
     InventoryItemGroup,
     InventoryItemType,
+    Order,
     Purchase,
     Supplier,
 )

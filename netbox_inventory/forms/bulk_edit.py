@@ -481,8 +481,8 @@ class AuditFlowPageAssignmentBulkEditForm(ChangelogMessageMixin, BulkEditForm):
     )
 
 
-# 
-# HArdware Lifecycle
+#
+# HaArdware Lifecycle
 #
 
 class HardwareLifecycleBulkEditForm(NetBoxModelBulkEditForm):
