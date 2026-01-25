@@ -1,8 +1,7 @@
 from rest_framework import serializers
 
-from netbox.api.serializers import NetBoxModelSerializer
 from dcim.api.serializers_.manufacturers import ManufacturerSerializer
-from tenancy.api.serializers import ContactSerializer
+from netbox.api.serializers import NetBoxModelSerializer
 
 from .nested import *
 from netbox_inventory.models import Order, Purchase, Supplier

@@ -1,9 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, render
 from django.views import View
+from virtualization.models import VirtualMachine
 
 from dcim.models import Device
-from virtualization.models import VirtualMachine
 
 from netbox_inventory.constants import (
     CONTRACT_STATUS_ACTIVE,
@@ -12,7 +12,6 @@ from netbox_inventory.constants import (
     CONTRACT_STATUS_UNSPECIFIED,
 )
 from netbox_inventory.models import ContractAssignment
-
 
 __all__ = (
     'DeviceContractsHTMXView',

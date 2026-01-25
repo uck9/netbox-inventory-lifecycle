@@ -4,7 +4,12 @@ from netbox.views.generic import ObjectChangeLogView
 from utilities.urls import get_model_urls
 
 from . import views
-from .models import ContractAssignment, HardwareLifecycle, VendorProgram, AssetProgramCoverage
+from .models import (
+    AssetProgramCoverage,
+    ContractAssignment,
+    HardwareLifecycle,
+    VendorProgram,
+)
 
 urlpatterns = [
     # InventoryItemGroups

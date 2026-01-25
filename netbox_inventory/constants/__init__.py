@@ -1,12 +1,12 @@
+from netbox_inventory.constants.audit import AUDITFLOW_OBJECT_TYPE_CHOICES
 from netbox_inventory.constants.contract import (
     CONTRACT_STATUS_ACTIVE,
+    CONTRACT_STATUS_COLOR,
     CONTRACT_STATUS_EXPIRED,
     CONTRACT_STATUS_FUTURE,
     CONTRACT_STATUS_UNSPECIFIED,
-    CONTRACT_STATUS_COLOR,
 )
 from netbox_inventory.constants.hardware import HARDWARE_LIFECYCLE_MODELS
-from netbox_inventory.constants.audit import AUDITFLOW_OBJECT_TYPE_CHOICES
 
 __all__ = (
     'CONTRACT_STATUS_ACTIVE',
