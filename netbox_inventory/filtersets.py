@@ -1,7 +1,6 @@
 from functools import reduce
 
 import django_filters
-from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.utils.translation import gettext as _

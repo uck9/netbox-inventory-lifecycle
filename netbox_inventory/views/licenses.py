@@ -1,9 +1,9 @@
 from netbox.views import generic
 
-from ..models import LicenseSKU
 from ..filtersets import LicenseSKUFilterSet
 from ..forms import LicenseSKUForm
 from ..forms.filters import LicenseSKUFilterForm
+from ..models import LicenseSKU
 from ..tables import LicenseSKUTable
 
 __all__ = (

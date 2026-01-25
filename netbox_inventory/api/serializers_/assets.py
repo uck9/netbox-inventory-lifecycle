@@ -14,9 +14,9 @@ from dcim.api.serializers import (
 from netbox.api.serializers import NestedGroupModelSerializer, NetBoxModelSerializer
 from tenancy.api.serializers import ContactSerializer, TenantSerializer
 
-from .purchases import *
 from .licenses import *
 from .nested import *
+from .purchases import *
 from netbox_inventory.models import Asset, InventoryItemGroup, InventoryItemType
 
 

@@ -3,17 +3,17 @@ import strawberry_django
 
 from .types import (
     AssetType,
-    OrderType,
     InventoryItemGroupType,
     InventoryItemTypeType,
+    OrderType,
     PurchaseType,
     SupplierType,
 )
 from netbox_inventory.models import (
     Asset,
-    Order,
     InventoryItemGroup,
     InventoryItemType,
+    Order,
     Purchase,
     Supplier,
 )

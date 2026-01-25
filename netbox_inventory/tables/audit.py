@@ -99,6 +99,7 @@ class AuditTrailSourceTable(NetBoxTable):
     name = tables.Column(
         linkify=True,
     )
+    tags = columns.TagColumn()
 
     class Meta(NetBoxTable.Meta):
         model = AuditTrailSource
@@ -107,6 +108,7 @@ class AuditTrailSourceTable(NetBoxTable):
             'id',
             'name',
             'description',
+            'tags',
             'comments',
             'actions',
         )
@@ -178,8 +180,9 @@ class AuditTrailTable(NetBoxTable):
 asset_count = columns.LinkedCountColumn(
     viewname='plugins:netbox_inventory:asset_list',
     url_params={'device_type_id': 'pk'},
-    verbose_name=_('Assets'),
+    verbose_name=_('Asset Count'),
     accessor='assets__count',
+    orderable=False,
 )
 
 register_table_column(asset_count, 'assets', DeviceTypeTable)
@@ -188,8 +191,9 @@ register_table_column(asset_count, 'assets', DeviceTypeTable)
 asset_count = columns.LinkedCountColumn(
     viewname='plugins:netbox_inventory:asset_list',
     url_params={'module_type_id': 'pk'},
-    verbose_name=_('Assets'),
+    verbose_name=_('Asset Count'),
     accessor='assets__count',
+    orderable=False,
 )
 
 register_table_column(asset_count, 'assets', ModuleTypeTable)
@@ -198,8 +202,9 @@ register_table_column(asset_count, 'assets', ModuleTypeTable)
 asset_count = columns.LinkedCountColumn(
     viewname='plugins:netbox_inventory:asset_list',
     url_params={'rack_type_id': 'pk'},
-    verbose_name=_('Assets'),
+    verbose_name=_('Asset Count'),
     accessor='assets__count',
+    orderable=False,
 )
 
 register_table_column(asset_count, 'assets', RackTypeTable)
@@ -208,9 +213,10 @@ register_table_column(asset_count, 'assets', RackTypeTable)
 asset_count = columns.LinkedCountColumn(
     viewname='plugins:netbox_inventory:asset_list',
     url_params={'storage_location_id': 'pk'},
-    verbose_name=_('Assets'),
+    verbose_name=_('Asset Count'),
     # accessor='assets__count',
     accessor=tables.A('assets__count_with_children'),
+    orderable=False,
 )
 
 register_table_column(asset_count, 'assets', LocationTable)

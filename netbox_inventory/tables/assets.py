@@ -8,7 +8,7 @@ from dcim.tables import (
     ModuleTypeTable,
     RackTypeTable,
 )
-from netbox.tables import NetBoxTable, columns, ChoiceFieldColumn
+from netbox.tables import ChoiceFieldColumn, NetBoxTable, columns
 from tenancy.tables import ContactsColumnMixin
 from utilities.tables import register_table_column
 
@@ -28,7 +28,8 @@ class InventoryItemGroupTable(NetBoxTable):
     asset_count = columns.LinkedCountColumn(
         viewname='plugins:netbox_inventory:asset_list',
         url_params={'inventoryitem_group_id': 'pk'},
-        verbose_name='Assets',
+        verbose_name='Asset Count',
+        orderable=False,
     )
     inventoryitem_type_count = columns.LinkedCountColumn(
         viewname='plugins:netbox_inventory:inventoryitemtype_list',
@@ -73,7 +74,8 @@ class InventoryItemTypeTable(NetBoxTable):
     asset_count = columns.LinkedCountColumn(
         viewname='plugins:netbox_inventory:asset_list',
         url_params={'inventoryitem_type_id': 'pk'},
-        verbose_name='Assets',
+        verbose_name='Asset Count',
+        orderable=False,
     )
     comments = columns.MarkdownColumn()
     tags = columns.TagColumn()

@@ -129,6 +129,36 @@ contract_buttons = [
     # ),
 ]
 
+vendor_buttons = [
+    PluginMenuButton(
+        link='plugins:netbox_inventory:contractvendor_add',
+        title='Add',
+        icon_class='mdi mdi-plus-thick',
+        permissions=['netbox_inventory.add_contractvendor'],
+    ),
+    # PluginMenuButton(
+    #    link='plugins:netbox_inventory:contractvendor_bulk_import',
+    #    title='Import',
+    #    icon_class='mdi mdi-upload',
+    #    permissions=['netbox_inventory.add_contractvendor'],
+    # ),
+]
+
+contractsku_buttons = [
+    PluginMenuButton(
+        link='plugins:netbox_inventory:contractsku_add',
+        title='Add',
+        icon_class='mdi mdi-plus-thick',
+        permissions=['netbox_inventory.add_contractsku'],
+    ),
+    # PluginMenuButton(
+    #    link='plugins:netbox_inventory:contractsku_bulk_import',
+    #    title='Import',
+    #    icon_class='mdi mdi-upload',
+    #    permissions=['netbox_inventory.add_contractsku'],
+    # ),
+]
+
 contracts_items = (
     PluginMenuItem(
         link='plugins:netbox_inventory:contract_list',
@@ -139,12 +169,14 @@ contracts_items = (
     PluginMenuItem(
         link='plugins:netbox_inventory:contractvendor_list',
         link_text='Contract Vendors',
-        permissions=['netbox_inventory.view_contractvendors']
+        permissions=['netbox_inventory.view_contractvendors'],
+        buttons=vendor_buttons,
     ),
     PluginMenuItem(
         link='plugins:netbox_inventory:contractsku_list',
         link_text='Contract SKUs',
-        permissions=['netbox_inventory.view_contractsku']
+        permissions=['netbox_inventory.view_contractsku'],
+        buttons=contractsku_buttons,
     ),
 )
 

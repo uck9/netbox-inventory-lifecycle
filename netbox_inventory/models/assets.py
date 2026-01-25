@@ -618,6 +618,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         """
         USED = "used"
         CONSUMED = "consumed"
+        STORED = "stored"
 
         # If assigned to a device and used -> consumed (hard rule)
         if self.device_id and self.status == USED:
@@ -629,6 +630,10 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         if not self.device_id and self.status == USED:
             if self.allocation_status == AssetAllocationStatusChoices.UNALLOCATED:
                 self.allocation_status = None
+
+        # If no device and status is stored, allocation_status must be UNALLOCATED
+        if not self.device_id and self.status == STORED:
+            self.allocation_status = AssetAllocationStatusChoices.UNALLOCATED
 
     def update_hardware_used(self, clear_old_hw=True):
         """
@@ -713,8 +718,6 @@ class Asset(NamedModel, ImageAttachmentsMixin):
             # storage_site is derived from storage_location, so only clear storage_location
             if self.storage_location_id is not None:
                 self.storage_location = None
-
-
     def validate_storage_location_required(self):
         if self.status == 'stored' and self.storage_location_id is None:
             raise ValidationError({
@@ -739,6 +742,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
 
         # Absolute fallback so __str__ never returns empty
         return label or f'{self.hardware_type} (id:{self.id})'
+
 
     class Meta:
         ordering = (

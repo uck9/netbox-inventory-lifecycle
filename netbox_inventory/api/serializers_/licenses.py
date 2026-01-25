@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from netbox.api.serializers import NetBoxModelSerializer
+
 from dcim.api.serializers import ManufacturerSerializer
+from netbox.api.serializers import NetBoxModelSerializer
 
 from netbox_inventory.models import LicenseSKU
 

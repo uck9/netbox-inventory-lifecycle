@@ -21,7 +21,9 @@ from ..models import *
 __all__ = (
     'AssetBulkEditForm',
     'AuditFlowBulkEditForm',
+    'AuditFlowPageBulkEditForm',
     'AuditFlowPageAssignmentBulkEditForm',
+    'AuditTrailSourceBulkEditForm',
     'ContractVendorBulkEditForm',
     'ContractSKUBulkEditForm',
     'ContractBulkEditForm',
@@ -464,6 +466,20 @@ class AuditFlowBulkEditForm(NetBoxModelBulkEditForm):
     )
 
 
+class AuditFlowPageBulkEditForm(NetBoxModelBulkEditForm):
+    model = AuditFlowPage
+
+    fieldsets = (
+        FieldSet(
+            'description',
+            name=_('Attributes'),
+        ),
+    )
+    nullable_fields = (
+        'description',
+    )
+
+
 class AuditFlowPageAssignmentBulkEditForm(ChangelogMessageMixin, BulkEditForm):
     pk = forms.ModelMultipleChoiceField(
         queryset=AuditFlowPageAssignment.objects.all(),
@@ -481,8 +497,22 @@ class AuditFlowPageAssignmentBulkEditForm(ChangelogMessageMixin, BulkEditForm):
     )
 
 
-# 
-# HArdware Lifecycle
+class AuditTrailSourceBulkEditForm(NetBoxModelBulkEditForm):
+    model = AuditTrailSource
+
+    fieldsets = (
+        FieldSet(
+            'description',
+            name=_('Attributes'),
+        ),
+    )
+    nullable_fields = (
+        'description',
+    )
+
+
+#
+# Hardware Lifecycle
 #
 
 class HardwareLifecycleBulkEditForm(NetBoxModelBulkEditForm):
