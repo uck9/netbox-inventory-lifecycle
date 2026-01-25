@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from dcim.models import DeviceType, Location, Manufacturer, ModuleType, RackType
 from extras.choices import *
 from extras.models import *
-from netbox.forms import NetBoxModelBulkEditForm
+from netbox.forms import PrimaryModelBulkEditForm
 from netbox.forms.mixins import ChangelogMessageMixin
 from tenancy.models import Contact, ContactGroup, Tenant
 from utilities.forms import BulkEditForm, add_blank_choice
@@ -21,7 +21,9 @@ from ..models import *
 __all__ = (
     'AssetBulkEditForm',
     'AuditFlowBulkEditForm',
+    'AuditFlowPageBulkEditForm',
     'AuditFlowPageAssignmentBulkEditForm',
+    'AuditTrailSourceBulkEditForm',
     'ContractVendorBulkEditForm',
     'ContractSKUBulkEditForm',
     'ContractBulkEditForm',
@@ -39,7 +41,7 @@ __all__ = (
 #
 
 
-class InventoryItemGroupBulkEditForm(NetBoxModelBulkEditForm):
+class InventoryItemGroupBulkEditForm(PrimaryModelBulkEditForm):
     parent = DynamicModelChoiceField(
         queryset=InventoryItemGroup.objects.all(),
         required=False,
@@ -65,7 +67,7 @@ class InventoryItemGroupBulkEditForm(NetBoxModelBulkEditForm):
     )
 
 
-class InventoryItemTypeBulkEditForm(NetBoxModelBulkEditForm):
+class InventoryItemTypeBulkEditForm(PrimaryModelBulkEditForm):
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=False,
@@ -100,7 +102,7 @@ class InventoryItemTypeBulkEditForm(NetBoxModelBulkEditForm):
     )
 
 
-class AssetBulkEditForm(NetBoxModelBulkEditForm):
+class AssetBulkEditForm(PrimaryModelBulkEditForm):
     name = forms.CharField(
         required=False,
     )
@@ -272,7 +274,7 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
 # Contracts
 #
 
-class ContractVendorBulkEditForm(NetBoxModelBulkEditForm):
+class ContractVendorBulkEditForm(PrimaryModelBulkEditForm):
     description = forms.CharField(
         label=_('Description'),
         max_length=200,
@@ -287,7 +289,7 @@ class ContractVendorBulkEditForm(NetBoxModelBulkEditForm):
     nullable_fields = ('description', )
 
 
-class ContractSKUBulkEditForm(NetBoxModelBulkEditForm):
+class ContractSKUBulkEditForm(PrimaryModelBulkEditForm):
     description = forms.CharField(
         label=_('Description'),
         max_length=200,
@@ -302,7 +304,7 @@ class ContractSKUBulkEditForm(NetBoxModelBulkEditForm):
     nullable_fields = ('description', )
 
 
-class ContractBulkEditForm(NetBoxModelBulkEditForm):
+class ContractBulkEditForm(PrimaryModelBulkEditForm):
     description = forms.CharField(
         label=_('Description'),
         max_length=200,
@@ -317,7 +319,7 @@ class ContractBulkEditForm(NetBoxModelBulkEditForm):
     nullable_fields = ('description', )
 
 
-class ContractAssignmentBulkEditForm(NetBoxModelBulkEditForm):
+class ContractAssignmentBulkEditForm(PrimaryModelBulkEditForm):
     contract = DynamicModelChoiceField(
         queryset=Contract.objects.all(),
         label=_('Contract'),
@@ -353,7 +355,7 @@ class ContractAssignmentBulkEditForm(NetBoxModelBulkEditForm):
 #
 
 
-class SupplierBulkEditForm(NetBoxModelBulkEditForm):
+class SupplierBulkEditForm(PrimaryModelBulkEditForm):
     description = forms.CharField(
         required=False,
     )
@@ -371,7 +373,7 @@ class SupplierBulkEditForm(NetBoxModelBulkEditForm):
     nullable_fields = ('description',)
 
 
-class PurchaseBulkEditForm(NetBoxModelBulkEditForm):
+class PurchaseBulkEditForm(PrimaryModelBulkEditForm):
     status = forms.ChoiceField(
         choices=add_blank_choice(PurchaseStatusChoices),
         required=False,
@@ -410,7 +412,7 @@ class PurchaseBulkEditForm(NetBoxModelBulkEditForm):
     )
 
 
-class OrderBulkEditForm(NetBoxModelBulkEditForm):
+class OrderBulkEditForm(PrimaryModelBulkEditForm):
     date = forms.DateField(
         label='Date',
         required=False,
@@ -448,7 +450,7 @@ class OrderBulkEditForm(NetBoxModelBulkEditForm):
 #
 
 
-class AuditFlowBulkEditForm(NetBoxModelBulkEditForm):
+class AuditFlowBulkEditForm(PrimaryModelBulkEditForm):
     enabled = forms.NullBooleanField(
         required=False,
         widget=BulkEditNullBooleanSelect(),
@@ -461,6 +463,20 @@ class AuditFlowBulkEditForm(NetBoxModelBulkEditForm):
             'enabled',
             name=_('Attributes'),
         ),
+    )
+
+
+class AuditFlowPageBulkEditForm(PrimaryModelBulkEditForm):
+    model = AuditFlowPage
+
+    fieldsets = (
+        FieldSet(
+            'description',
+            name=_('Attributes'),
+        ),
+    )
+    nullable_fields = (
+        'description',
     )
 
 
@@ -481,11 +497,25 @@ class AuditFlowPageAssignmentBulkEditForm(ChangelogMessageMixin, BulkEditForm):
     )
 
 
+class AuditTrailSourceBulkEditForm(PrimaryModelBulkEditForm):
+    model = AuditTrailSource
+
+    fieldsets = (
+        FieldSet(
+            'description',
+            name=_('Attributes'),
+        ),
+    )
+    nullable_fields = (
+        'description',
+    )
+
+
 #
-# HaArdware Lifecycle
+# Hardware Lifecycle
 #
 
-class HardwareLifecycleBulkEditForm(NetBoxModelBulkEditForm):
+class HardwareLifecycleBulkEditForm(PrimaryModelBulkEditForm):
     description = forms.CharField(
         label=_('Description'), max_length=200, required=False
     )
