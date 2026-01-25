@@ -680,6 +680,7 @@ class AuditTrailSourceForm(NetBoxModelForm):
             'name',
             'slug',
             'description',
+            'tags',
         ),
     )
 
@@ -690,6 +691,7 @@ class AuditTrailSourceForm(NetBoxModelForm):
             'slug',
             'description',
             'comments',
+            'tags',
         )
 
 
