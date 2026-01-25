@@ -1,3 +1,5 @@
+import json
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -14,6 +16,7 @@ from dcim.models import (
 from netbox.forms import NetBoxModelForm
 from utilities.forms.fields import DynamicModelChoiceField
 from utilities.forms.rendering import FieldSet
+from utilities.forms.widgets import APISelect
 
 from ..choices import AssetStatusChoices
 from ..models import Asset, InventoryItemGroup, InventoryItemType
@@ -143,22 +146,43 @@ class AssetReassignMixin(forms.Form):
 
 class AssetDeviceReassignForm(AssetReassignMixin, NetBoxModelForm):
     assigned_asset = DynamicModelChoiceField(
-        queryset=Asset.objects.filter(device_type__isnull=False, device__isnull=True),
+        queryset=Asset.objects.none(),
         required=False,
         selector=True,
-        query_params={
-            'kind': 'device',
-            'is_assigned': False,
-            'storage_site_id': '$storage_site',
-            'storage_location_id': '$storage_location',
-        },
-        label='New Asset',
-        help_text='New asset to assign to device',
+        label="New Asset",
+        help_text="New asset to assign to device",
+        widget=APISelect(
+            api_url="/api/plugins/inventory/assets/",
+            attrs={
+                "data-static-params": "[]",
+                "data-dynamic-params": "[]",
+            },
+        ),
     )
 
     class Meta:
         model = Device
-        fields = AssetReassignMixin.Meta.fields
+        fields = AssetReassignMixin.Meta.fields  # make sure storage_site/storage_location are in here
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        dt_id = getattr(self.instance, "device_type_id", None)
+
+        static_params = []
+        static_params.append({"queryParam": "is_assigned", "queryValue": "false"})
+        if dt_id:
+            static_params.append({"queryParam": "device_type_id", "queryValue": str(dt_id)})
+
+        # Only included in the request if the user has selected them (otherwise empty -> omitted/blank)
+        dynamic_params = [
+            {"queryParam": "storage_site_id", "fieldName": "storage_site"},
+            {"queryParam": "storage_location_id", "fieldName": "storage_location"},
+        ]
+
+        w = self.fields["assigned_asset"].widget
+        w.attrs["data-static-params"] = json.dumps(static_params)
+        w.attrs["data-dynamic-params"] = json.dumps(dynamic_params)
 
 
 class AssetModuleReassignForm(AssetReassignMixin, NetBoxModelForm):

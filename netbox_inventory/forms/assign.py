@@ -101,16 +101,21 @@ class AssetDeviceAssignForm(AssetAssignMixin, NetBoxModelForm):
             },
         ),
     )
+    storage_location = DynamicModelChoiceField(
+        queryset=Location.objects.all(),
+        required=False,
+        label="Storage location",
+    )
 
     fieldsets = (
         FieldSet('name', name='Asset'),
-        FieldSet('site', 'device', name='Device'),
+        FieldSet('site', 'device', 'storage_location', name='Device'),
         FieldSet('tenant', 'contact', name='Assigned to'),
     )
 
     class Meta:
         model = Asset
-        fields = ('device_type', 'name', 'site', 'device', 'tenant', 'contact')
+        fields = ('device_type', 'name', 'site', 'device', 'storage_location', 'tenant', 'contact')
         widgets = {'device_type': forms.HiddenInput()}
 
     def clean_device_type(self):
@@ -118,6 +123,21 @@ class AssetDeviceAssignForm(AssetAssignMixin, NetBoxModelForm):
 
     def clean_device(self):
         return self._clean_hardware('device')
+
+    def clean(self):
+        super().clean()  # let parents populate cleaned_data / errors
+        cleaned = self.cleaned_data or {}
+
+        device = cleaned.get("device")
+
+        # If device is being cleared, require a storage location
+        if device is None and not cleaned.get("storage_location"):
+            self.add_error(
+                "storage_location",
+                "Storage location is required when unassigning a device."
+            )
+
+        return cleaned
 
 
 class AssetModuleAssignForm(AssetAssignMixin, NetBoxModelForm):
