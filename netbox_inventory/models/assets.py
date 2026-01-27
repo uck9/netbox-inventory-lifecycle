@@ -263,7 +263,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     #
     # purchase info
     #
-    owner = models.ForeignKey(
+    owning_tenant = models.ForeignKey(
         help_text='Who owns this asset',
         to='tenancy.Tenant',
         on_delete=models.PROTECT,
@@ -362,7 +362,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         'device_type',
         'module_type',
         'inventoryitem_type',
-        'owner',
+        'owning_tenant',
         'purchase',
         'order',
         'contract',
@@ -770,13 +770,13 @@ class Asset(NamedModel, ImageAttachmentsMixin):
                 name='unique_rack_type_serial',
             ),
             models.UniqueConstraint(
-                fields=('owner', 'asset_tag'),
-                name='unique_owner_asset_tag',
+                fields=('owning_tenant', 'asset_tag'),
+                name='unique_owning_tenant_asset_tag',
             ),
             models.UniqueConstraint(
                 'asset_tag',
-                condition=models.Q(owner__isnull=True),
+                condition=models.Q(owning_tenant__isnull=True),
                 name='unique_asset_tag',
-                violation_error_message='Asset with this Asset Tag and no Owner already exists.',
+                violation_error_message='Asset with this Asset Tag and no Owning Tenant already exists.',
             ),
         )

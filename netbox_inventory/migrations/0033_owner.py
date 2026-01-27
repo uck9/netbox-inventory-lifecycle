@@ -5,7 +5,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         ('users', '0015_owner'),
-        ('netbox_inventory', '0015_alter_asset_storage_location'),
+        ('netbox_inventory', '0032_asset_vendor_instance_id'),
     ]
 
     operations = [

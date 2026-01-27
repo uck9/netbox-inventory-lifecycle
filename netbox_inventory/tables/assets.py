@@ -8,7 +8,7 @@ from dcim.tables import (
     ModuleTypeTable,
     RackTypeTable,
 )
-from netbox.tables import ChoiceFieldColumn, NetBoxTable, columns
+from netbox.tables import ChoiceFieldColumn, NetBoxTable, PrimaryModelTable, columns
 from tenancy.tables import ContactsColumnMixin
 from utilities.tables import register_table_column
 
@@ -21,7 +21,7 @@ __all__ = (
     'InventoryItemGroupTable',
 )
 
-class InventoryItemGroupTable(NetBoxTable):
+class InventoryItemGroupTable(PrimaryModelTable):
     name = columns.MPTTColumn(
         linkify=True,
     )
@@ -36,7 +36,6 @@ class InventoryItemGroupTable(NetBoxTable):
         url_params={'inventoryitem_group_id': 'pk'},
         verbose_name='Inventory Item Types',
     )
-    comments = columns.MarkdownColumn()
     tags = columns.TagColumn()
 
     class Meta(NetBoxTable.Meta):
@@ -61,7 +60,7 @@ class InventoryItemGroupTable(NetBoxTable):
         )
 
 
-class InventoryItemTypeTable(NetBoxTable):
+class InventoryItemTypeTable(PrimaryModelTable):
     manufacturer = tables.Column(
         linkify=True,
     )
@@ -77,7 +76,6 @@ class InventoryItemTypeTable(NetBoxTable):
         verbose_name='Asset Count',
         orderable=False,
     )
-    comments = columns.MarkdownColumn()
     tags = columns.TagColumn()
 
     class Meta(NetBoxTable.Meta):
@@ -105,7 +103,7 @@ class InventoryItemTypeTable(NetBoxTable):
         )
 
 
-class AssetTable(NetBoxTable):
+class AssetTable(PrimaryModelTable):
     name = tables.Column(
         linkify=True,
     )
@@ -165,7 +163,7 @@ class AssetTable(NetBoxTable):
     storage_location = tables.Column(
         linkify=True,
     )
-    owner = tables.Column(
+    owning_tenant = tables.Column(
         linkify=True,
     )
     supplier = tables.Column(
@@ -215,7 +213,6 @@ class AssetTable(NetBoxTable):
         verbose_name='Vendor Instance ID',
     )
     disposal_date = columns.DateColumn()
-    comments = columns.MarkdownColumn()
     tags = columns.TagColumn()
     actions = columns.ActionsColumn(
         extra_buttons="""
@@ -381,7 +378,7 @@ class AssetTable(NetBoxTable):
             'storage_location',
             'current_site',
             'current_location',
-            'owner',
+            'owning_tenant',
             'supplier',
             'purchase',
             'order',
