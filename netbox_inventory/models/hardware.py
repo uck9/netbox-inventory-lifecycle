@@ -61,10 +61,6 @@ class HardwareLifecycle(PrimaryModel):
         choices=SupportBasisChoices,
         default=SupportBasisChoices.DEFAULT_KEY,
     )
-    tags = TaggableManager(
-        blank=True,
-        related_name="lcm_hardwarelifecycles"
-    )
 
     class Meta:
         ordering = ['assigned_object_type']

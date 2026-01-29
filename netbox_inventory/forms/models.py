@@ -447,9 +447,11 @@ class ContractAssignmentForm(NetBoxModelForm):
     )
     sku = DynamicModelChoiceField(
         queryset=ContractSKU.objects.all(),
-        required=False,
-        selector=True,
+        required=True,
         label=_('SKU'),
+        query_params={
+            "contract_id": "$contract",   # <-- this makes Select2 re-query when contract changes
+        },
     )
     asset = DynamicModelChoiceField(
         queryset=Asset.objects.all(),

@@ -30,10 +30,17 @@
         </div>
       </div>
       <div class="card">
-        <h5 class="card-header">Lifecycle Details</h5>
+        <h5 class="card-header">Hardware EoX Details</h5>
         <div class="card-body">
           <table class="table table-hover attr-table">
-            
+            <tr>
+              <th scope="row">Product Notice</th>
+              <td>
+              {% if object.notice_url %}<span class="text-center"><a href="{{ object.notice_url }}" target="_blank">{{ object.assigned_object }} Notice</a>
+                {% else %}<span class="text-muted">&mdash;{% endif %}
+              </span>
+              </td>
+            </tr>
             <tr>
               <td>End of Sale</td>
               <td><span {{ object.end_of_sale|date_badge_class }}>{{ object.end_of_sale|placeholder }}</span></td>
@@ -57,14 +64,6 @@
             <tr>
               <td>End of Support</td>
               <td><span {{ object.end_of_support|date_badge_class }}>{{ object.end_of_support|placeholder }}</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Product Notice</th>
-              <td>
-              {% if object.notice_url %}<span class="text-center"><a href="{{ object.notice_url }}" target="_blank">{{ object.assigned_object }} Notice</a>
-                {% else %}<span class="text-muted">&mdash;{% endif %}
-              </span>
-              </td>
             </tr>
             <tr>
               <th scope="row">Support Status Calculated From</th>

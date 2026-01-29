@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from netbox.api.fields import ContentTypeField
-from netbox.api.serializers import NetBoxModelSerializer
+from netbox.api.serializers import NetBoxModelSerializer, PrimaryModelSerializer
 from utilities.api import get_serializer_for_model
 
 from netbox_inventory.models import HardwareLifecycle
@@ -11,7 +11,7 @@ from netbox_inventory.models import HardwareLifecycle
 __all__ = ('HardwareLifecycleSerializer',)
 
 
-class HardwareLifecycleSerializer(NetBoxModelSerializer):
+class HardwareLifecycleSerializer(PrimaryModelSerializer):
     url = serializers.HyperlinkedIdentityField(
         view_name='plugins-api:netbox_inventory-api:hardwarelifecycle-detail'
     )

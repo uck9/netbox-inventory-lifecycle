@@ -1,0 +1,52 @@
+
+{% load inventory_filters %}
+{% load helpers %}
+{# renders panel on lifecycle_info with lifecycle info assigned to it #}
+
+<div class="card">
+  <h2 class="card-header">
+    Lifecycle Information
+    {% if lifecycle_info %}
+    <div class="card-actions"><a href="{% url 'plugins:netbox_inventory:hardwarelifecycle' lifecycle_info.pk %}" class="btn btn-sm btn-ghost-primary">
+      <i class="mdi mdi-chevron-right-box-outline" aria-hidden="true"></i> View Details
+    </a></div>
+  </h2>
+  <table class="table table-hover attr-table">
+    <tr>
+      <th scope="row">Product Notice</th>
+      <td>
+        {% if lifecycle_info.notice_url %}<span class="text-center"><a href="{{ lifecycle_info.notice_url }}" target="_blank">{{ lifecycle_info.assigned_object }} Notice</a>
+          {% else %}<span class="text-muted">&mdash;{% endif %}
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <th scope="row">End of Sale</th>
+      <td><span {{ lifecycle_info.end_of_sale|date_badge_class }}>{{ lifecycle_info.end_of_sale }}</span></td>
+    </tr>
+    <tr>
+      <th scope="row">End of SW Maintenance</th>
+      <td><span {{ lifecycle_info.end_of_maintenance|date_badge_class }}>{{ lifecycle_info.end_of_maintenance }}</span></td>
+    </tr>
+    <tr>
+      <th scope="row">End of Security Vulnerability</th>
+      <td><span {{ lifecycle_info.end_of_security|date_badge_class }}>{{ lifecycle_info.end_of_security }}</span></td>
+    </tr>
+    <tr>
+      <th scope="row">End of Contract Attach</th>
+      <td><span {{ lifecycle_info.last_contract_attach|date_badge_class }}>{{ lifecycle_info.last_contract_attach }}</span></td>
+    </tr>
+    <tr>
+      <th scope="row">Last Contract Renewal</th>
+      <td><span {{ lifecycle_info.last_contract_renewal|date_badge_class }}>{{ lifecycle_info.last_contract_renewal }}</span></td>
+    </tr>
+    <tr>
+      <th scope="row">End of Support</th>
+      <td><span {{ lifecycle_info.end_of_support|date_badge_class }}>{{ lifecycle_info.end_of_support }}</span></td>
+    </tr>
+  </table>
+  {% else %}
+  </h2>
+  <div class="card-body"><span class="text-muted">No Lifecycle Dates Annouced.</span></div>
+  {% endif %}
+</div>

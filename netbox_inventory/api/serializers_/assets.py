@@ -213,7 +213,7 @@ class AssetSerializer(PrimaryModelSerializer):
             'tenant',
             'contact',
             'storage_location',
-            'ownint_tenant',
+            'owning_tenant',
             'order',
             'purchase',
             'base_license_sku',

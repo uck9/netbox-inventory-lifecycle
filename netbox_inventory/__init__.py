@@ -49,7 +49,10 @@ class NetBoxInventoryConfig(PluginConfig):
 
     def ready(self):
         super().ready()
-        from . import signals  # noqa: F401
+        from . import (
+            jobs,  # noqa: F401
+            signals,  # noqa: F401
+        )
 
         self.register_feature_views()
 

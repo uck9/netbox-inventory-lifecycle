@@ -1,12 +1,17 @@
+from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 from django.http import HttpRequest
 from django.template import Template
+from django.urls import reverse
 
 from core.models import ObjectType
 from netbox.plugins import PluginTemplateExtension
 
-from .models import Asset, AuditFlow, Contract, ContractAssignment
+from .models import Asset, AuditFlow, Contract, ContractAssignment, HardwareLifecycle
 from .utils import query_located
+
+PLUGIN_SETTINGS = settings.PLUGINS_CONFIG.get('netbox_inventory', {})
 
 #
 # Assets
@@ -125,6 +130,71 @@ class AssetContractInfoExtension(PluginTemplateExtension):
             extra_context={"asset": asset, "contracts": contracts},
         )
 
+class BaseLifecycleInfo(PluginTemplateExtension):
+    """Base class for lifecycle template extensions."""
+
+    lifecycle_content_type = None  # Override: 'devicetype' or 'moduletype'
+    lifecycle_object_id_attr = None  # Override: attribute name for object ID
+
+    def get_lifecycle_card_position(self):
+        return PLUGIN_SETTINGS.get('lifecycle_card_position', 'right_page')
+
+    def _get_lifecycle_info(self):
+        obj = self.context.get('object')
+        content_type = ContentType.objects.get(
+            app_label='dcim', model=self.lifecycle_content_type
+        )
+        object_id = getattr(obj, self.lifecycle_object_id_attr, obj.id)
+        return HardwareLifecycle.objects.filter(
+            assigned_object_id=object_id,
+            assigned_object_type_id=content_type.id,
+        ).first()
+
+    def _render_lifecycle_info(self):
+        return self.render(
+            'netbox_inventory/inc/hardware_lifecycle_info.html',
+            extra_context={'lifecycle_info': self._get_lifecycle_info()},
+        )
+
+    def right_page(self):
+        if self.get_lifecycle_card_position() == 'right_page':
+            return self._render_lifecycle_info()
+        return ''
+
+    def left_page(self):
+        if self.get_lifecycle_card_position() == 'left_page':
+            return self._render_lifecycle_info()
+        return ''
+
+    def full_width_page(self):
+        if self.get_lifecycle_card_position() == 'full_width_page':
+            return self._render_lifecycle_info()
+        return ''
+
+
+class DeviceLifecycleInfo(BaseLifecycleInfo):
+    models = ['dcim.device']
+    lifecycle_content_type = 'devicetype'
+    lifecycle_object_id_attr = 'device_type_id'
+
+    def right_page(self):
+        result = ''
+        if self.get_lifecycle_card_position() == 'right_page':
+            result += self._render_lifecycle_info()
+        return result
+
+    def left_page(self):
+        result = ''
+        if self.get_lifecycle_card_position() == 'left_page':
+            result += self._render_lifecycle_info()
+        return result
+
+    def full_width_page(self):
+        result = ''
+        if self.get_lifecycle_card_position() == 'full_width_page':
+            result += self._render_lifecycle_info()
+        return result
+
 
 class DeviceAssetInfo(AssetInfoExtension):
     models = ['dcim.device']
@@ -149,6 +219,24 @@ class InventoryItemAssetInfo(AssetInfoExtension):
 class RackAssetInfo(AssetInfoExtension):
     models = ['dcim.rack']
     kind = 'rack'
+
+
+class ModuleLifecycleInfo(BaseLifecycleInfo):
+    models = ['dcim.module']
+    lifecycle_content_type = 'moduletype'
+    lifecycle_object_id_attr = 'module_type_id'
+
+
+class DeviceTypeLifecycleInfo(BaseLifecycleInfo):
+    models = ['dcim.devicetype']
+    lifecycle_content_type = 'devicetype'
+    lifecycle_object_id_attr = 'id'
+
+
+class ModuleTypeLifecycleInfo(BaseLifecycleInfo):
+    models = ['dcim.moduletype']
+    lifecycle_content_type = 'moduletype'
+    lifecycle_object_id_attr = 'id'
 
 
 class ManufacturerAssetCounts(PluginTemplateExtension):
@@ -344,6 +432,22 @@ class AuditFlowRunButton(PluginTemplateExtension):
         )
 
 
+class ManufacturerButtons(PluginTemplateExtension):
+    models = ['dcim.manufacturer']
+
+    def buttons(self):
+        # Only show for Cisco manufacturer pages
+        obj = self.context["object"]
+        if obj.name != "Cisco":
+            return ""
+
+        url = reverse("plugins:netbox_inventory:run_cisco_eox_sync")
+        return f"""
+        <a class="btn btn-primary" href="{url}">
+          Run Cisco EoX Sync
+        </a>
+        """
+
 template_extensions = (
     # Assets
     DeviceAssetInfo,
@@ -357,6 +461,13 @@ template_extensions = (
     RackAssetCounts,
     TenantAssetCounts,
     ContactAssetCounts,
+    # Lifecycle
+    DeviceLifecycleInfo,
+    ModuleLifecycleInfo,
+    DeviceTypeLifecycleInfo,
+    ModuleTypeLifecycleInfo,
     # Audit
     AuditFlowRunButton,
+    # HwEoXButton
+    ManufacturerButtons
 )

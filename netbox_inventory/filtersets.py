@@ -604,10 +604,25 @@ class ContractSKUFilterSet(NetBoxModelFilterSet):
         to_field_name='slug',
         label=_('Manufacturer (slug)'),
     )
+    contract_id = django_filters.NumberFilter(
+        method="filter_contract_id",
+        label=_("Contract (ID)"),
+    )
 
     class Meta:
         model = ContractSKU
-        fields = ('id', 'q', 'sku', )
+        fields = ('id', 'q', 'sku', 'contract_id')
+
+    def filter_contract_id(self, queryset, name, value):
+        """
+        Filter SKUs to the type of the selected contract.
+        Expects: ?contract_id=<pk>
+        """
+        contract = Contract.objects.filter(pk=value).only("contract_type").first()
+        if not contract:
+            return queryset.none()
+
+        return queryset.filter(contract_type=contract.contract_type)
 
     def search(self, queryset, name, value):
         if not value.strip():

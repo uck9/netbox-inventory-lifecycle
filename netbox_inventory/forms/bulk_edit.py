@@ -8,7 +8,10 @@ from netbox.forms import NetBoxModelBulkEditForm,  PrimaryModelBulkEditForm
 from netbox.forms.mixins import ChangelogMessageMixin
 from tenancy.models import Contact, ContactGroup, Tenant
 from utilities.forms import BulkEditForm, add_blank_choice
-from utilities.forms.fields import DynamicModelChoiceField
+from utilities.forms.fields import (
+    CommentField,
+    DynamicModelChoiceField,
+)
 from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import BulkEditNullBooleanSelect, DatePicker
 

@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.template import Template
 from django.urls import reverse
@@ -11,9 +12,8 @@ from ..choices import ProgramCoverageStatusChoices, ProgramEligibilityChoices
 from ..filtersets import AssetProgramCoverageFilterSet, VendorProgramFilterSet
 from ..forms.models import AssetProgramCoverageForm, VendorProgramForm
 from ..forms.programs import ActivateCoverageForm
-from ..models import AssetProgramCoverage, ContractAssignment
+from ..models import AssetProgramCoverage, ContractAssignment, HardwareLifecycle
 from ..template_content import WARRANTY_PROGRESSBAR
-
 
 __all__ = (
     'AssetView',
@@ -32,6 +32,9 @@ __all__ = (
 class AssetView(generic.ObjectView):
     queryset = models.Asset.objects.all()
 
+    lifecycle_content_type_model = "devicetype"          # dcim model name
+    lifecycle_object_id_attr = "device_type_id"           # attribute on Asset that points to the dcim object id
+
     def get_extra_context(self, request, instance):
         context = super().get_extra_context(request, instance)
         context['warranty_progressbar'] = Template(WARRANTY_PROGRESSBAR)
@@ -40,6 +43,21 @@ class AssetView(generic.ObjectView):
             .filter(asset=instance)
             .select_related('contract')
             .order_by('contract__contract_id', 'end_date')
+        )
+
+        # --- Lifecycle context ---
+        lifecycle_ct = ContentType.objects.get(app_label="dcim", model=self.lifecycle_content_type_model)
+
+        object_id = getattr(instance, self.lifecycle_object_id_attr, None) or instance.pk
+
+        context['lifecycle_info'] = (
+            HardwareLifecycle.objects
+            .filter(
+                assigned_object_id=object_id,
+                assigned_object_type_id=lifecycle_ct.id,
+            )
+            .select_related()  # harmless; keep if you add FKs later
+            .first()
         )
         return context
 

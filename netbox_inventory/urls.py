@@ -4,6 +4,7 @@ from netbox.views.generic import ObjectChangeLogView
 from utilities.urls import get_model_urls
 
 from . import views
+from .views.jobs import run_cisco_eox_sync
 from .models import (
     AssetProgramCoverage,
     ContractAssignment,
@@ -153,4 +154,7 @@ urlpatterns = [
     path("license-skus/<int:pk>/", views.LicenseSKUView.as_view(), name="licensesku"),
     path("license-skus/<int:pk>/edit/", views.LicenseSKUEditView.as_view(), name="licensesku_edit"),
     path("license-skus/<int:pk>/delete/", views.LicenseSKUDeleteView.as_view(), name="licensesku_delete"),
+
+    #EoX Button
+    path("jobs/run-cisco-eox-sync/", run_cisco_eox_sync, name="run_cisco_eox_sync"),
 ]

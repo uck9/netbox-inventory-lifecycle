@@ -117,6 +117,7 @@
               {{ object.tenant|linkify|placeholder }}
             </td>
           </tr>
+          {% if object.contact %}
           <tr>
             <th scope="row">Contact</th>
             <td>
@@ -126,6 +127,7 @@
               {{ object.contact|linkify|placeholder }}
             </td>
           </tr>
+          {% endif %}
           <tr>
             <th scope="row">{{ object.get_kind_display }}</th>
             <td>{{ object.hardware|linkify|placeholder }}</td>
@@ -163,6 +165,8 @@
         </table>
       </div>
       {% include 'inc/panels/custom_fields.html' %}
+      {% include 'inc/panels/tags.html' %}
+      {% include 'inc/panels/comments.html' %}
       {% plugin_left_page object %}
     </div>
     <div class="col col-md-6">
@@ -230,8 +234,7 @@
       </div>
       {% endif %}
       {% include 'netbox_inventory/inc/contracts_panel.html' with asset=object contracts=contracts %}
-      {% include 'inc/panels/tags.html' %}
-      {% include 'inc/panels/comments.html' %}
+      {% include 'netbox_inventory/inc/hardware_lifecycle_info.html' with lifecycle_info=lifecycle_info %}
       {% include 'inc/panels/image_attachments.html' %}
       {% plugin_right_page object %}
     </div>
