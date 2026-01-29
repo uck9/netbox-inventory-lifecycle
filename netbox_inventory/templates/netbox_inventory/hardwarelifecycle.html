@@ -41,6 +41,10 @@
               </span>
               </td>
             </tr>
+             <tr>
+              <td>Announcement Date</td>
+              <td><span {{ object.announcement_date|date_badge_class }}>{{ object.announcement_date|placeholder }}</span></td>
+            </tr>
             <tr>
               <td>End of Sale</td>
               <td><span {{ object.end_of_sale|date_badge_class }}>{{ object.end_of_sale|placeholder }}</span></td>

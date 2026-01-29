@@ -49,6 +49,7 @@ class HardwareLifecycle(PrimaryModel):
         fk_field='assigned_object_id'
     )
 
+    announcement_date = models.DateField(blank=True, null=True)
     end_of_sale = models.DateField(blank=True, null=True)
     end_of_maintenance = models.DateField(blank=True, null=True)
     end_of_security = models.DateField(blank=True, null=True)

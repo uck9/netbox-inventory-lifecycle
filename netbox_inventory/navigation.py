@@ -255,7 +255,7 @@ purchases_items = (
 lifecycle_items = (
     PluginMenuItem(
         link='plugins:netbox_inventory:hardwarelifecycle_list',
-        link_text='Hardware Lifecycle',
+        link_text='Hardware EoX Notices',
         permissions=['netbox_inventory.view_hardwarelifecycle'],
     ),
 )

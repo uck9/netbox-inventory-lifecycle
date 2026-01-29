@@ -198,6 +198,10 @@ class AssetProgramCoverageActivateView(ObjectView):
 
         # --- Flip coverage status ---
         coverage.status = ProgramCoverageStatusChoices.ACTIVE
+
+        # Guardrail: ACTIVE implies ELIGIBLE
+        coverage.eligibility = ProgramEligibilityChoices.ELIGIBLE
+
         if not coverage.effective_start:
             coverage.effective_start = start_date
         coverage.effective_end = None

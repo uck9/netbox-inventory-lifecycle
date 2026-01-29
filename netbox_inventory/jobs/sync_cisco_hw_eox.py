@@ -167,6 +167,7 @@ class SyncCiscoHwEoXDates(JobRunner):
         """
         # map: (field on lifecycle, path in Cisco JSON, value_transform, "missing log msg")
         date_fields = [
+            ("announcement_date", ["EOXRecord", 0, "EOXExternalAnnouncementDate", "value"], self._parse_date, "announcement_date"),
             ("end_of_sale", ["EOXRecord", 0, "EndOfSaleDate", "value"], self._parse_date, "end_of_sale_date"),
             ("end_of_maintenance", ["EOXRecord", 0, "EndOfSWMaintenanceReleases", "value"], self._parse_date, "end_of_sw_maintenance_releases"),
             ("end_of_security", ["EOXRecord", 0, "EndOfSecurityVulSupportDate", "value"], self._parse_date, "end_of_security_vul_support_date"),

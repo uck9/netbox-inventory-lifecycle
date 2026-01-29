@@ -130,6 +130,7 @@ class AssetContractInfoExtension(PluginTemplateExtension):
             extra_context={"asset": asset, "contracts": contracts},
         )
 
+
 class BaseLifecycleInfo(PluginTemplateExtension):
     """Base class for lifecycle template extensions."""
 

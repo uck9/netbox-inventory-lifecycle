@@ -703,11 +703,12 @@ class HardwareLifecycleForm(NetBoxModelForm):
             ),
         ),
         FieldSet(
-            'last_contract_attach',
-            'last_contract_renewal',
+            'announcement_date',
             'end_of_sale',
             'end_of_maintenance',
             'end_of_security',
+            'last_contract_attach',
+            'last_contract_renewal',
             'end_of_support',
             'support_basis',
             name=_('Dates'),
@@ -719,6 +720,7 @@ class HardwareLifecycleForm(NetBoxModelForm):
     class Meta:
         model = HardwareLifecycle
         fields = (
+            'announcement_date',
             'last_contract_attach',
             'last_contract_renewal',
             'end_of_sale',
@@ -732,6 +734,7 @@ class HardwareLifecycleForm(NetBoxModelForm):
             'tags',
         )
         widgets = {
+            'announcement_date': DatePicker(),
             'last_contract_attach': DatePicker(),
             'last_contract_renewal': DatePicker(),
             'end_of_sale': DatePicker(),

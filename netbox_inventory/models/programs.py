@@ -179,11 +179,51 @@ class AssetProgramCoverage(PrimaryModel):
     def clean(self):
         super().clean()
 
-        # 0) Date sanity
+        self._validate_date_sanity()
+        self._validate_status_eligibility_guardrails()
+        self._validate_manufacturer_rules()
+        self._validate_terminated_requires_end_date()
+        self._validate_active_requires_matching_contract()
+
+    # -------------------------
+    # Validators (small + testable)
+    # -------------------------
+
+    def _validate_date_sanity(self) -> None:
         if self.effective_start and self.effective_end and self.effective_end < self.effective_start:
             raise ValidationError({"effective_end": _("effective_end cannot be before effective_start.")})
 
-        # 1) Manufacturer enforcement
+    def _validate_status_eligibility_guardrails(self) -> None:
+        status = self.status
+        eligibility = self.eligibility
+
+        # ACTIVE -> ELIGIBLE
+        if status == ProgramCoverageStatusChoices.ACTIVE:
+            if eligibility != ProgramEligibilityChoices.ELIGIBLE:
+                raise ValidationError({"eligibility": _("ACTIVE coverage requires eligibility to be ELIGIBLE.")})
+            return
+
+        # TERMINATED -> INELIGIBLE
+        if status == ProgramCoverageStatusChoices.TERMINATED:
+            if eligibility != ProgramEligibilityChoices.INELIGIBLE:
+                raise ValidationError({
+                    "eligibility": _("TERMINATED coverage requires eligibility to be INELIGIBLE (cannot be re-added).")
+                })
+            return
+
+        # PLANNED/EXCLUDED -> not INELIGIBLE (can still be UNKNOWN or ELIGIBLE)
+        if status in (ProgramCoverageStatusChoices.PLANNED, ProgramCoverageStatusChoices.EXCLUDED):
+            if eligibility == ProgramEligibilityChoices.INELIGIBLE:
+                raise ValidationError({
+                    "eligibility": _("PLANNED/EXCLUDED coverage cannot be INELIGIBLE. Use TERMINATED for permanent removal.")
+                })
+            return
+
+        # If someone sets INELIGIBLE, it must be TERMINATED (hard rule per your lifecycle definition)
+        if eligibility == ProgramEligibilityChoices.INELIGIBLE:
+            raise ValidationError({"status": _("INELIGIBLE records must be TERMINATED.")})
+
+    def _validate_manufacturer_rules(self) -> None:
         program_mfr = getattr(self.program, "manufacturer", None)
         asset_mfr = _get_asset_manufacturer(self.asset)
 
@@ -199,36 +239,31 @@ class AssetProgramCoverage(PrimaryModel):
                 ) % {"asset_mfr": asset_mfr},
             })
 
-        # 2) Eligibility rules
-        if self.eligibility == ProgramEligibilityChoices.INELIGIBLE:
-            if self.status == ProgramCoverageStatusChoices.ACTIVE:
-                raise ValidationError({"status": _("INELIGIBLE records cannot be ACTIVE.")})
-            if self.status == ProgramCoverageStatusChoices.PLANNED:
-                raise ValidationError({"status": _("INELIGIBLE records cannot be PLANNED.")})
-            # Optional stronger rule:
-            # if self.status != ProgramCoverageStatusChoices.EXCLUDED:
-            #     raise ValidationError({"status": _("INELIGIBLE records must be EXCLUDED.")})
-
-        # 3) TERMINATED should have effective_end
+    def _validate_terminated_requires_end_date(self) -> None:
         if self.status == ProgramCoverageStatusChoices.TERMINATED and not self.effective_end:
             raise ValidationError({"effective_end": _("TERMINATED coverage should have an effective_end date.")})
 
-        # 4) ACTIVE requires an active ContractAssignment matching program contract_type
-        if self.status == ProgramCoverageStatusChoices.ACTIVE:
-            ContractAssignment = apps.get_model('netbox_inventory', 'ContractAssignment')
-            today = _date.today()
+    def _validate_active_requires_matching_contract(self) -> None:
+        if self.status != ProgramCoverageStatusChoices.ACTIVE:
+            return
 
-            candidates = ContractAssignment.objects.filter(
-                asset=self.asset,
-                contract__contract_type=self.program.contract_type,
-            ).select_related('contract', 'sku')
+        ContractAssignment = apps.get_model('netbox_inventory', 'ContractAssignment')
+        today = _date.today()
 
-            if self.program.manufacturer_id:
-                candidates = candidates.filter(sku__manufacturer_id=self.program.manufacturer_id)
+        candidates = ContractAssignment.objects.filter(
+            asset=self.asset,
+            contract__contract_type=self.program.contract_type,
+        ).select_related('contract', 'sku')
 
-            # Use your effective_* properties if you want correctness
-            if not any(a.effective_start_date and a.effective_start_date <= today <= (a.effective_end_date or _date.max)
-                    for a in candidates):
-                raise ValidationError({
-                    "status": _("ACTIVE coverage requires a current contract assignment matching the program.")
-                })
+        if self.program.manufacturer_id:
+            candidates = candidates.filter(sku__manufacturer_id=self.program.manufacturer_id)
+
+        is_current = any(
+            a.effective_start_date and a.effective_start_date <= today <= (a.effective_end_date or _date.max)
+            for a in candidates
+        )
+
+        if not is_current:
+            raise ValidationError({
+                "status": _("ACTIVE coverage requires a current contract assignment matching the program.")
+            })
