@@ -200,28 +200,31 @@ class AssetProgramCoverage(PrimaryModel):
         # ACTIVE -> ELIGIBLE
         if status == ProgramCoverageStatusChoices.ACTIVE:
             if eligibility != ProgramEligibilityChoices.ELIGIBLE:
-                raise ValidationError({"eligibility": _("ACTIVE coverage requires eligibility to be ELIGIBLE.")})
+                raise ValidationError({
+                    "eligibility": _("ACTIVE coverage requires eligibility to be ELIGIBLE. v2")
+                })
             return
 
         # TERMINATED -> INELIGIBLE
         if status == ProgramCoverageStatusChoices.TERMINATED:
             if eligibility != ProgramEligibilityChoices.INELIGIBLE:
                 raise ValidationError({
-                    "eligibility": _("TERMINATED coverage requires eligibility to be INELIGIBLE (cannot be re-added).")
+                    "eligibility": _("TERMINATED coverage requires eligibility to be INELIGIBLE. v2")
                 })
             return
 
-        # PLANNED/EXCLUDED -> not INELIGIBLE (can still be UNKNOWN or ELIGIBLE)
-        if status in (ProgramCoverageStatusChoices.PLANNED, ProgramCoverageStatusChoices.EXCLUDED):
+        # PLANNED -> cannot be INELIGIBLE
+        if status == ProgramCoverageStatusChoices.PLANNED:
             if eligibility == ProgramEligibilityChoices.INELIGIBLE:
                 raise ValidationError({
-                    "eligibility": _("PLANNED/EXCLUDED coverage cannot be INELIGIBLE. Use TERMINATED for permanent removal.")
+                    "eligibility": _("PLANNED coverage cannot be INELIGIBLE. Use EXCLUDED or TERMINATED. v2")
                 })
             return
 
-        # If someone sets INELIGIBLE, it must be TERMINATED (hard rule per your lifecycle definition)
-        if eligibility == ProgramEligibilityChoices.INELIGIBLE:
-            raise ValidationError({"status": _("INELIGIBLE records must be TERMINATED.")})
+        # EXCLUDED -> may be UNKNOWN/ELIGIBLE/INELIGIBLE
+        if status == ProgramCoverageStatusChoices.EXCLUDED:
+            return
+
 
     def _validate_manufacturer_rules(self) -> None:
         program_mfr = getattr(self.program, "manufacturer", None)
