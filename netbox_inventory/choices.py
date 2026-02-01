@@ -1,3 +1,5 @@
+from django.utils.translation import gettext_lazy as _
+
 from utilities.choices import ChoiceSet
 
 #
@@ -144,3 +146,75 @@ class AssetDisposalReasonhoices(ChoiceSet):
         (RETURNED_TO_VENDOR, 'Returned to Vendor', 'blue'),
         (OTHER, 'Other', 'gray'),
     ]
+
+
+#
+# Asset Support Source
+#
+class AssetSupportSourceChoices(ChoiceSet):
+    key = 'Asset.support_source'
+
+    COMPUTED = 'computed'
+    MANUAL = 'manual'
+    IMPORT = 'imported'
+    API = 'api'
+
+    CHOICES = (
+        (COMPUTED, 'Computed', 'blue'),
+        (MANUAL, 'Manual', 'green'),
+        (IMPORT, 'Imported', 'purple'),
+        (API, 'API', 'cyan'),
+    )
+
+#
+# Asset Support Status
+#
+class AssetSupportStateChoices(ChoiceSet):
+    key = 'Asset.support_state'
+
+    COVERED = 'supported'
+    UNCOVERED = 'unsupported'
+    EXCLUDED = 'excluded'
+    UNKNOWN = 'unknown'
+
+    CHOICES = (
+        (COVERED, 'Covered', 'green'),
+        (UNCOVERED, 'Uncovered', 'red'),
+        (EXCLUDED, 'Excluded', 'orange'),
+        (UNKNOWN, 'Unknown', 'gray'),
+    )
+
+#
+# Asset Support Reason
+#
+class AssetSupportReasonChoices(ChoiceSet):
+    key = 'Asset.support_reason'
+
+    # Operational Gaps (fixable)
+    CONTRACT_MISSING = "contract_missing"
+    CONTRACT_EXPIRED = "contract_expired"
+    COVERAGE_PENDING = "coverage_pending"
+    DATA_MISSING = "data_missing"
+
+    # Intentional Exclusions
+    LAB = 'lab'
+    SPARE = 'spare'
+    DECOMMISSION_PLANNED = 'decommission_planned'
+
+    # Structural (not fixable)
+    PAST_END_OF_SUPPORT = 'past_end_of_support'
+    VENDOR_UNSUPPORTED = 'vendor_unsupported'
+
+    CHOICES = (
+        (CONTRACT_MISSING, _("Contract missing"), "orange"),
+        (CONTRACT_EXPIRED, _("Contract expired"), "orange"),
+        (COVERAGE_PENDING, _("Coverage pending"), "cyan"),
+        (DATA_MISSING, _("Data missing"), "gray"),
+
+        (VENDOR_UNSUPPORTED, _("Vendor unsupported"), "purple"),
+        (PAST_END_OF_SUPPORT, _("Past end of support"), "purple"),
+
+        (LAB, _("Lab"), "blue"),
+        (SPARE, _("Spare"), "blue"),
+        (DECOMMISSION_PLANNED, _("Decommission planned"), "blue"),
+    )

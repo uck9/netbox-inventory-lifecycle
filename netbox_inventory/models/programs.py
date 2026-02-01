@@ -201,7 +201,7 @@ class AssetProgramCoverage(PrimaryModel):
         if status == ProgramCoverageStatusChoices.ACTIVE:
             if eligibility != ProgramEligibilityChoices.ELIGIBLE:
                 raise ValidationError({
-                    "eligibility": _("ACTIVE coverage requires eligibility to be ELIGIBLE. v2")
+                    "eligibility": _("ACTIVE coverage requires eligibility to be ELIGIBLE.")
                 })
             return
 
@@ -209,7 +209,7 @@ class AssetProgramCoverage(PrimaryModel):
         if status == ProgramCoverageStatusChoices.TERMINATED:
             if eligibility != ProgramEligibilityChoices.INELIGIBLE:
                 raise ValidationError({
-                    "eligibility": _("TERMINATED coverage requires eligibility to be INELIGIBLE. v2")
+                    "eligibility": _("TERMINATED coverage requires eligibility to be INELIGIBLE.")
                 })
             return
 
@@ -217,7 +217,7 @@ class AssetProgramCoverage(PrimaryModel):
         if status == ProgramCoverageStatusChoices.PLANNED:
             if eligibility == ProgramEligibilityChoices.INELIGIBLE:
                 raise ValidationError({
-                    "eligibility": _("PLANNED coverage cannot be INELIGIBLE. Use EXCLUDED or TERMINATED. v2")
+                    "eligibility": _("PLANNED coverage cannot be INELIGIBLE. Use EXCLUDED or TERMINATED.")
                 })
             return
 

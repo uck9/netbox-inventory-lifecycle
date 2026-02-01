@@ -1,6 +1,7 @@
 import logging
 
 from datetime import date as _date
+from django.utils import timezone
 
 from django.db.models.signals import post_save, pre_delete, pre_save, post_delete, post_save
 from django.dispatch import receiver
@@ -8,8 +9,15 @@ from django.dispatch import receiver
 from dcim.models import Device, InventoryItem, Module, Rack
 from utilities.exceptions import AbortRequest
 
-from .choices import ProgramCoverageStatusChoices, ProgramEligibilityChoices
+from .choices import (
+    AssetSupportStateChoices,
+    ProgramCoverageStatusChoices,
+    ProgramEligibilityChoices,
+    AssetSupportReasonChoices,
+    AssetSupportSourceChoices,
+)
 from .models import Asset, Order, ContractAssignment, AssetProgramCoverage
+from .services.asset_support_state import apply_computed_support
 from .utils import get_plugin_setting, get_status_for, is_equal_none
 
 logger = logging.getLogger('netbox.netbox_inventory.signals')
@@ -127,13 +135,107 @@ def _reconcile_coverages_for_asset(asset_id: int) -> None:
         # Avoid recursion issues: save only changed fields
         coverage.save(update_fields=["status", "eligibility", "effective_end"])
 
+def _reconcile_all_for_asset(asset_id: int) -> None:
+    _reconcile_coverages_for_asset(asset_id)
+    _reconcile_asset_support(asset_id)
+
+def _assignment_is_active(a: ContractAssignment, today: _date) -> bool:
+    if a.start_date and a.start_date > today:
+        return False
+    if a.end_date and a.end_date < today:
+        return False
+    return True
+
+
+def _has_any_active_assignment(asset_id: int) -> bool:
+    today = timezone.now().date()
+
+    qs = (
+        ContractAssignment.objects
+        .filter(asset_id=asset_id)
+        .only("id", "start_date", "end_date")
+    )
+    for a in qs:
+        if _assignment_is_active(a, today):
+            return True
+    return False
+
+
+def _reconcile_asset_support(asset_id: int) -> None:
+    """
+    Vendor-agnostic support state:
+    - If any active assignment exists => COVERED
+    - Else => UNCOVERED (unless EXCLUDED is sticky)
+    """
+    asset = (
+        Asset.objects
+        .filter(id=asset_id)
+        .only("id", "support_state", "support_reason", "support_source", "support_validated_at")
+        .first()
+    )
+    if not asset:
+        return
+
+    today = timezone.now().date()
+    has_active = _has_any_active_assignment(asset_id)
+
+    # Policy choice: EXCLUDED is sticky (recommended)
+    if asset.support_state == AssetSupportStateChoices.EXCLUDED:
+        # Still stamp validation/source as computed if you want
+        # (or leave source as manual if you want exclusions to remain manual)
+        # I’d keep the exclusion "owner intent" as manual if set that way.
+        changed_fields = []
+        if asset.support_validated_at != today:
+            asset.support_validated_at = today
+            changed_fields.append("support_validated_at")
+        if asset.support_source != AssetSupportSourceChoices.COMPUTED:
+            asset.support_source = AssetSupportSourceChoices.COMPUTED
+            changed_fields.append("support_source")
+        if changed_fields:
+            asset.full_clean()
+            asset.save(update_fields=changed_fields)
+        return
+
+    # Compute new state/reason
+    if has_active:
+        new_state = AssetSupportStateChoices.COVERED
+        new_reason = None
+    else:
+        new_state = AssetSupportStateChoices.UNCOVERED
+        # If reason already set (e.g. coverage_pending), keep it; else default
+        new_reason = asset.support_reason or AssetSupportReasonChoices.CONTRACT_MISSING
+
+    changed_fields = []
+
+    if asset.support_state != new_state:
+        asset.support_state = new_state
+        changed_fields.append("support_state")
+
+    # Normalize blank to None
+    if (asset.support_reason or None) != (new_reason or None):
+        asset.support_reason = new_reason
+        changed_fields.append("support_reason")
+
+    if asset.support_source != AssetSupportSourceChoices.COMPUTED:
+        asset.support_source = AssetSupportSourceChoices.COMPUTED
+        changed_fields.append("support_source")
+
+    if asset.support_validated_at != today:
+        asset.support_validated_at = today
+        changed_fields.append("support_validated_at")
+
+    if changed_fields:
+        asset.full_clean()
+        asset.save(update_fields=changed_fields)
+
 
 @receiver(post_delete, sender=ContractAssignment)
 def contract_assignment_deleted(sender, instance, **kwargs):
-    _reconcile_coverages_for_asset(instance.asset_id)
+    if instance.asset_id:
+        _reconcile_all_for_asset(instance.asset_id)
 
 
 @receiver(post_save, sender=ContractAssignment)
 def contract_assignment_saved(sender, instance, **kwargs):
-    # Handles cases where an assignment is edited to end/expire or change SKU/contract
-    _reconcile_coverages_for_asset(instance.asset_id)
+    if instance.asset_id:
+        _reconcile_all_for_asset(instance.asset_id)

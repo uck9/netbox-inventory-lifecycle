@@ -2,12 +2,20 @@ from datetime import date
 
 from django.db import models
 from django.forms import ValidationError
-
+from django.utils.translation import gettext_lazy as _
 
 from netbox.models import NestedGroupModel
 from netbox.models.features import ImageAttachmentsMixin
 
-from ..choices import AssetStatusChoices, AssetAllocationStatusChoices, AssetDisposalReasonhoices, HardwareKindChoices
+from ..choices import (
+    AssetAllocationStatusChoices,
+    AssetDisposalReasonhoices,
+    AssetStatusChoices,
+    AssetSupportReasonChoices,
+    AssetSupportSourceChoices,
+    AssetSupportStateChoices,
+    HardwareKindChoices,
+)
 from ..managers import AssetManager
 from ..utils import (
     asset_clear_old_hw,
@@ -17,6 +25,15 @@ from ..utils import (
     get_status_for,
 )
 from .mixins import NamedModel
+
+UNCOVERED_STATES_REQUIRE_REASON = {
+    AssetSupportStateChoices.UNCOVERED,
+    AssetSupportStateChoices.EXCLUDED,
+}
+
+COVERED_STATES_FORBID_REASON = {
+    AssetSupportStateChoices.COVERED,
+}
 
 
 class InventoryItemGroup(NestedGroupModel, NamedModel):
@@ -355,6 +372,37 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         default=None,
     )
 
+    #
+    # Support Info
+    #
+    support_state = models.CharField(
+        max_length=30,
+        choices=AssetSupportStateChoices,
+        help_text='Asset support state',
+        blank=False,
+        default=AssetSupportStateChoices.UNKNOWN,
+    )
+    support_reason = models.CharField(
+        help_text='Asset support reason',
+        max_length=30,
+        choices=AssetSupportReasonChoices,
+        blank=True,
+        null=True,
+    )
+    support_validated_at = models.DateField(
+        help_text='Date this asset support status was last validated',
+        blank=True,
+        null=True,
+        verbose_name='Support Validated At',
+    )
+    support_source = models.CharField(
+        help_text='Asset support source',
+        max_length=30,
+        choices=AssetSupportSourceChoices,
+        blank=False,
+        default=AssetSupportSourceChoices.COMPUTED
+    )
+
     clone_fields = [
         'name',
         'asset_tag',
@@ -522,6 +570,11 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         self.validate_storage_location_required()
         self.clean_storage_fields()
         self.clean_installed_site_override()
+
+        # Support fields validation (new)
+        self.clean_support_fields()
+        self.validate_support_rules()
+
         return super().clean()
 
     def save(self, clear_old_hw=True, *args, **kwargs):
@@ -729,6 +782,47 @@ class Asset(NamedModel, ImageAttachmentsMixin):
 
     def get_allocation_status_color(self):
         return AssetAllocationStatusChoices.colors.get(self.allocation_status)
+
+    def clean_support_fields(self) -> None:
+        """
+        Normalize support fields to prevent "fake precision":
+        - Trim blank -> NULL for support_reason
+        - If state is COVERED/UNKNOWN, clear reason
+        """
+        # Normalize blanks to None
+        if self.support_reason in ("", None):
+            self.support_reason = None
+
+        # Keep the model honest: reason only makes sense for Uncovered/Excluded
+        if self.support_state in (AssetSupportStateChoices.COVERED, AssetSupportStateChoices.UNKNOWN):
+            self.support_reason = None
+
+        if self.support_state == AssetSupportStateChoices.UNKNOWN:
+            # optional:
+            self.support_validated_at = None
+
+
+    def validate_support_rules(self) -> None:
+        """
+        Enforce support integrity rules:
+        - If state is UNCOVERED or EXCLUDED, reason is required
+        - If state is COVERED or UNKNOWN, reason must be empty (normalized in clean_support_fields)
+        """
+        errors = {}
+
+        if self.support_state in (AssetSupportStateChoices.UNCOVERED, AssetSupportStateChoices.EXCLUDED):
+            if not self.support_reason:
+                errors["support_reason"] = _(
+                    "Support reason is required when support state is Uncovered or Excluded."
+                )
+
+        # Optional stricter rule: discourage manual COVERED when source isn't computed.
+        # Leave commented unless you want to enforce it.
+        # if self.support_state == AssetSupportStateChoices.COVERED and self.support_source != AssetSupportSourceChoices.COMPUTED:
+        #     errors["support_source"] = _("Covered support state should be computed from contract assignments.")
+
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         parts = [
