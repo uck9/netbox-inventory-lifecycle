@@ -83,6 +83,16 @@
 
     <div class="field-group my-5">
         <div class="row mb-2">
+          <h2 class="col-9 offset-3">Support Status</h2>
+        </div>
+        {% render_field form.support_state %}
+        {% render_field form.support_reason %}
+        {% render_field form.support_source %}
+        {% render_field form.support_validated_at %}
+    </div>
+
+    <div class="field-group my-5">
+        <div class="row mb-2">
           <h2 class="col-9 offset-3">Assigned to</h2>
         </div>
         {% render_field form.tenant %}

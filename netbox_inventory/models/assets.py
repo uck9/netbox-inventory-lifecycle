@@ -400,7 +400,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         max_length=30,
         choices=AssetSupportSourceChoices,
         blank=False,
-        default=AssetSupportSourceChoices.COMPUTED
+        default=AssetSupportSourceChoices.MANUAL
     )
 
     clone_fields = [
@@ -782,6 +782,9 @@ class Asset(NamedModel, ImageAttachmentsMixin):
 
     def get_allocation_status_color(self):
         return AssetAllocationStatusChoices.colors.get(self.allocation_status)
+
+    def get_support_state_color(self):
+        return AssetSupportStateChoices.colors.get(self.support_state)
 
     def clean_support_fields(self) -> None:
         """

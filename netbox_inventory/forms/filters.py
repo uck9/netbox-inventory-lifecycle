@@ -29,7 +29,15 @@ from utilities.forms.fields import (
 from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import APISelectMultiple, DatePicker, DateTimePicker
 
-from ..choices import AssetStatusChoices, ProgramCoverageStatusChoices, HardwareKindChoices, PurchaseStatusChoices
+from ..choices import (
+    AssetStatusChoices,
+    ProgramCoverageStatusChoices,
+    HardwareKindChoices,
+    PurchaseStatusChoices,
+    AssetSupportStateChoices,
+    AssetSupportReasonChoices,
+    AssetSupportSourceChoices
+)
 from ..models import *
 
 __all__ = (
@@ -295,6 +303,21 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
         required=False,
         label='Warranty ends on or before',
         widget=DatePicker,
+    )
+    support_state = forms.MultipleChoiceField(
+        choices=AssetSupportStateChoices,
+        required=False,
+        label='Support state',
+    )
+    support_reason = forms.MultipleChoiceField(
+        choices=AssetSupportReasonChoices,
+        required=False,
+        label='Support reason',
+    )
+    support_source = forms.MultipleChoiceField(
+        choices=AssetSupportSourceChoices,
+        required=False,
+        label='Support source',
     )
     storage_site_id = DynamicModelMultipleChoiceField(
         queryset=Site.objects.all(),

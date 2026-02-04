@@ -50,6 +50,7 @@ class ContractVendor(PrimaryModel):
     def get_absolute_url(self):
         return reverse('plugins:netbox_inventory:contractvendor', args=[self.pk])
 
+
 class ContractSKU(PrimaryModel):
     """
     A single support SKU.
@@ -197,7 +198,7 @@ class Contract(PrimaryModel):
         )
 
     def __str__(self):
-        return f'{self.contract_id}'
+        return f'{self.contract_id} - {self.vendor} - {self.get_contract_type_display()}'
 
     def get_absolute_url(self):
         return reverse('plugins:netbox_inventory:contract', args=[self.pk])

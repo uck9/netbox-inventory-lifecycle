@@ -114,6 +114,11 @@ class HardwareLifecycle(PrimaryModel):
             return Device.objects.filter(device_type=self.assigned_object).count()
         return Module.objects.filter(module_type=self.assigned_object).count()
 
+    @property
+    def assigned_asset_count(self):
+        if isinstance(self.assigned_object, DeviceType):
+            return self.assigned_object.assets.count()
+        return 0
 
     def _support_basis_date(self):
         """

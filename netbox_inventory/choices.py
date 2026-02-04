@@ -64,7 +64,7 @@ class ContractTypeChoices(ChoiceSet):
 
     CHOICES = [
         ('support-ea', 'Support - Enterprise Agreement', 'blue'),
-        ('support-alc', 'Support - A la carte', 'red'),
+        ('support-alc', 'Support - À la carte', 'red'),
         ('warranty', 'Warranty', 'blue'),
         ('other', 'Other', 'gray'),
     ]
@@ -159,30 +159,29 @@ class AssetSupportSourceChoices(ChoiceSet):
     IMPORT = 'imported'
     API = 'api'
 
-    CHOICES = (
+    CHOICES = [
         (COMPUTED, 'Computed', 'blue'),
         (MANUAL, 'Manual', 'green'),
         (IMPORT, 'Imported', 'purple'),
         (API, 'API', 'cyan'),
-    )
-
+    ]
 #
 # Asset Support Status
 #
 class AssetSupportStateChoices(ChoiceSet):
     key = 'Asset.support_state'
 
-    COVERED = 'supported'
-    UNCOVERED = 'unsupported'
+    COVERED = 'covered'
+    UNCOVERED = 'uncovered'
     EXCLUDED = 'excluded'
     UNKNOWN = 'unknown'
 
-    CHOICES = (
+    CHOICES = [
         (COVERED, 'Covered', 'green'),
         (UNCOVERED, 'Uncovered', 'red'),
         (EXCLUDED, 'Excluded', 'orange'),
         (UNKNOWN, 'Unknown', 'gray'),
-    )
+    ]
 
 #
 # Asset Support Reason
@@ -205,7 +204,7 @@ class AssetSupportReasonChoices(ChoiceSet):
     PAST_END_OF_SUPPORT = 'past_end_of_support'
     VENDOR_UNSUPPORTED = 'vendor_unsupported'
 
-    CHOICES = (
+    CHOICES = [
         (CONTRACT_MISSING, _("Contract missing"), "orange"),
         (CONTRACT_EXPIRED, _("Contract expired"), "orange"),
         (COVERAGE_PENDING, _("Coverage pending"), "cyan"),
@@ -217,4 +216,4 @@ class AssetSupportReasonChoices(ChoiceSet):
         (LAB, _("Lab"), "blue"),
         (SPARE, _("Spare"), "blue"),
         (DECOMMISSION_PLANNED, _("Decommission planned"), "blue"),
-    )
+    ]

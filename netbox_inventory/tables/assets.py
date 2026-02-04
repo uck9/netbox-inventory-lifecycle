@@ -132,6 +132,7 @@ class AssetTable(PrimaryModelTable):
     hardware = tables.Column(
         linkify=True,
         order_by=('device', 'module'),
+        verbose_name='Assigned Device',
     )
     hardware_role = tables.Column(
         accessor=columns.Accessor('hardware__role'),

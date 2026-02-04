@@ -362,6 +362,9 @@ class AssetFilterSet(PrimaryModelFilterSet):
     purchase_date = django_filters.DateFromToRangeFilter(
         field_name='purchase__date',
     )
+    support_state = django_filters.MultipleChoiceFilter(choices=Asset._meta.get_field("support_state").choices)
+    support_reason = django_filters.MultipleChoiceFilter(choices=Asset._meta.get_field("support_reason").choices)
+    support_source = django_filters.MultipleChoiceFilter(choices=Asset._meta.get_field("support_source").choices)
     storage_site_id = django_filters.ModelMultipleChoiceFilter(
         queryset=Site.objects.all(),
         field_name='storage_location__site',

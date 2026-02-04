@@ -249,6 +249,13 @@ class AssetForm(PrimaryModelForm):
             'warranty_end',
             name='Key Hardware Dates',
         ),
+        FieldSet(
+            "support_state",
+            "support_reason",
+            "support_validated_at",
+            "support_source",
+            name = 'Support State'
+        ),
         FieldSet('tenant', 'contact_group', 'contact', name='Assigned to'),
         FieldSet('storage_site', 'storage_location', name='Location'),
     )
@@ -284,11 +291,16 @@ class AssetForm(PrimaryModelForm):
             'comments',
             'storage_site',
             'installed_site_override',
+            'support_state',
+            'support_reason',
+            'support_validated_at',
+            'support_source',
         )
         widgets = {
             'vendor_ship_date': DatePicker(),
             'warranty_start': DatePicker(),
             'warranty_end': DatePicker(),
+            'support_validated_at': DatePicker(),
         }
 
     def __init__(self, *args, **kwargs):
