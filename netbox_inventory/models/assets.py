@@ -685,8 +685,8 @@ class Asset(NamedModel, ImageAttachmentsMixin):
                 self.allocation_status = None
 
         # If no device and status is stored, allocation_status must be UNALLOCATED
-        if not self.device_id and self.status == STORED:
-            self.allocation_status = AssetAllocationStatusChoices.UNALLOCATED
+        # if not self.device_id and self.status == STORED:
+        #    self.allocation_status = AssetAllocationStatusChoices.UNALLOCATED
 
     def update_hardware_used(self, clear_old_hw=True):
         """

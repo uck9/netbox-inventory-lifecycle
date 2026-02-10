@@ -9,16 +9,26 @@
 {% endblock tabs %}
 
 {% block form %}
-     <div class="field-group mb-5">
-        <div class="row">
-          <h2 class="col-9 offset-3">General</h2>
-        </div>
-        {% render_field form.name %}
-        {% render_field form.asset_tag %}
-        {% render_field form.description %}
-        {% render_field form.tags %}
-        {% render_field form.status %}
-        {% render_field form.allocation_status %}
+    <div class="field-group mb-5">
+      <div class="row">
+        <h2 class="col-9 offset-3">General</h2>
+      </div>
+      {% render_field form.name %}
+      {% render_field form.asset_tag %}
+      {% render_field form.description %}
+      {% render_field form.tags %}
+      {% render_field form.status %}
+      {% render_field form.allocation_status %}
+    </div>
+
+    <div class="field-group mb-5" id="asset-location-group">
+      <div class="row">
+        <h2 class="col-9 offset-3">Location</h2>
+      </div>
+      {# Only meaningful for OT / manusal install site for assets that are used+allocated without hardware assigned #}
+      {% render_field form.installed_site_override %}
+      {% render_field form.storage_site %}
+      {% render_field form.storage_location %}  
     </div>
 
     <div class="field-group mb-5">
@@ -96,18 +106,6 @@
           <h2 class="col-9 offset-3">Assigned to</h2>
         </div>
         {% render_field form.tenant %}
-        {% render_field form.contact_group %}
-        {% render_field form.contact %}
-    </div>
-
-    <div class="field-group mb-5">
-        <div class="row">
-          <h2 class="col-9 offset-3">Location</h2>
-        </div>
-        {# Only meaningful for OT / manusal install site for assets that are used+allocated without hardware assigned #}
-        {% render_field form.installed_site_override %}
-        {% render_field form.storage_site %}
-        {% render_field form.storage_location %}  
     </div>
 
     {% if form.custom_fields %}
