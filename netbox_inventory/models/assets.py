@@ -661,32 +661,37 @@ class Asset(NamedModel, ImageAttachmentsMixin):
 
     def update_allocation_status(self):
         """
-        Enforce allocation_status rules:
+        Enforce allocation_status and status rules.
 
-        - If the asset is assigned to a *device* and physical status is 'used',
-        allocation_status must be 'consumed'.
-        - If no device is assigned, do not force allocation_status.
-        But if the record still has the default UNALLOCATED and status is 'used',
-        clear it to NULL so manual "used but not deployed" is clean.
+        Simple rules:
+        - Assigned to hardware → used + consumed (forced)
+        - Not assigned → stored + unallocated (forced, unless retired/disposed)
+        - User must manually set 'allocated' or 'disposed' after unassignment
         """
-        USED = "used"
-        CONSUMED = "consumed"
-        STORED = "stored"
+        is_assigned = any([
+            self.device_id,
+            self.module_id,
+            self.rack_id,
+            self.inventoryitem_id,
+        ])
 
-        # If assigned to a device and used -> consumed (hard rule)
-        if self.device_id and self.status == USED:
-            self.allocation_status = CONSUMED
+        # Don't touch retired/disposed
+        if self.status in ["retired", "disposed"]:
             return
 
-        # If no device, allow allocation_status to remain NULL.
-        # Also normalize: if status is used and allocation_status is the default UNALLOCATED, clear it.
-        if not self.device_id and self.status == USED:
-            if self.allocation_status == AssetAllocationStatusChoices.UNALLOCATED:
-                self.allocation_status = None
+        if is_assigned:
+            # Deployed
+            self.status = "used"
+            self.allocation_status = AssetAllocationStatusChoices.CONSUMED
+        else:
+            # Unassigned - return to spare pool
+            # Exception: preserve 'allocated' if user manually set it (project reservation)
+            if self.allocation_status == AssetAllocationStatusChoices.CONSUMED:
+                self.allocation_status = AssetAllocationStatusChoices.UNALLOCATED
 
-        # If no device and status is stored, allocation_status must be UNALLOCATED
-        # if not self.device_id and self.status == STORED:
-        #    self.allocation_status = AssetAllocationStatusChoices.UNALLOCATED
+            # Force status to stored unless in-transit
+            if self.status == "used":
+                self.status = "stored"
 
     def update_hardware_used(self, clear_old_hw=True):
         """

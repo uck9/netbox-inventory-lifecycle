@@ -167,8 +167,15 @@ class AssetDeviceReassignForm(AssetReassignMixin, NetBoxModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Set the base queryset for validation
         dt_id = getattr(self.instance, "device_type_id", None)
+        base_qs = Asset.objects.filter(device_type__isnull=False, device__isnull=True)
+        if dt_id:
+            base_qs = base_qs.filter(device_type_id=dt_id)
 
+        self.fields["assigned_asset"].queryset = base_qs
+
+        # Widget configuration for dynamic filtering
         static_params = []
         static_params.append({"queryParam": "is_assigned", "queryValue": "false"})
         if dt_id:
