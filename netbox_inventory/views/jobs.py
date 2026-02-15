@@ -1,9 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import redirect
-from django.urls import reverse
-
-from netbox.views import generic
 
 from ..jobs.sync_cisco_hw_eox import SyncCiscoHwEoXDates  # your JobRunner subclass
 

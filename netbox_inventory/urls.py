@@ -4,13 +4,13 @@ from netbox.views.generic import ObjectChangeLogView
 from utilities.urls import get_model_urls
 
 from . import views
-from .views.jobs import run_cisco_eox_sync
 from .models import (
     AssetProgramCoverage,
     ContractAssignment,
     HardwareLifecycle,
     VendorProgram,
 )
+from .views.jobs import run_cisco_eox_sync
 
 urlpatterns = [
     # InventoryItemGroups

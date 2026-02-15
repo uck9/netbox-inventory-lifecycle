@@ -73,6 +73,14 @@
     </div>
 
     <div class="field-group my-5">
+        <div class="row mb-2">
+          <h2 class="col-9 offset-3">Operational Assignments</h2>
+        </div>
+        {% render_field form.tenant %}
+        {% render_field form.owner %}
+    </div>
+
+    <div class="field-group my-5">
         <div class="row">
           <h2 class="col-9 offset-3">Purchase</h2>
         </div>
@@ -101,28 +109,12 @@
         {% render_field form.support_validated_at %}
     </div>
 
-    <div class="field-group my-5">
-        <div class="row mb-2">
-          <h2 class="col-9 offset-3">Assigned to</h2>
-        </div>
-        {% render_field form.tenant %}
-    </div>
-
     {% if form.custom_fields %}
-        <div class="field-group mb-5">
-            <div class="row">
+        <div class="field-group my-5">
+          <div class="row mb-2">
               <h5 class="col-9 offset-3">Custom Fields</h5>
             </div>
             {% render_custom_fields form %}
-        </div>
-    {% endif %}
-
-    {% if form.owner %}
-        <div class="field-group mb-5">
-            <div class="row">
-                <h2 class="col-9 offset-3">{% trans "Ownership" %}</h2>
-            </div>
-            {% render_field form.owner %}
         </div>
     {% endif %}
 

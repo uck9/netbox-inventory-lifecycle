@@ -15,7 +15,7 @@ from utilities.forms.fields import (
 from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import BulkEditNullBooleanSelect, DatePicker
 
-from ..choices import AssetStatusChoices, PurchaseStatusChoices
+from ..choices import AssetAllocationStatusChoices, AssetStatusChoices, PurchaseStatusChoices
 from ..models import *
 
 __all__ = (
@@ -94,6 +94,11 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
     )
     status = forms.ChoiceField(
         choices=add_blank_choice(AssetStatusChoices),
+        required=False,
+        initial='',
+    )
+    allocation_status = forms.ChoiceField(
+        choices=add_blank_choice(AssetAllocationStatusChoices),
         required=False,
         initial='',
     )
@@ -193,6 +198,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         FieldSet(
             'name',
             'status',
+            'allocation_status',
             'description',
             name='General',
         ),

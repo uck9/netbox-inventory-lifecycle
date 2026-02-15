@@ -225,7 +225,15 @@ class AssetForm(PrimaryModelForm):
     )
 
     fieldsets = (
-        FieldSet('name', 'asset_tag', 'description', 'tags', 'status', name='General'),
+        FieldSet(
+            'name',
+            'asset_tag',
+            'description',
+            'tags',
+            'status',
+            'allocation_status',
+            name='General'
+        ),
         FieldSet(
             'serial',
             'vendor_instance_id',
@@ -305,6 +313,10 @@ class AssetForm(PrimaryModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Add/modify help text on core NetBox field
+        if 'owner' in self.fields:
+            self.fields['owner'].help_text = 'Operational Owner of this asset (can differ from Tenant and Owning Tenant)'
 
         # Only apply the cf_ filter if the custom field exists on dcim.Location
         has_storage_cf = CustomField.objects.filter(

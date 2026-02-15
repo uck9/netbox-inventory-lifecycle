@@ -170,7 +170,7 @@ class AssetSerializer(PrimaryModelSerializer):
         allow_null=True,
         default=None,
     )
-    owner = TenantSerializer(
+    owning_tenant = TenantSerializer(
         nested=True,
         required=False,
         allow_null=True,

@@ -84,7 +84,7 @@
       </div>
       <div class="card">
         <h5 class="card-header">
-          Assigned To
+          Operational Assignments
           <div class="card-actions">
             {# only show create button if user has add permissions for the kind of hardware being created #}
             {# django templates don't support parenthesis in if statements, but and has priority over or #}
@@ -129,8 +129,8 @@
           </tr>
           {% endif %}
           <tr>
-            <th scope="row">{{ object.get_kind_display }}</th>
-            <td>{{ object.hardware|linkify|placeholder }}</td>
+            <th scope="row">Owner</th>
+            <td>{{ object.owner|linkify|placeholder }}</td>
           </tr>
         </table>
       </div>
