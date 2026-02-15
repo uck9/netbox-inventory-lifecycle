@@ -13,11 +13,11 @@ from .models import (
 from .views.jobs import run_cisco_eox_sync
 
 urlpatterns = [
-    # InventoryItemGroups
+    # InventoryItemGroups - To be deperecated
     path('inventory-item-groups/', include(get_model_urls('netbox_inventory', 'inventoryitemgroup', detail=False))),
     path('inventory-item-groups/<int:pk>/',include(get_model_urls('netbox_inventory', 'inventoryitemgroup'))),
 
-    # InventoryItemTypes
+    # InventoryItemTypes - To be deperecated
     path('inventory-item-types/', include(get_model_urls('netbox_inventory', 'inventoryitemtype', detail=False))),
     path('inventory-item-types/<int:pk>/', include(get_model_urls('netbox_inventory', 'inventoryitemtype'))),
 
