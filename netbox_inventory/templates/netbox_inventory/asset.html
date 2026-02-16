@@ -72,19 +72,19 @@
             </td>
           </tr>
           {% endif %}
+          {% if object.storage_location %}
           <tr>
             <th scope="row" title="Where is this asset stored when not in use">Storage Location</th>
             <td>
-              {% if object.storage_location %}
-                {{ object.storage_location.site }} /
-              {% endif %}
-              {{ object.storage_location|linkify|placeholder }}</td>
+                {{ object.storage_location.site }} / {{ object.storage_location|linkify|placeholder }}
+              </td>
           </tr>
+          {% endif %}
         </table>
       </div>
       <div class="card">
         <h5 class="card-header">
-          Assigned To
+          Operational Assignments
           <div class="card-actions">
             {# only show create button if user has add permissions for the kind of hardware being created #}
             {# django templates don't support parenthesis in if statements, but and has priority over or #}
@@ -117,6 +117,7 @@
               {{ object.tenant|linkify|placeholder }}
             </td>
           </tr>
+          {% if object.contact %}
           <tr>
             <th scope="row">Contact</th>
             <td>
@@ -126,9 +127,10 @@
               {{ object.contact|linkify|placeholder }}
             </td>
           </tr>
+          {% endif %}
           <tr>
-            <th scope="row">{{ object.get_kind_display }}</th>
-            <td>{{ object.hardware|linkify|placeholder }}</td>
+            <th scope="row">Owner</th>
+            <td>{{ object.owner|linkify|placeholder }}</td>
           </tr>
         </table>
       </div>
@@ -163,6 +165,8 @@
         </table>
       </div>
       {% include 'inc/panels/custom_fields.html' %}
+      {% include 'inc/panels/tags.html' %}
+      {% include 'inc/panels/comments.html' %}
       {% plugin_left_page object %}
     </div>
     <div class="col col-md-6">
@@ -170,8 +174,8 @@
         <h5 class="card-header">Purchase Details</h5>
         <table class="table table-hover attr-table">
           <tr>
-            <th scope="row">Owner</th>
-            <td>{{ object.owner|linkify|placeholder }}</td>
+            <th scope="row">Owning Tenant</th>
+            <td>{{ object.owning_tenant|linkify|placeholder }}</td>
           </tr>
           <tr>
             <th scope="row">Purchase</th>
@@ -210,6 +214,29 @@
           </tr>
         </table>
       </div>
+      <div class="card">
+        <h5 class="card-header">Support Status</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Support State</th>
+            <td>{% badge object.get_support_state_display bg_color=object.get_support_state_color %}</td>
+          </tr>
+          {% if object.support_state != "covered" and object.support_state != "unknown" %}
+          <tr>
+            <th scope="row">Support Reason</th>
+            <td>{% badge object.get_support_reason_display bg_color=object.get_support_reason_color %}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <th scope="row">Support Source</th>
+            <td>{{ object.get_support_source_display }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Support Validated At</th>
+            <td>{{ object.support_validated_at|isodate|placeholder }}</td>
+          </tr>
+        </table>
+      </div>
       {% if object.status == "disposed" %}
       <div class="card">
         <h5 class="card-header">Disposal Details</h5>
@@ -230,8 +257,7 @@
       </div>
       {% endif %}
       {% include 'netbox_inventory/inc/contracts_panel.html' with asset=object contracts=contracts %}
-      {% include 'inc/panels/tags.html' %}
-      {% include 'inc/panels/comments.html' %}
+      {% include 'netbox_inventory/inc/hardware_lifecycle_info.html' with lifecycle_info=lifecycle_info %}
       {% include 'inc/panels/image_attachments.html' %}
       {% plugin_right_page object %}
     </div>

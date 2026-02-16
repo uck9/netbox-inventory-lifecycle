@@ -2,12 +2,20 @@ from datetime import date
 
 from django.db import models
 from django.forms import ValidationError
-
+from django.utils.translation import gettext_lazy as _
 
 from netbox.models import NestedGroupModel
 from netbox.models.features import ImageAttachmentsMixin
 
-from ..choices import AssetStatusChoices, AssetAllocationStatusChoices, AssetDisposalReasonhoices, HardwareKindChoices
+from ..choices import (
+    AssetAllocationStatusChoices,
+    AssetDisposalReasonhoices,
+    AssetStatusChoices,
+    AssetSupportReasonChoices,
+    AssetSupportSourceChoices,
+    AssetSupportStateChoices,
+    HardwareKindChoices,
+)
 from ..managers import AssetManager
 from ..utils import (
     asset_clear_old_hw,
@@ -17,6 +25,15 @@ from ..utils import (
     get_status_for,
 )
 from .mixins import NamedModel
+
+UNCOVERED_STATES_REQUIRE_REASON = {
+    AssetSupportStateChoices.UNCOVERED,
+    AssetSupportStateChoices.EXCLUDED,
+}
+
+COVERED_STATES_FORBID_REASON = {
+    AssetSupportStateChoices.COVERED,
+}
 
 
 class InventoryItemGroup(NestedGroupModel, NamedModel):
@@ -263,7 +280,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     #
     # purchase info
     #
-    owner = models.ForeignKey(
+    owning_tenant = models.ForeignKey(
         help_text='Who owns this asset',
         to='tenancy.Tenant',
         on_delete=models.PROTECT,
@@ -355,6 +372,37 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         default=None,
     )
 
+    #
+    # Support Info
+    #
+    support_state = models.CharField(
+        max_length=30,
+        choices=AssetSupportStateChoices,
+        help_text='Asset support state',
+        blank=False,
+        default=AssetSupportStateChoices.UNKNOWN,
+    )
+    support_reason = models.CharField(
+        help_text='Asset support reason',
+        max_length=30,
+        choices=AssetSupportReasonChoices,
+        blank=True,
+        null=True,
+    )
+    support_validated_at = models.DateField(
+        help_text='Date this asset support status was last validated',
+        blank=True,
+        null=True,
+        verbose_name='Support Validated At',
+    )
+    support_source = models.CharField(
+        help_text='Asset support source',
+        max_length=30,
+        choices=AssetSupportSourceChoices,
+        blank=False,
+        default=AssetSupportSourceChoices.MANUAL
+    )
+
     clone_fields = [
         'name',
         'asset_tag',
@@ -362,7 +410,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         'device_type',
         'module_type',
         'inventoryitem_type',
-        'owner',
+        'owning_tenant',
         'purchase',
         'order',
         'contract',
@@ -522,6 +570,11 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         self.validate_storage_location_required()
         self.clean_storage_fields()
         self.clean_installed_site_override()
+
+        # Support fields validation (new)
+        self.clean_support_fields()
+        self.validate_support_rules()
+
         return super().clean()
 
     def save(self, clear_old_hw=True, *args, **kwargs):
@@ -608,32 +661,37 @@ class Asset(NamedModel, ImageAttachmentsMixin):
 
     def update_allocation_status(self):
         """
-        Enforce allocation_status rules:
+        Enforce allocation_status and status rules.
 
-        - If the asset is assigned to a *device* and physical status is 'used',
-        allocation_status must be 'consumed'.
-        - If no device is assigned, do not force allocation_status.
-        But if the record still has the default UNALLOCATED and status is 'used',
-        clear it to NULL so manual "used but not deployed" is clean.
+        Simple rules:
+        - Assigned to hardware → used + consumed (forced)
+        - Not assigned → stored + unallocated (forced, unless retired/disposed)
+        - User must manually set 'allocated' or 'disposed' after unassignment
         """
-        USED = "used"
-        CONSUMED = "consumed"
-        STORED = "stored"
+        is_assigned = any([
+            self.device_id,
+            self.module_id,
+            self.rack_id,
+            self.inventoryitem_id,
+        ])
 
-        # If assigned to a device and used -> consumed (hard rule)
-        if self.device_id and self.status == USED:
-            self.allocation_status = CONSUMED
+        # Don't touch retired/disposed
+        if self.status in ["retired", "disposed"]:
             return
 
-        # If no device, allow allocation_status to remain NULL.
-        # Also normalize: if status is used and allocation_status is the default UNALLOCATED, clear it.
-        if not self.device_id and self.status == USED:
-            if self.allocation_status == AssetAllocationStatusChoices.UNALLOCATED:
-                self.allocation_status = None
+        if is_assigned:
+            # Deployed
+            self.status = "used"
+            self.allocation_status = AssetAllocationStatusChoices.CONSUMED
+        else:
+            # Unassigned - return to spare pool
+            # Exception: preserve 'allocated' if user manually set it (project reservation)
+            if self.allocation_status == AssetAllocationStatusChoices.CONSUMED:
+                self.allocation_status = AssetAllocationStatusChoices.UNALLOCATED
 
-        # If no device and status is stored, allocation_status must be UNALLOCATED
-        if not self.device_id and self.status == STORED:
-            self.allocation_status = AssetAllocationStatusChoices.UNALLOCATED
+            # Force status to stored unless in-transit
+            if self.status == "used":
+                self.status = "stored"
 
     def update_hardware_used(self, clear_old_hw=True):
         """
@@ -730,6 +788,50 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     def get_allocation_status_color(self):
         return AssetAllocationStatusChoices.colors.get(self.allocation_status)
 
+    def get_support_state_color(self):
+        return AssetSupportStateChoices.colors.get(self.support_state)
+
+    def clean_support_fields(self) -> None:
+        """
+        Normalize support fields to prevent "fake precision":
+        - Trim blank -> NULL for support_reason
+        - If state is COVERED/UNKNOWN, clear reason
+        """
+        # Normalize blanks to None
+        if self.support_reason in ("", None):
+            self.support_reason = None
+
+        # Keep the model honest: reason only makes sense for Uncovered/Excluded
+        if self.support_state in (AssetSupportStateChoices.COVERED, AssetSupportStateChoices.UNKNOWN):
+            self.support_reason = None
+
+        if self.support_state == AssetSupportStateChoices.UNKNOWN:
+            # optional:
+            self.support_validated_at = None
+
+
+    def validate_support_rules(self) -> None:
+        """
+        Enforce support integrity rules:
+        - If state is UNCOVERED or EXCLUDED, reason is required
+        - If state is COVERED or UNKNOWN, reason must be empty (normalized in clean_support_fields)
+        """
+        errors = {}
+
+        if self.support_state in (AssetSupportStateChoices.UNCOVERED, AssetSupportStateChoices.EXCLUDED):
+            if not self.support_reason:
+                errors["support_reason"] = _(
+                    "Support reason is required when support state is Uncovered or Excluded."
+                )
+
+        # Optional stricter rule: discourage manual COVERED when source isn't computed.
+        # Leave commented unless you want to enforce it.
+        # if self.support_state == AssetSupportStateChoices.COVERED and self.support_source != AssetSupportSourceChoices.COMPUTED:
+        #     errors["support_source"] = _("Covered support state should be computed from contract assignments.")
+
+        if errors:
+            raise ValidationError(errors)
+
     def __str__(self):
         parts = [
             self.asset_tag,
@@ -770,13 +872,13 @@ class Asset(NamedModel, ImageAttachmentsMixin):
                 name='unique_rack_type_serial',
             ),
             models.UniqueConstraint(
-                fields=('owner', 'asset_tag'),
-                name='unique_owner_asset_tag',
+                fields=('owning_tenant', 'asset_tag'),
+                name='unique_owning_tenant_asset_tag',
             ),
             models.UniqueConstraint(
                 'asset_tag',
-                condition=models.Q(owner__isnull=True),
+                condition=models.Q(owning_tenant__isnull=True),
                 name='unique_asset_tag',
-                violation_error_message='Asset with this Asset Tag and no Owner already exists.',
+                violation_error_message='Asset with this Asset Tag and no Owning Tenant already exists.',
             ),
         )

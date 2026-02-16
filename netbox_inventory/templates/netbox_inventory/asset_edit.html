@@ -9,16 +9,26 @@
 {% endblock tabs %}
 
 {% block form %}
-     <div class="field-group mb-5">
-        <div class="row">
-          <h2 class="col-9 offset-3">General</h2>
-        </div>
-        {% render_field form.name %}
-        {% render_field form.asset_tag %}
-        {% render_field form.description %}
-        {% render_field form.tags %}
-        {% render_field form.status %}
-        {% render_field form.allocation_status %}
+    <div class="field-group mb-5">
+      <div class="row">
+        <h2 class="col-9 offset-3">General</h2>
+      </div>
+      {% render_field form.name %}
+      {% render_field form.asset_tag %}
+      {% render_field form.description %}
+      {% render_field form.tags %}
+      {% render_field form.status %}
+      {% render_field form.allocation_status %}
+    </div>
+
+    <div class="field-group mb-5" id="asset-location-group">
+      <div class="row">
+        <h2 class="col-9 offset-3">Location</h2>
+      </div>
+      {# Only meaningful for OT / manusal install site for assets that are used+allocated without hardware assigned #}
+      {% render_field form.installed_site_override %}
+      {% render_field form.storage_site %}
+      {% render_field form.storage_location %}  
     </div>
 
     <div class="field-group mb-5">
@@ -63,10 +73,18 @@
     </div>
 
     <div class="field-group my-5">
+        <div class="row mb-2">
+          <h2 class="col-9 offset-3">Operational Assignments</h2>
+        </div>
+        {% render_field form.tenant %}
+        {% render_field form.owner %}
+    </div>
+
+    <div class="field-group my-5">
         <div class="row">
           <h2 class="col-9 offset-3">Purchase</h2>
         </div>
-        {% render_field form.owner %}
+        {% render_field form.owning_tenant %}
         {% render_field form.purchase %}
         {% render_field form.order %}
         {% render_field form.base_license_sku %}
@@ -83,26 +101,17 @@
 
     <div class="field-group my-5">
         <div class="row mb-2">
-          <h2 class="col-9 offset-3">Assigned to</h2>
+          <h2 class="col-9 offset-3">Support Status</h2>
         </div>
-        {% render_field form.tenant %}
-        {% render_field form.contact_group %}
-        {% render_field form.contact %}
-    </div>
-
-    <div class="field-group mb-5">
-        <div class="row">
-          <h2 class="col-9 offset-3">Location</h2>
-        </div>
-        {# Only meaningful for OT / manusal install site for assets that are used+allocated without hardware assigned #}
-        {% render_field form.installed_site_override %}
-        {% render_field form.storage_site %}
-        {% render_field form.storage_location %}  
+        {% render_field form.support_state %}
+        {% render_field form.support_reason %}
+        {% render_field form.support_source %}
+        {% render_field form.support_validated_at %}
     </div>
 
     {% if form.custom_fields %}
-        <div class="field-group mb-5">
-            <div class="row">
+        <div class="field-group my-5">
+          <div class="row mb-2">
               <h5 class="col-9 offset-3">Custom Fields</h5>
             </div>
             {% render_custom_fields form %}

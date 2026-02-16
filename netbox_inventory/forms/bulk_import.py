@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import ObjectType
 from dcim.models import DeviceType, Location, Manufacturer, ModuleType, RackType, Site
-from netbox.forms import NetBoxModelImportForm
+from netbox.forms import NetBoxModelImportForm, PrimaryModelImportForm
 from tenancy.models import Contact, Tenant
 from utilities.forms.fields import (
     CSVChoiceField,
@@ -43,7 +43,7 @@ __all__ = (
 #
 
 
-class InventoryItemGroupImportForm(NetBoxModelImportForm):
+class InventoryItemGroupImportForm( PrimaryModelImportForm):
     parent = CSVModelChoiceField(
         queryset=InventoryItemGroup.objects.all(),
         required=False,
@@ -53,10 +53,10 @@ class InventoryItemGroupImportForm(NetBoxModelImportForm):
 
     class Meta:
         model = InventoryItemGroup
-        fields = ('name', 'parent', 'description', 'comments', 'tags')
+        fields = ('name', 'parent', 'description', 'owner', 'comments', 'tags')
 
 
-class InventoryItemTypeImportForm(NetBoxModelImportForm):
+class InventoryItemTypeImportForm( PrimaryModelImportForm):
     manufacturer = CSVModelChoiceField(
         queryset=Manufacturer.objects.all(),
         to_field_name='name',
@@ -79,12 +79,13 @@ class InventoryItemTypeImportForm(NetBoxModelImportForm):
             'description',
             'part_number',
             'inventoryitem_group',
+            'owner',
             'comments',
             'tags',
         )
 
 
-class AssetImportForm(NetBoxModelImportForm):
+class AssetImportForm(PrimaryModelImportForm):
     hardware_kind = CSVChoiceField(
         choices=HardwareKindChoices,
         required=True,
@@ -128,7 +129,7 @@ class AssetImportForm(NetBoxModelImportForm):
         help_text='Location where is this asset stored when not in use. It must exist before import.',
         required=False,
     )
-    owner = CSVModelChoiceField(
+    owning_tenant = CSVModelChoiceField(
         queryset=Tenant.objects.all(),
         to_field_name='name',
         help_text='Tenant that owns this asset. It must exist before import.',
@@ -184,7 +185,7 @@ class AssetImportForm(NetBoxModelImportForm):
             'model_comments',
             'storage_site',
             'storage_location',
-            'owner',
+            'owning_tenant',
             'supplier',
             'purchase',
             'purchase_date',
@@ -193,6 +194,7 @@ class AssetImportForm(NetBoxModelImportForm):
             'manufacturer',
             'warranty_start',
             'warranty_end',
+            'owner',
             'comments',
             'tenant',
             'contact',
@@ -234,7 +236,7 @@ class AssetImportForm(NetBoxModelImportForm):
             purchase = Purchase.objects.get(supplier=supplier, name=purchase_name)
         except ObjectDoesNotExist:
             raise forms.ValidationError(
-                f'Unable to find purchase {supplier} {purchase_name}'
+                f'Unable to find purchase {supplier} - {purchase_name}'
             )
         return purchase
 
@@ -247,7 +249,7 @@ class AssetImportForm(NetBoxModelImportForm):
             order = Order.objects.get(purchase=purchase, name=order_name)
         except ObjectDoesNotExist:
             raise forms.ValidationError(
-                f'Unable to find order {purchase} {order_name}'
+                f'Unable to find order {purchase} - {order_name}'
             )
         return order
 
@@ -381,9 +383,9 @@ class AssetImportForm(NetBoxModelImportForm):
             ):
                 self._get_or_create_related('tenant')
             if get_plugin_setting('asset_import_create_tenant') and self.data.get(
-                'owner'
+                'owning_tenant'
             ):
-                self._get_or_create_related('owner')
+                self._get_or_create_related('owning_tenant')
         except forms.ValidationError:
             # ValidationErrors are raised by _clean_fields() method
             # this will be called later in the code and will be bound
@@ -469,13 +471,13 @@ class ContractImportForm(NetBoxModelImportForm):
 #
 
 
-class SupplierImportForm(NetBoxModelImportForm):
+class SupplierImportForm(PrimaryModelImportForm):
     class Meta:
         model = Supplier
-        fields = ('name', 'slug', 'description', 'comments', 'tags')
+        fields = ('name', 'slug', 'description', 'owner', 'comments', 'tags')
 
 
-class PurchaseImportForm(NetBoxModelImportForm):
+class PurchaseImportForm(PrimaryModelImportForm):
     supplier = CSVModelChoiceField(
         queryset=Supplier.objects.all(),
         to_field_name='name',
@@ -495,12 +497,13 @@ class PurchaseImportForm(NetBoxModelImportForm):
             'status',
             'supplier',
             'description',
+            'owner',
             'comments',
             'tags',
         )
 
 
-class OrderImportForm(NetBoxModelImportForm):
+class OrderImportForm(PrimaryModelImportForm):
     purchase = CSVModelChoiceField(
         queryset=Purchase.objects.all(),
         to_field_name='id',
@@ -515,6 +518,7 @@ class OrderImportForm(NetBoxModelImportForm):
             'purchase',
             'manufacturer',
             'description',
+            'owner',
             'comments',
             'tags',
         )
@@ -525,7 +529,7 @@ class OrderImportForm(NetBoxModelImportForm):
 #
 
 
-class BaseFlowImportForm(NetBoxModelImportForm):
+class BaseFlowImportForm(PrimaryModelImportForm):
     """
     Internal base bulk import class for audit flow models.
     """
@@ -539,6 +543,7 @@ class BaseFlowImportForm(NetBoxModelImportForm):
         fields = (
             'name',
             'description',
+            'owner',
             'tags',
             'object_type',
             'object_filter',
@@ -565,19 +570,24 @@ class AuditFlowImportForm(BaseFlowImportForm):
         fields = BaseFlowImportForm.Meta.fields + ('enabled',)
 
 
-class AuditTrailSourceImportForm(NetBoxModelImportForm):
+class AuditTrailSourceImportForm(PrimaryModelImportForm):
     class Meta:
         model = AuditTrailSource
         fields = (
             'name',
             'slug',
             'description',
+            'owner',
             'tags',
             'comments',
         )
 
 
 class AuditTrailImportForm(BaseFlowImportForm):
+    object_type = CSVContentTypeField(
+        queryset=ObjectType.objects.public(),
+        help_text=_('Object Type'),
+    )
     source = CSVModelChoiceField(
         queryset=AuditTrailSource.objects.all(),
         to_field_name='slug',

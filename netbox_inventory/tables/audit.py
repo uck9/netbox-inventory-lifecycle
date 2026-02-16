@@ -7,7 +7,7 @@ from dcim.tables import (
     ModuleTypeTable,
     RackTypeTable,
 )
-from netbox.tables import NetBoxTable, columns
+from netbox.tables import NetBoxTable, PrimaryModelTable, columns
 from utilities.tables import register_table_column
 
 from ..models import *
@@ -20,7 +20,7 @@ __all__ = (
     'AuditTrailSourceTable',
 )
 
-class BaseFlowTable(NetBoxTable):
+class BaseFlowTable(PrimaryModelTable):
     """
     Internal base table class for audit flow models.
     """
@@ -95,7 +95,7 @@ class AuditFlowPageAssignmentTable(NetBoxTable):
         )
 
 
-class AuditTrailSourceTable(NetBoxTable):
+class AuditTrailSourceTable(PrimaryModelTable):
     name = tables.Column(
         linkify=True,
     )

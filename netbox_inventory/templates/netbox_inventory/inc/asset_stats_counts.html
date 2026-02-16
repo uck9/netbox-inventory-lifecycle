@@ -2,7 +2,7 @@
 {# renders panel similar to Related Objects with counts of assets related to object #}
 
 <div class="card">
-  <h5 class="card-header">Assets</h5>
+  <h5 class="card-header">Assets1</h5>
   <ul class="list-group list-group-flush">
     {% for asset_stat in asset_stats %}
       <a href="{% url 'plugins:netbox_inventory:asset_list' %}?{{ asset_stat.filter_field }}={{ object.pk }}{{ asset_stat.extra_filter }}" class="list-group-item list-group-item-action d-flex justify-content-between">

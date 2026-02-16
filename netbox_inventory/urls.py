@@ -10,13 +10,14 @@ from .models import (
     HardwareLifecycle,
     VendorProgram,
 )
+from .views.jobs import run_cisco_eox_sync
 
 urlpatterns = [
-    # InventoryItemGroups
+    # InventoryItemGroups - To be deperecated
     path('inventory-item-groups/', include(get_model_urls('netbox_inventory', 'inventoryitemgroup', detail=False))),
     path('inventory-item-groups/<int:pk>/',include(get_model_urls('netbox_inventory', 'inventoryitemgroup'))),
 
-    # InventoryItemTypes
+    # InventoryItemTypes - To be deperecated
     path('inventory-item-types/', include(get_model_urls('netbox_inventory', 'inventoryitemtype', detail=False))),
     path('inventory-item-types/<int:pk>/', include(get_model_urls('netbox_inventory', 'inventoryitemtype'))),
 
@@ -138,6 +139,7 @@ urlpatterns = [
     # Asset Program Coverage
     path("asset-program-coverages/", views.AssetProgramCoverageListView.as_view(), name="assetprogramcoverage_list"),
     path("asset-program-coverages/add/", views.AssetProgramCoverageEditView.as_view(), name="assetprogramcoverage_add"),
+    path("asset-program-coverages/delete/", views.AssetProgramCoverageBulkDeleteView.as_view(), name="assetprogramcoverage_bulk_delete"),
     path("asset-program-coverages/<int:pk>/", views.AssetProgramCoverageView.as_view(), name="assetprogramcoverage"),
     path("asset-program-coverages/<int:pk>/edit/", views.AssetProgramCoverageEditView.as_view(), name="assetprogramcoverage_edit"),
     path("asset-program-coverages/<int:pk>/delete/", views.AssetProgramCoverageDeleteView.as_view(), name="assetprogramcoverage_delete"),
@@ -153,4 +155,7 @@ urlpatterns = [
     path("license-skus/<int:pk>/", views.LicenseSKUView.as_view(), name="licensesku"),
     path("license-skus/<int:pk>/edit/", views.LicenseSKUEditView.as_view(), name="licensesku_edit"),
     path("license-skus/<int:pk>/delete/", views.LicenseSKUDeleteView.as_view(), name="licensesku_delete"),
+
+    #EoX Button
+    path("jobs/run-cisco-eox-sync/", run_cisco_eox_sync, name="run_cisco_eox_sync"),
 ]

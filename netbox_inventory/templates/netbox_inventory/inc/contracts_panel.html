@@ -2,9 +2,10 @@
 {% load helpers %}
 
 <div class="card">
-  <h2 class="card-header">Contracts</h2>
+  <h2 class="card-header">Contracts
 
   {% if contracts %}
+    </h2>
     <table class="table table-hover attr-table">
       <thead>
         <tr class="border-bottom">
@@ -25,13 +26,11 @@
             </td>
             <td>{{ contract.contract.get_contract_type_display }}</td>
             <td>{{ contract.sku }}</td>
-
             {% if contract.effective_end_date == None %}
               <td>No End Date</td>
             {% else %}
               <td><span {{ contract.effective_end_date|date_badge_class }}>{{ contract.effective_end_date }}</span></td>
             {% endif %}
-
             <td>
               <a href="{% url 'plugins:netbox_inventory:contractassignment' contract.pk %}">
                 <i class="mdi mdi-chevron-right-box-outline" aria-hidden="true"></i>
@@ -42,6 +41,9 @@
       </tbody>
     </table>
   {% else %}
+      <div class="card-actions"><a href="{% url 'plugins:netbox_inventory:contractassignment_add' %}?asset={{ object.pk }}&return_url={% url 'plugins:netbox_inventory:asset' pk=object.pk %}" class="btn btn-ghost-primary btn-sm">
+      <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Contract</a></div>
+    </h2>
     <div class="card-body">
       <span class="text-muted">No contract assignments</span>
     </div>

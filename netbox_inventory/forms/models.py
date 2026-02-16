@@ -11,7 +11,7 @@ from dcim.models import (  # pyright: ignore[reportMissingImports]
     Site,
 )
 from extras.models import CustomField
-from netbox.forms import NetBoxModelForm
+from netbox.forms import NetBoxModelForm, PrimaryModelForm
 from tenancy.models import Contact, ContactGroup, Tenant
 from utilities.forms.fields import (
     CommentField,
@@ -54,7 +54,7 @@ __all__ = (
 #
 
 
-class InventoryItemGroupForm(NetBoxModelForm):
+class InventoryItemGroupForm(PrimaryModelForm):
     parent = DynamicModelChoiceField(
         queryset=InventoryItemGroup.objects.all(),
         required=False,
@@ -67,6 +67,7 @@ class InventoryItemGroupForm(NetBoxModelForm):
             'name',
             'parent',
             'description',
+            'owner',
             'tags',
             name='Inventory Item Group',
         ),
@@ -83,7 +84,7 @@ class InventoryItemGroupForm(NetBoxModelForm):
         )
 
 
-class InventoryItemTypeForm(NetBoxModelForm):
+class InventoryItemTypeForm(PrimaryModelForm):
     slug = SlugField(slug_source='model')
     inventoryitem_group = DynamicModelChoiceField(
         queryset=InventoryItemGroup.objects.all(),
@@ -100,6 +101,7 @@ class InventoryItemTypeForm(NetBoxModelForm):
             'description',
             'part_number',
             'inventoryitem_group',
+            'owner',
             'tags',
             name='Inventory Item Type',
         ),
@@ -119,7 +121,7 @@ class InventoryItemTypeForm(NetBoxModelForm):
         )
 
 
-class AssetForm(NetBoxModelForm):
+class AssetForm(PrimaryModelForm):
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=False,
@@ -159,10 +161,10 @@ class AssetForm(NetBoxModelForm):
             'manufacturer_id': '$manufacturer',
         },
     )
-    owner = DynamicModelChoiceField(
+    owning_tenant = DynamicModelChoiceField(
         queryset=Tenant.objects.all(),
-        help_text=Asset._meta.get_field('owner').help_text,
-        required=not Asset._meta.get_field('owner').blank,
+        help_text=Asset._meta.get_field('owning_tenant').help_text,
+        required=not Asset._meta.get_field('owning_tenant').blank,
     )
     purchase = DynamicModelChoiceField(
         queryset=Purchase.objects.all(),
@@ -221,10 +223,17 @@ class AssetForm(NetBoxModelForm):
             "manufacturer_id": "$manufacturer",
         },
     )
-    comments = CommentField()
 
     fieldsets = (
-        FieldSet('name', 'asset_tag', 'description', 'tags', 'status', name='General'),
+        FieldSet(
+            'name',
+            'asset_tag',
+            'description',
+            'tags',
+            'status',
+            'allocation_status',
+            name='General'
+        ),
         FieldSet(
             'serial',
             'vendor_instance_id',
@@ -236,7 +245,7 @@ class AssetForm(NetBoxModelForm):
             name='Hardware',
         ),
         FieldSet(
-            'owner',
+            'owning_tenant',
             'purchase',
             'order',
             'base_license_sku',
@@ -247,6 +256,13 @@ class AssetForm(NetBoxModelForm):
             'warranty_start',
             'warranty_end',
             name='Key Hardware Dates',
+        ),
+        FieldSet(
+            "support_state",
+            "support_reason",
+            "support_validated_at",
+            "support_source",
+            name = 'Support State'
         ),
         FieldSet('tenant', 'contact_group', 'contact', name='Assigned to'),
         FieldSet('storage_site', 'storage_location', name='Location'),
@@ -267,7 +283,7 @@ class AssetForm(NetBoxModelForm):
             'inventoryitem_type',
             'rack_type',
             'storage_location',
-            'owner',
+            'owning_tenant',
             'purchase',
             'order',
             'base_license_sku',
@@ -278,19 +294,29 @@ class AssetForm(NetBoxModelForm):
             'contact_group',
             'contact',
             'tags',
+            'owner',
             'description',
             'comments',
             'storage_site',
             'installed_site_override',
+            'support_state',
+            'support_reason',
+            'support_validated_at',
+            'support_source',
         )
         widgets = {
             'vendor_ship_date': DatePicker(),
             'warranty_start': DatePicker(),
             'warranty_end': DatePicker(),
+            'support_validated_at': DatePicker(),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Add/modify help text on core NetBox field
+        if 'owner' in self.fields:
+            self.fields['owner'].help_text = 'Operational Owner of this asset (can differ from Tenant and Owning Tenant)'
 
         # Only apply the cf_ filter if the custom field exists on dcim.Location
         has_storage_cf = CustomField.objects.filter(
@@ -445,9 +471,11 @@ class ContractAssignmentForm(NetBoxModelForm):
     )
     sku = DynamicModelChoiceField(
         queryset=ContractSKU.objects.all(),
-        required=False,
-        selector=True,
+        required=True,
         label=_('SKU'),
+        query_params={
+            "contract_id": "$contract",   # <-- this makes Select2 re-query when contract changes
+        },
     )
     asset = DynamicModelChoiceField(
         queryset=Asset.objects.all(),
@@ -472,7 +500,7 @@ class ContractAssignmentForm(NetBoxModelForm):
 #
 
 
-class SupplierForm(NetBoxModelForm):
+class SupplierForm(PrimaryModelForm):
     slug = SlugField(slug_source='name')
     comments = CommentField()
 
@@ -486,10 +514,11 @@ class SupplierForm(NetBoxModelForm):
             'description',
             'comments',
             'tags',
+            'owner',
         )
 
 
-class PurchaseForm(NetBoxModelForm):
+class PurchaseForm(PrimaryModelForm):
     comments = CommentField()
 
     fieldsets = (
@@ -512,13 +541,14 @@ class PurchaseForm(NetBoxModelForm):
             'description',
             'comments',
             'tags',
+            'owner'
         )
         widgets = {
             'date': DatePicker(),
         }
 
 
-class OrderForm(NetBoxModelForm):
+class OrderForm(PrimaryModelForm):
     name = forms.CharField(
         label="Order ID",
         help_text="Manufacturer-specific order identifier",
@@ -533,6 +563,7 @@ class OrderForm(NetBoxModelForm):
             'name',
             'description',
             'tags',
+            'owner',
             name='Order',
         ),
     )
@@ -557,7 +588,7 @@ class OrderForm(NetBoxModelForm):
 #
 
 
-class BaseFlowForm(NetBoxModelForm):
+class BaseFlowForm(PrimaryModelForm):
     """
     Internal base form class for audit flow models.
     """
@@ -579,6 +610,7 @@ class BaseFlowForm(NetBoxModelForm):
             'name',
             'description',
             'tags',
+            'owner',
         ),
         FieldSet(
             'object_type',
@@ -648,7 +680,7 @@ class AuditFlowPageAssignmentForm(NetBoxModelForm):
         )
 
 
-class AuditTrailSourceForm(NetBoxModelForm):
+class AuditTrailSourceForm(PrimaryModelForm):
     slug = SlugField()
     comments = CommentField()
 
@@ -658,6 +690,7 @@ class AuditTrailSourceForm(NetBoxModelForm):
             'slug',
             'description',
             'tags',
+            'owner',
         ),
     )
 
@@ -694,11 +727,12 @@ class HardwareLifecycleForm(NetBoxModelForm):
             ),
         ),
         FieldSet(
-            'last_contract_attach',
-            'last_contract_renewal',
+            'announcement_date',
             'end_of_sale',
             'end_of_maintenance',
             'end_of_security',
+            'last_contract_attach',
+            'last_contract_renewal',
             'end_of_support',
             'support_basis',
             name=_('Dates'),
@@ -710,6 +744,7 @@ class HardwareLifecycleForm(NetBoxModelForm):
     class Meta:
         model = HardwareLifecycle
         fields = (
+            'announcement_date',
             'last_contract_attach',
             'last_contract_renewal',
             'end_of_sale',
@@ -723,6 +758,7 @@ class HardwareLifecycleForm(NetBoxModelForm):
             'tags',
         )
         widgets = {
+            'announcement_date': DatePicker(),
             'last_contract_attach': DatePicker(),
             'last_contract_renewal': DatePicker(),
             'end_of_sale': DatePicker(),

@@ -17,7 +17,7 @@ from dcim.models import (
     RackType,
     Site,
 )
-from netbox.forms import NetBoxModelFilterSetForm
+from netbox.forms import NetBoxModelFilterSetForm, PrimaryModelFilterSetForm
 from tenancy.forms import ContactModelFilterForm
 from tenancy.models import Contact, ContactGroup, Tenant
 from utilities.forms import BOOLEAN_WITH_BLANK_CHOICES
@@ -29,7 +29,15 @@ from utilities.forms.fields import (
 from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import APISelectMultiple, DatePicker, DateTimePicker
 
-from ..choices import AssetStatusChoices, ProgramCoverageStatusChoices, HardwareKindChoices, PurchaseStatusChoices
+from ..choices import (
+    AssetStatusChoices,
+    ProgramCoverageStatusChoices,
+    HardwareKindChoices,
+    PurchaseStatusChoices,
+    AssetSupportStateChoices,
+    AssetSupportReasonChoices,
+    AssetSupportSourceChoices
+)
 from ..models import *
 
 __all__ = (
@@ -58,13 +66,14 @@ __all__ = (
 #
 
 
-class InventoryItemGroupFilterForm(NetBoxModelFilterSetForm):
+class InventoryItemGroupFilterForm(PrimaryModelFilterSetForm):
     model = InventoryItemGroup
     fieldsets = (
         FieldSet(
             'q',
             'filter_id',
             'tag',
+            'owner_id',
             'parent_id',
         ),
     )
@@ -76,13 +85,14 @@ class InventoryItemGroupFilterForm(NetBoxModelFilterSetForm):
     tag = TagFilterField(model)
 
 
-class InventoryItemTypeFilterForm(NetBoxModelFilterSetForm):
+class InventoryItemTypeFilterForm(PrimaryModelFilterSetForm):
     model = InventoryItemType
     fieldsets = (
         FieldSet(
             'q',
             'filter_id',
             'tag',
+            'owner_id',
         ),
         FieldSet(
             'manufacturer_id',
@@ -103,10 +113,10 @@ class InventoryItemTypeFilterForm(NetBoxModelFilterSetForm):
     tag = TagFilterField(model)
 
 
-class AssetFilterForm(NetBoxModelFilterSetForm):
+class AssetFilterForm(PrimaryModelFilterSetForm):
     model = Asset
     fieldsets = (
-        FieldSet('q', 'filter_id', 'tag', 'status'),
+        FieldSet('q', 'filter_id', 'tag', 'owner_id','status'),
         FieldSet(
             'kind',
             'manufacturer_id',
@@ -123,7 +133,7 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
         ),
         FieldSet('tenant_id', 'contact_group_id', 'contact_id', name='Usage'),
         FieldSet(
-            'owner_id',
+            'owning_tenant_id',
             'order_id',
             'purchase_id',
             'supplier_id',
@@ -241,11 +251,11 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
         },
         label='Contact',
     )
-    owner_id = DynamicModelMultipleChoiceField(
+    owning_tenant_id = DynamicModelMultipleChoiceField(
         queryset=Tenant.objects.all(),
         required=False,
         null_option='None',
-        label='Owner',
+        label='Owning Tenant',
     )
     order_id = DynamicModelMultipleChoiceField(
         queryset=Order.objects.all(),
@@ -293,6 +303,21 @@ class AssetFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label='Warranty ends on or before',
         widget=DatePicker,
+    )
+    support_state = forms.MultipleChoiceField(
+        choices=AssetSupportStateChoices,
+        required=False,
+        label='Support state',
+    )
+    support_reason = forms.MultipleChoiceField(
+        choices=AssetSupportReasonChoices,
+        required=False,
+        label='Support reason',
+    )
+    support_source = forms.MultipleChoiceField(
+        choices=AssetSupportSourceChoices,
+        required=False,
+        label='Support source',
     )
     storage_site_id = DynamicModelMultipleChoiceField(
         queryset=Site.objects.all(),
@@ -448,10 +473,10 @@ class ContractAssignmentFilterForm(NetBoxModelFilterSetForm):
 #
 
 
-class SupplierFilterForm(ContactModelFilterForm, NetBoxModelFilterSetForm):
+class SupplierFilterForm(ContactModelFilterForm, PrimaryModelFilterSetForm):
     model = Supplier
     fieldsets = (
-        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('q', 'filter_id', 'tag', 'owner_id'),
         FieldSet('contact_group', 'contact_role', 'contact', name='Contacts'),
     )
 
@@ -474,10 +499,10 @@ class SupplierFilterForm(ContactModelFilterForm, NetBoxModelFilterSetForm):
     tag = TagFilterField(model)
 
 
-class PurchaseFilterForm(NetBoxModelFilterSetForm):
+class PurchaseFilterForm(PrimaryModelFilterSetForm):
     model = Purchase
     fieldsets = (
-        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('q', 'filter_id', 'tag', 'owner_id'),
         FieldSet('supplier_id', 'status', 'date_after', 'date_before', name='Purchase'),
     )
 
@@ -539,7 +564,7 @@ class OrderFilterForm(NetBoxModelFilterSetForm):
 #
 
 
-class BaseFlowFilterForm(NetBoxModelFilterSetForm):
+class BaseFlowFilterForm(PrimaryModelFilterSetForm):
     """
     Internal base filter form class for audit flow models.
     """
@@ -561,7 +586,7 @@ class AuditFlowPageFilterForm(BaseFlowFilterForm):
     model = AuditFlowPage
 
     fieldsets = (
-        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('q', 'filter_id', 'tag', 'owner_id'),
         FieldSet(
             'object_type_id',
             'assigned_flow_id',
@@ -574,7 +599,7 @@ class AuditFlowFilterForm(BaseFlowFilterForm):
     model = AuditFlow
 
     fieldsets = (
-        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('q', 'filter_id', 'tag', 'owner_id'),
         FieldSet(
             'object_type_id',
             name='Assignment',
@@ -582,15 +607,20 @@ class AuditFlowFilterForm(BaseFlowFilterForm):
     )
 
 
-class AuditTrailSourceFilterForm(NetBoxModelFilterSetForm):
+class AuditTrailSourceFilterForm(PrimaryModelFilterSetForm):
     model = AuditTrailSource
 
-    fields = (FieldSet('q', 'filter_id', 'tag'),)
+    fields = (FieldSet('q', 'filter_id', 'tag', 'owner_id'),)
 
 
 class AuditTrailFilterForm(BaseFlowFilterForm):
     model = AuditTrail
 
+    object_type_id = ContentTypeChoiceField(
+        queryset=ObjectType.objects.public(),
+        required=False,
+        label=_('Object type'),
+    )
     source_id = DynamicModelMultipleChoiceField(
         queryset=AuditTrailSource.objects.all(),
         required=False,

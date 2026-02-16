@@ -1,0 +1,53 @@
+import django.db.models.deletion
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('netbox_inventory', '0034_rename_asset_owner_to_owning_tenant'),
+        ('users', '0015_owner'),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name='asset',
+            name='owner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='users.owner'),
+        ),
+        migrations.AddField(
+            model_name='auditflow',
+            name='owner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='users.owner'),
+        ),
+        migrations.AddField(
+            model_name='auditflowpage',
+            name='owner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='users.owner'),
+        ),
+        migrations.AddField(
+            model_name='audittrailsource',
+            name='owner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='users.owner'),
+        ),
+        migrations.AddField(
+            model_name='order',
+            name='owner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='users.owner'),
+        ),
+        migrations.AddField(
+            model_name='inventoryitemtype',
+            name='owner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='users.owner'),
+        ),
+        migrations.AddField(
+            model_name='purchase',
+            name='owner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='users.owner'),
+        ),
+        migrations.AddField(
+            model_name='supplier',
+            name='owner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='users.owner'),
+        ),
+    ]

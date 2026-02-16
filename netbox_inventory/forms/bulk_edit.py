@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from dcim.models import DeviceType, Location, Manufacturer, ModuleType, RackType
 from extras.choices import *
 from extras.models import *
-from netbox.forms import NetBoxModelBulkEditForm
+from netbox.forms import NetBoxModelBulkEditForm,  PrimaryModelBulkEditForm
 from netbox.forms.mixins import ChangelogMessageMixin
 from tenancy.models import Contact, ContactGroup, Tenant
 from utilities.forms import BulkEditForm, add_blank_choice
@@ -15,7 +15,7 @@ from utilities.forms.fields import (
 from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import BulkEditNullBooleanSelect, DatePicker
 
-from ..choices import AssetStatusChoices, PurchaseStatusChoices
+from ..choices import AssetAllocationStatusChoices, AssetStatusChoices, PurchaseStatusChoices
 from ..models import *
 
 __all__ = (
@@ -41,16 +41,9 @@ __all__ = (
 #
 
 
-class InventoryItemGroupBulkEditForm(NetBoxModelBulkEditForm):
+class InventoryItemGroupBulkEditForm(PrimaryModelBulkEditForm):
     parent = DynamicModelChoiceField(
         queryset=InventoryItemGroup.objects.all(),
-        required=False,
-    )
-    description = forms.CharField(
-        max_length=200,
-        required=False,
-    )
-    comments = CommentField(
         required=False,
     )
 
@@ -67,7 +60,7 @@ class InventoryItemGroupBulkEditForm(NetBoxModelBulkEditForm):
     )
 
 
-class InventoryItemTypeBulkEditForm(NetBoxModelBulkEditForm):
+class InventoryItemTypeBulkEditForm(PrimaryModelBulkEditForm):
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         required=False,
@@ -77,13 +70,6 @@ class InventoryItemTypeBulkEditForm(NetBoxModelBulkEditForm):
         queryset=InventoryItemGroup.objects.all(),
         required=False,
         label='Inventory Item Group',
-    )
-    description = forms.CharField(
-        max_length=200,
-        required=False,
-    )
-    comments = CommentField(
-        required=False,
     )
 
     model = InventoryItemType
@@ -102,7 +88,7 @@ class InventoryItemTypeBulkEditForm(NetBoxModelBulkEditForm):
     )
 
 
-class AssetBulkEditForm(NetBoxModelBulkEditForm):
+class AssetBulkEditForm(PrimaryModelBulkEditForm):
     name = forms.CharField(
         required=False,
     )
@@ -111,9 +97,10 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
         required=False,
         initial='',
     )
-    description = forms.CharField(
-        max_length=200,
+    allocation_status = forms.ChoiceField(
+        choices=add_blank_choice(AssetAllocationStatusChoices),
         required=False,
+        initial='',
     )
     device_type = DynamicModelChoiceField(
         queryset=DeviceType.objects.all(),
@@ -145,10 +132,10 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
         disabled=True,
         required=False,
     )
-    owner = DynamicModelChoiceField(
+    owning_tenant = DynamicModelChoiceField(
         queryset=Tenant.objects.all(),
-        help_text=Asset._meta.get_field('owner').help_text,
-        required=not Asset._meta.get_field('owner').blank,
+        help_text=Asset._meta.get_field('owning_tenant').help_text,
+        required=not Asset._meta.get_field('owning_tenant').blank,
     )
     purchase = DynamicModelChoiceField(
         queryset=Purchase.objects.all(),
@@ -205,15 +192,13 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
         help_text=Asset._meta.get_field('storage_location').help_text,
         required=False,
     )
-    comments = CommentField(
-        required=False,
-    )
 
     model = Asset
     fieldsets = (
         FieldSet(
             'name',
             'status',
+            'allocation_status',
             'description',
             name='General',
         ),
@@ -227,7 +212,7 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
             name='Hardware',
         ),
         FieldSet(
-            'owner',
+            'owning_tenant',
             'purchase',
             'order',
             'base_license_sku',
@@ -259,7 +244,7 @@ class AssetBulkEditForm(NetBoxModelBulkEditForm):
         'device',
         'module',
         'rack',
-        'owner',
+        'owning_tenant',
         'purchase',
         'order',
         'tenant',
@@ -355,13 +340,7 @@ class ContractAssignmentBulkEditForm(NetBoxModelBulkEditForm):
 #
 
 
-class SupplierBulkEditForm(NetBoxModelBulkEditForm):
-    description = forms.CharField(
-        required=False,
-    )
-    comments = CommentField(
-        required=False,
-    )
+class SupplierBulkEditForm(PrimaryModelBulkEditForm):
 
     model = Supplier
     fieldsets = (
@@ -373,7 +352,7 @@ class SupplierBulkEditForm(NetBoxModelBulkEditForm):
     nullable_fields = ('description',)
 
 
-class PurchaseBulkEditForm(NetBoxModelBulkEditForm):
+class PurchaseBulkEditForm(PrimaryModelBulkEditForm):
     status = forms.ChoiceField(
         choices=add_blank_choice(PurchaseStatusChoices),
         required=False,
@@ -388,12 +367,6 @@ class PurchaseBulkEditForm(NetBoxModelBulkEditForm):
         queryset=Supplier.objects.all(),
         required=False,
         label='Supplier',
-    )
-    description = forms.CharField(
-        required=False,
-    )
-    comments = CommentField(
-        required=False,
     )
 
     model = Purchase
@@ -412,7 +385,7 @@ class PurchaseBulkEditForm(NetBoxModelBulkEditForm):
     )
 
 
-class OrderBulkEditForm(NetBoxModelBulkEditForm):
+class OrderBulkEditForm(PrimaryModelBulkEditForm):
     date = forms.DateField(
         label='Date',
         required=False,
@@ -422,12 +395,6 @@ class OrderBulkEditForm(NetBoxModelBulkEditForm):
         queryset=Purchase.objects.all(),
         required=False,
         label='Purchase',
-    )
-    description = forms.CharField(
-        required=False,
-    )
-    comments = CommentField(
-        required=False,
     )
 
     model = Order
@@ -450,7 +417,7 @@ class OrderBulkEditForm(NetBoxModelBulkEditForm):
 #
 
 
-class AuditFlowBulkEditForm(NetBoxModelBulkEditForm):
+class AuditFlowBulkEditForm(PrimaryModelBulkEditForm):
     enabled = forms.NullBooleanField(
         required=False,
         widget=BulkEditNullBooleanSelect(),

@@ -49,6 +49,7 @@ class HardwareLifecycle(PrimaryModel):
         fk_field='assigned_object_id'
     )
 
+    announcement_date = models.DateField(blank=True, null=True)
     end_of_sale = models.DateField(blank=True, null=True)
     end_of_maintenance = models.DateField(blank=True, null=True)
     end_of_security = models.DateField(blank=True, null=True)
@@ -60,10 +61,6 @@ class HardwareLifecycle(PrimaryModel):
         max_length=16,
         choices=SupportBasisChoices,
         default=SupportBasisChoices.DEFAULT_KEY,
-    )
-    tags = TaggableManager(
-        blank=True,
-        related_name="lcm_hardwarelifecycles"
     )
 
     class Meta:
@@ -117,6 +114,11 @@ class HardwareLifecycle(PrimaryModel):
             return Device.objects.filter(device_type=self.assigned_object).count()
         return Module.objects.filter(module_type=self.assigned_object).count()
 
+    @property
+    def assigned_asset_count(self):
+        if isinstance(self.assigned_object, DeviceType):
+            return self.assigned_object.assets.count()
+        return 0
 
     def _support_basis_date(self):
         """

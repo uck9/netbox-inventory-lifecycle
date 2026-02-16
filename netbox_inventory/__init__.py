@@ -13,7 +13,7 @@ class NetBoxInventoryConfig(PluginConfig):
     author = 'Matej Vadnjal'
     author_email = 'matej.vadnjal@arnes.si'
     base_url = 'inventory'
-    min_version = '4.4.0'
+    min_version = '4.5.0'
     default_settings = {
         'top_level_menu': True,
         'used_status_name': 'used',
@@ -49,7 +49,10 @@ class NetBoxInventoryConfig(PluginConfig):
 
     def ready(self):
         super().ready()
-        from . import signals  # noqa: F401
+        from . import (
+            jobs,  # noqa: F401
+            signals,  # noqa: F401
+        )
 
         self.register_feature_views()
 

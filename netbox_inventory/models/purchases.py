@@ -32,13 +32,13 @@ class Purchase(NamedModel):
     )
     purchase_requisition = models.CharField(
         max_length=100,
-        help_text='Purchase Requisition',
+        verbose_name='Requisition Reference',
         blank=True,
         null=True
     )
     purchase_order = models.CharField(
         max_length=100,
-        help_text='Purchase Order',
+        verbose_name='Purchase Reference',
         blank=True,
         null=True
     )

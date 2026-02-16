@@ -13,6 +13,7 @@ from netbox.views.generic import (
     ObjectEditView,
     ObjectListView,
     ObjectView,
+    BulkDeleteView,
 )
 from utilities.views import ViewTab, register_model_view
 
@@ -48,6 +49,7 @@ __all__ = (
     'AssetProgramCoverageEditView',
     'AssetProgramCoverageDeleteView',
     'AssetProgramCoverageActivateView',
+    'AssetProgramCoverageBulkDeleteView',
 )
 
 
@@ -106,6 +108,14 @@ class AssetProgramCoverageEditView(ObjectEditView):
 
 class AssetProgramCoverageDeleteView(ObjectDeleteView):
     queryset = AssetProgramCoverage.objects.all()
+
+
+@register_model_view(AssetProgramCoverage, 'bulk_delete', path='delete', detail=False)
+class AssetProgramCoverageBulkDeleteView(BulkDeleteView):
+    queryset = AssetProgramCoverage.objects.all()
+    filterset = AssetProgramCoverageFilterSet
+    table = AssetProgramCoverageTable
+
 
 
 @register_model_view(AssetProgramCoverage, name="activate", path="activate")
@@ -198,6 +208,10 @@ class AssetProgramCoverageActivateView(ObjectView):
 
         # --- Flip coverage status ---
         coverage.status = ProgramCoverageStatusChoices.ACTIVE
+
+        # Guardrail: ACTIVE implies ELIGIBLE
+        coverage.eligibility = ProgramEligibilityChoices.ELIGIBLE
+
         if not coverage.effective_start:
             coverage.effective_start = start_date
         coverage.effective_end = None

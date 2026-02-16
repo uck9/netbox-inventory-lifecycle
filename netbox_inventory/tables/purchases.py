@@ -1,7 +1,7 @@
 import django_tables2 as tables
 from django.utils.translation import gettext_lazy as _
 
-from netbox.tables import NetBoxTable, columns
+from netbox.tables import NetBoxTable, PrimaryModelTable, columns
 from tenancy.tables import ContactsColumnMixin
 
 from ..models import *
@@ -13,7 +13,7 @@ __all__ = (
 )
 
 
-class SupplierTable(ContactsColumnMixin, NetBoxTable):
+class SupplierTable(ContactsColumnMixin, PrimaryModelTable):
     name = tables.Column(
         linkify=True,
     )
@@ -32,7 +32,6 @@ class SupplierTable(ContactsColumnMixin, NetBoxTable):
         url_params={'supplier_id': 'pk'},
         verbose_name='Assets',
     )
-    comments = columns.MarkdownColumn()
     tags = columns.TagColumn()
 
     class Meta(NetBoxTable.Meta):
@@ -59,7 +58,7 @@ class SupplierTable(ContactsColumnMixin, NetBoxTable):
         )
 
 
-class PurchaseTable(NetBoxTable):
+class PurchaseTable(PrimaryModelTable):
     supplier = tables.Column(
         linkify=True,
     )
@@ -77,7 +76,6 @@ class PurchaseTable(NetBoxTable):
         url_params={'purchase_id': 'pk'},
         verbose_name='Assets',
     )
-    comments = columns.MarkdownColumn()
     tags = columns.TagColumn()
 
     class Meta(NetBoxTable.Meta):
@@ -106,7 +104,7 @@ class PurchaseTable(NetBoxTable):
         )
 
 
-class OrderTable(NetBoxTable):
+class OrderTable(PrimaryModelTable):
     name = tables.Column(
         linkify=True,
         verbose_name='Order ID',
@@ -122,7 +120,6 @@ class OrderTable(NetBoxTable):
         url_params={'order_id': 'pk'},
         verbose_name='Assets',
     )
-    comments = columns.MarkdownColumn()
     tags = columns.TagColumn()
 
     class Meta(NetBoxTable.Meta):
