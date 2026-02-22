@@ -679,17 +679,24 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         if self.status in ["retired", "disposed"]:
             return
 
+        deployed_without_device = (
+            self.status == "used"
+            and self.allocation_status == AssetAllocationStatusChoices.ALLOCATED
+            and not is_assigned
+        )
+
         if is_assigned:
-            # Deployed
             self.status = "used"
             self.allocation_status = AssetAllocationStatusChoices.CONSUMED
         else:
-            # Unassigned - return to spare pool
-            # Exception: preserve 'allocated' if user manually set it (project reservation)
+            if deployed_without_device:
+                # leave status/allocation alone
+                return
+
+            # normal spare pool behavior
             if self.allocation_status == AssetAllocationStatusChoices.CONSUMED:
                 self.allocation_status = AssetAllocationStatusChoices.UNALLOCATED
 
-            # Force status to stored unless in-transit
             if self.status == "used":
                 self.status = "stored"
 
@@ -776,6 +783,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
             # storage_site is derived from storage_location, so only clear storage_location
             if self.storage_location_id is not None:
                 self.storage_location = None
+
     def validate_storage_location_required(self):
         if self.status == 'stored' and self.storage_location_id is None:
             raise ValidationError({
