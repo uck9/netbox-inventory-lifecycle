@@ -370,6 +370,11 @@ class AssetFilterSet(PrimaryModelFilterSet):
         field_name='storage_location__site',
         label='Storage site (ID)',
     )
+    installed_site_override_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='installed_site_override',
+        queryset=Site.objects.all(),
+        label='Installed site override (ID)',
+    )
     storage_location_id = TreeNodeMultipleChoiceFilter(
         queryset=Location.objects.all(),
         field_name='storage_location',

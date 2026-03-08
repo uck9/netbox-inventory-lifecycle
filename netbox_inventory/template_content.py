@@ -297,10 +297,114 @@ class SiteAssetCounts(AssetLocationCounts):
     models = ['dcim.site']
     location_type = 'site'
 
+    def right_page(self):
+        site = self.context.get('object')
+        user = self.context['request'].user
+        assets_qs = Asset.objects.restrict(user, 'view')
+
+        count_installed = query_located(
+            assets_qs, 'site', [site.pk], assets_shown='installed'
+        ).count()
+        count_stored = query_located(
+            assets_qs, 'site', [site.pk], assets_shown='stored'
+        ).count()
+        # Allocated: used+allocated assets with no device, manually pointed at this site
+        count_allocated = assets_qs.filter(
+            status='used',
+            allocation_status='allocated',
+            installed_site_override=site,
+        ).count()
+
+        context = {
+            'asset_stats': [
+                {
+                    'label': 'Installed',
+                    'filter_field': 'installed_site_id',
+                    'count': count_installed,
+                },
+                {
+                    'label': 'Stored',
+                    'filter_field': 'storage_site_id',
+                    'count': count_stored,
+                },
+                {
+                    'label': 'Allocated',
+                    'filter_field': 'installed_site_override_id',
+                    'extra_filter': '&status=used&allocation_status=allocated',
+                    'count': count_allocated,
+                },
+                {
+                    'label': 'Total',
+                    'filter_field': 'located_site_id',
+                    'count': count_installed + count_stored + count_allocated,
+                },
+            ],
+        }
+        return self.render(
+            'netbox_inventory/inc/asset_stats_counts.html', extra_context=context
+        )
+
 
 class LocationAssetCounts(AssetLocationCounts):
     models = ['dcim.location']
     location_type = 'location'
+
+    def right_page(self):
+        location = self.context.get('object')
+        user = self.context['request'].user
+        assets_qs = Asset.objects.restrict(user, 'view')
+
+        # Expand to include all descendant locations so counts match NetBox device counts
+        location_pks = [location.pk] + list(
+            location.get_descendants().values_list('pk', flat=True)
+        )
+
+        count_installed = query_located(
+            assets_qs, 'location', location_pks, assets_shown='installed'
+        ).count()
+        count_stored = query_located(
+            assets_qs, 'location', location_pks, assets_shown='stored'
+        ).count()
+        # Allocated: used+allocated assets with no device; installed_site_override is site-level
+        # so we match against this location's parent site
+        count_allocated = 0
+        if location.site_id:
+            count_allocated = assets_qs.filter(
+                status='used',
+                allocation_status='allocated',
+                installed_site_override_id=location.site_id,
+            ).count()
+
+        context = {
+            'asset_stats': [
+                {
+                    'label': 'Installed',
+                    'filter_field': 'installed_location_id',
+                    'count': count_installed,
+                },
+                {
+                    'label': 'Stored',
+                    'filter_field': 'storage_location_id',
+                    'count': count_stored,
+                },
+                {
+                    'label': 'Allocated',
+                    'filter_field': 'installed_site_override_id',
+                    # filter_value overrides object.pk in the template — link by site, not location
+                    'filter_value': location.site_id,
+                    'extra_filter': '&status=used&allocation_status=allocated',
+                    'count': count_allocated,
+                },
+                {
+                    'label': 'Total',
+                    'filter_field': 'located_location_id',
+                    'count': count_installed + count_stored + count_allocated,
+                },
+            ],
+        }
+        return self.render(
+            'netbox_inventory/inc/asset_stats_counts.html', extra_context=context
+        )
 
 
 class RackAssetCounts(PluginTemplateExtension):

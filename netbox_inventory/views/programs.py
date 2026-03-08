@@ -208,6 +208,7 @@ class AssetProgramCoverageActivateView(ObjectView):
 
         # --- Flip coverage status ---
         coverage.status = ProgramCoverageStatusChoices.ACTIVE
+        coverage.activated_via = assignment
 
         # Guardrail: ACTIVE implies ELIGIBLE
         coverage.eligibility = ProgramEligibilityChoices.ELIGIBLE

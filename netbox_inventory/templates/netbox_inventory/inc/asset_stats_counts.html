@@ -5,7 +5,7 @@
   <h5 class="card-header">Assets</h5>
   <ul class="list-group list-group-flush">
     {% for asset_stat in asset_stats %}
-      <a href="{% url 'plugins:netbox_inventory:asset_list' %}?{{ asset_stat.filter_field }}={{ object.pk }}{{ asset_stat.extra_filter }}" class="list-group-item list-group-item-action d-flex justify-content-between">
+      <a href="{% url 'plugins:netbox_inventory:asset_list' %}?{{ asset_stat.filter_field }}={% firstof asset_stat.filter_value object.pk %}{{ asset_stat.extra_filter }}" class="list-group-item list-group-item-action d-flex justify-content-between">
         {{ asset_stat.label|bettertitle }}
         {% if asset_stat.count %}
           <span class="badge text-bg-primary rounded-pill">{{ asset_stat.count }}</span>
