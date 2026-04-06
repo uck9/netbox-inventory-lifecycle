@@ -444,7 +444,7 @@ class ContractSKUForm(NetBoxModelForm):
 
     class Meta:
         model = ContractSKU
-        fields = ('manufacturer', 'sku', 'contract_type', 'description', 'comments', 'tags', )
+        fields = ('manufacturer', 'sku', 'contract_type', 'service_level', 'description', 'comments', 'tags', )
 
 class ContractForm(NetBoxModelForm):
     vendor = DynamicModelChoiceField(

@@ -207,6 +207,8 @@ class Contract(PrimaryModel):
     def is_active(self):
         """Check if the contract is currently active based on dates."""
         from datetime import date
+        if not self.start_date or not self.end_date:
+            return False
         today = date.today()
         return self.start_date <= today <= self.end_date
 
@@ -214,6 +216,8 @@ class Contract(PrimaryModel):
     def days_until_expiry(self):
         """Calculate days until contract expires."""
         from datetime import date
+        if not self.end_date:
+            return 0
         today = date.today()
         if self.end_date > today:
             return (self.end_date - today).days
@@ -223,6 +227,8 @@ class Contract(PrimaryModel):
     def is_expired(self):
         """Check if the contract has expired."""
         from datetime import date
+        if not self.end_date:
+            return False
         return self.end_date < date.today()
 
     @property

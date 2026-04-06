@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from dcim.models import DeviceType, Location, Manufacturer, ModuleType, RackType
+from dcim.models import DeviceType, Location, Manufacturer, ModuleType, RackType, Site
 from extras.choices import *
 from extras.models import *
 from netbox.forms import NetBoxModelBulkEditForm,  PrimaryModelBulkEditForm
@@ -15,8 +15,18 @@ from utilities.forms.fields import (
 from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import BulkEditNullBooleanSelect, DatePicker
 
-from ..choices import AssetAllocationStatusChoices, AssetStatusChoices, PurchaseStatusChoices
+from ..choices import (
+    AssetAllocationStatusChoices,
+    AssetDisposalReasonhoices,
+    AssetStatusChoices,
+    AssetSupportReasonChoices,
+    AssetSupportStateChoices,
+    ContractStatusChoices,
+    ContractTypeChoices,
+    PurchaseStatusChoices,
+)
 from ..models import *
+from ..models.hardware import SupportBasisChoices
 
 __all__ = (
     'AssetBulkEditForm',
@@ -167,6 +177,10 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         required=False,
         widget=DatePicker(),
     )
+    vendor_instance_id = forms.CharField(
+        label='Vendor Instance ID',
+        required=False,
+    )
     tenant = DynamicModelChoiceField(
         queryset=Tenant.objects.all(),
         help_text=Asset._meta.get_field('tenant').help_text,
@@ -192,6 +206,40 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         help_text=Asset._meta.get_field('storage_location').help_text,
         required=False,
     )
+    installed_site_override = DynamicModelChoiceField(
+        queryset=Site.objects.all(),
+        help_text=Asset._meta.get_field('installed_site_override').help_text,
+        required=False,
+    )
+    support_state = forms.ChoiceField(
+        choices=add_blank_choice(AssetSupportStateChoices),
+        required=False,
+        initial='',
+    )
+    support_reason = forms.ChoiceField(
+        choices=add_blank_choice(AssetSupportReasonChoices),
+        required=False,
+        initial='',
+    )
+    support_validated_at = forms.DateField(
+        label='Support Validated At',
+        required=False,
+        widget=DatePicker(),
+    )
+    disposal_date = forms.DateField(
+        label='Disposal Date',
+        required=False,
+        widget=DatePicker(),
+    )
+    disposal_reason = forms.ChoiceField(
+        choices=add_blank_choice(AssetDisposalReasonhoices),
+        required=False,
+        initial='',
+    )
+    disposal_reference = forms.CharField(
+        label='Disposal Reference',
+        required=False,
+    )
 
     model = Asset
     fieldsets = (
@@ -209,6 +257,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
             'module',
             'rack_type',
             'rack',
+            'vendor_instance_id',
             name='Hardware',
         ),
         FieldSet(
@@ -222,10 +271,16 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
             name='Purchase',
         ),
         FieldSet(
-            'vendor_ship_date',
-            'warranty_start',
-            'warranty_end',
-            name='Key Hardware Dates',
+            'support_state',
+            'support_reason',
+            'support_validated_at',
+            name='Support State',
+        ),
+        FieldSet(
+            'disposal_date',
+            'disposal_reason',
+            'disposal_reference',
+            name='Disposal',
         ),
         FieldSet(
             'tenant',
@@ -235,6 +290,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         ),
         FieldSet(
             'storage_location',
+            'installed_site_override',
             name='Location',
         ),
     )
@@ -251,7 +307,14 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         'contact',
         'warranty_start',
         'warranty_end',
+        'vendor_instance_id',
         'storage_location',
+        'installed_site_override',
+        'support_reason',
+        'support_validated_at',
+        'disposal_date',
+        'disposal_reason',
+        'disposal_reference',
     )
 
 
@@ -275,33 +338,82 @@ class ContractVendorBulkEditForm(NetBoxModelBulkEditForm):
 
 
 class ContractSKUBulkEditForm(NetBoxModelBulkEditForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        label=_('Manufacturer'),
+    )
+    contract_type = forms.ChoiceField(
+        choices=add_blank_choice(ContractTypeChoices),
+        required=False,
+        initial='',
+        label=_('Contract Type'),
+    )
+    service_level = forms.CharField(
+        label=_('Service Level'),
+        max_length=64,
+        required=False,
+    )
     description = forms.CharField(
         label=_('Description'),
         max_length=200,
-        required=False
+        required=False,
     )
     comments = CommentField()
 
     model = ContractSKU
     fieldsets = (
-        FieldSet('description', ),
+        FieldSet('manufacturer', 'contract_type', 'service_level', 'description'),
     )
-    nullable_fields = ('description', )
+    nullable_fields = ('service_level', 'description')
 
 
 class ContractBulkEditForm(NetBoxModelBulkEditForm):
+    vendor = DynamicModelChoiceField(
+        queryset=ContractVendor.objects.all(),
+        required=False,
+        label=_('Vendor'),
+        selector=True,
+    )
+    contract_type = forms.ChoiceField(
+        choices=add_blank_choice(ContractTypeChoices),
+        required=False,
+        initial='',
+        label=_('Contract Type'),
+    )
+    status = forms.ChoiceField(
+        choices=add_blank_choice(ContractStatusChoices),
+        required=False,
+        initial='',
+    )
+    start_date = forms.DateField(
+        label=_('Start Date'),
+        required=False,
+        widget=DatePicker(),
+    )
+    renewal_date = forms.DateField(
+        label=_('Renewal Date'),
+        required=False,
+        widget=DatePicker(),
+    )
+    end_date = forms.DateField(
+        label=_('End Date'),
+        required=False,
+        widget=DatePicker(),
+    )
     description = forms.CharField(
         label=_('Description'),
         max_length=200,
-        required=False
+        required=False,
     )
     comments = CommentField()
 
     model = Contract
     fieldsets = (
-        FieldSet('description', ),
+        FieldSet('vendor', 'contract_type', 'status', 'description', name='Contract'),
+        FieldSet('start_date', 'renewal_date', 'end_date', name='Dates'),
     )
-    nullable_fields = ('description', )
+    nullable_fields = ('description', 'start_date', 'renewal_date', 'end_date')
 
 
 class ContractAssignmentBulkEditForm(NetBoxModelBulkEditForm):
@@ -322,7 +434,7 @@ class ContractAssignmentBulkEditForm(NetBoxModelBulkEditForm):
         max_length=200,
         required=False
     )
-    end = forms.DateField(
+    end_date = forms.DateField(
         label=_('End date'),
         required=False,
         widget=DatePicker(),
@@ -331,9 +443,9 @@ class ContractAssignmentBulkEditForm(NetBoxModelBulkEditForm):
 
     model = ContractAssignment
     fieldsets = (
-        FieldSet('contract', 'sku', 'description', 'end', ),
+        FieldSet('contract', 'sku', 'description', 'end_date', ),
     )
-    nullable_fields = ('contract', 'sku', 'description', 'end', )
+    nullable_fields = ('contract', 'sku', 'description', 'end_date', )
 
 #
 # Purchases
@@ -483,6 +595,51 @@ class AuditTrailSourceBulkEditForm(NetBoxModelBulkEditForm):
 #
 
 class HardwareLifecycleBulkEditForm(NetBoxModelBulkEditForm):
+    announcement_date = forms.DateField(
+        label=_('Announcement Date'),
+        required=False,
+        widget=DatePicker(),
+    )
+    end_of_sale = forms.DateField(
+        label=_('End of Sale'),
+        required=False,
+        widget=DatePicker(),
+    )
+    end_of_maintenance = forms.DateField(
+        label=_('End of Maintenance'),
+        required=False,
+        widget=DatePicker(),
+    )
+    end_of_security = forms.DateField(
+        label=_('End of Security'),
+        required=False,
+        widget=DatePicker(),
+    )
+    last_contract_attach = forms.DateField(
+        label=_('Last Contract Attach'),
+        required=False,
+        widget=DatePicker(),
+    )
+    last_contract_renewal = forms.DateField(
+        label=_('Last Contract Renewal'),
+        required=False,
+        widget=DatePicker(),
+    )
+    end_of_support = forms.DateField(
+        label=_('End of Support'),
+        required=False,
+        widget=DatePicker(),
+    )
+    support_basis = forms.ChoiceField(
+        choices=add_blank_choice(SupportBasisChoices),
+        required=False,
+        initial='',
+        label=_('Support Basis'),
+    )
+    notice_url = forms.URLField(
+        label=_('Notice URL'),
+        required=False,
+    )
     description = forms.CharField(
         label=_('Description'), max_length=200, required=False
     )
@@ -491,7 +648,30 @@ class HardwareLifecycleBulkEditForm(NetBoxModelBulkEditForm):
     model = HardwareLifecycle
     fieldsets = (
         FieldSet(
+            'announcement_date',
+            'end_of_sale',
+            'end_of_maintenance',
+            'end_of_security',
+            'last_contract_attach',
+            'last_contract_renewal',
+            'end_of_support',
+            'support_basis',
+            name=_('Dates'),
+        ),
+        FieldSet(
+            'notice_url',
             'description',
+            name=_('Information'),
         ),
     )
-    nullable_fields = ('description',)
+    nullable_fields = (
+        'announcement_date',
+        'end_of_sale',
+        'end_of_maintenance',
+        'end_of_security',
+        'last_contract_attach',
+        'last_contract_renewal',
+        'end_of_support',
+        'notice_url',
+        'description',
+    )

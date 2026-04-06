@@ -29,6 +29,8 @@ from utilities import filters
 from utilities.filters import ContentTypeFilter, TreeNodeMultipleChoiceFilter
 
 from .choices import (
+    AssetAllocationStatusChoices,
+    AssetDisposalReasonhoices,
     AssetStatusChoices,
     ContractStatusChoices,
     ContractTypeChoices,
@@ -136,6 +138,17 @@ class InventoryItemTypeFilterSet(PrimaryModelFilterSet):
 class AssetFilterSet(PrimaryModelFilterSet):
     status = django_filters.MultipleChoiceFilter(
         choices=AssetStatusChoices,
+    )
+    allocation_status = django_filters.MultipleChoiceFilter(
+        choices=AssetAllocationStatusChoices,
+    )
+    disposal_date = django_filters.DateFromToRangeFilter()
+    disposal_reason = django_filters.MultipleChoiceFilter(
+        choices=AssetDisposalReasonhoices,
+    )
+    disposal_reference = django_filters.CharFilter(
+        lookup_expr='icontains',
+        label='Disposal Reference',
     )
     kind = filters.MultiValueCharFilter(
         method='filter_kind',
@@ -439,7 +452,8 @@ class AssetFilterSet(PrimaryModelFilterSet):
 
     class Meta:
         model = Asset
-        fields = ('id', 'name', 'serial', 'asset_tag', 'description', 'program_id')
+        fields = ('id', 'name', 'serial', 'asset_tag', 'description', 'program_id',
+                  'allocation_status', 'disposal_date', 'disposal_reason', 'disposal_reference')
 
     def search(self, queryset, name, value):
         query = (
