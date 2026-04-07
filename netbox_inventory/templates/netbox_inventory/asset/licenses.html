@@ -1,0 +1,51 @@
+{% extends 'generic/object.html' %}
+{% load buttons %}
+{% load helpers %}
+
+{% block content %}
+  {% if object.base_license_sku %}
+  <div class="row mb-3">
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">Base / Perpetual License</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Manufacturer</th>
+            <td>{{ object.base_license_sku.manufacturer|linkify }}</td>
+          </tr>
+          <tr>
+            <th scope="row">SKU</th>
+            <td>{{ object.base_license_sku|linkify:'sku' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Name</th>
+            <td>{{ object.base_license_sku.name }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Description</th>
+            <td>{{ object.base_license_sku.description|placeholder }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>Subscription Licenses</strong>
+          <div>
+            <a href="{% url 'plugins:netbox_inventory:assetlicense_add' %}?asset={{ object.pk }}"
+               class="btn btn-sm btn-primary">
+              <i class="mdi mdi-plus-thick"></i> Add License
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          {% include 'inc/table.html' with table=licenses_table %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

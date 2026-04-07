@@ -46,6 +46,9 @@ __all__ = (
     'VendorProgramForm',
     'AssetProgramCoverageForm',
     'LicenseSKUForm',
+    'SubscriptionForm',
+    'AssetLicenseForm',
+    'AssetLicenseBulkAssignForm',
 )
 
 
@@ -915,3 +918,155 @@ class LicenseSKUForm(NetBoxModelForm):
             "description",
             "tags",
         )
+
+
+#
+# Subscriptions & Asset Licenses
+#
+
+
+class SubscriptionForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        selector=True,
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        query_params={'manufacturer_id': '$manufacturer'},
+        label=_('Order'),
+        help_text=_('Purchase order that created this subscription (optional).'),
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet(
+            'manufacturer',
+            'subscription_id',
+            'description',
+            'order',
+            'tags',
+            name=_('Subscription'),
+        ),
+    )
+
+    class Meta:
+        model = Subscription
+        fields = (
+            'manufacturer',
+            'subscription_id',
+            'description',
+            'order',
+            'comments',
+            'tags',
+        )
+
+
+class AssetLicenseForm(NetBoxModelForm):
+    # Pick subscription first — it drives both the asset and SKU dropdowns
+    # via server-side subscription_id filters on each API endpoint.
+    subscription = DynamicModelChoiceField(
+        queryset=Subscription.objects.all(),
+        selector=True,
+        help_text=_('Subscription this license is enrolled under.'),
+    )
+    asset = DynamicModelChoiceField(
+        queryset=Asset.objects.all(),
+        selector=True,
+        query_params={'subscription_id': '$subscription'},
+        help_text=_(
+            'Filtered to the subscription\'s manufacturer. '
+            'If the subscription is linked to an order, only assets on that order are shown.'
+        ),
+    )
+    sku = DynamicModelChoiceField(
+        queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.SUBSCRIPTION),
+        selector=True,
+        label=_('License SKU'),
+        query_params={
+            'subscription_id': '$subscription',
+            'license_kind': 'subscription',
+        },
+        help_text=_('Subscription-type SKUs only, filtered to the subscription\'s manufacturer.'),
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet('subscription', 'asset', 'sku', name=_('License')),
+        FieldSet('start_date', 'end_date', name=_('Term')),
+        FieldSet('quantity', 'notes', 'tags', name=_('Details')),
+    )
+
+    class Meta:
+        model = AssetLicense
+        fields = (
+            'asset',
+            'subscription',
+            'sku',
+            'start_date',
+            'end_date',
+            'quantity',
+            'notes',
+            'comments',
+            'tags',
+        )
+        widgets = {
+            'start_date': DatePicker(),
+            'end_date': DatePicker(),
+        }
+
+
+class AssetLicenseBulkAssignForm(forms.Form):
+    """
+    Form used to bulk-assign a license SKU under a subscription to many assets at once.
+    The user picks the subscription, SKU, and term dates, then selects assets from a
+    filtered list.  One AssetLicense record is created per selected asset.
+    """
+    subscription = DynamicModelChoiceField(
+        queryset=Subscription.objects.all(),
+        selector=True,
+        help_text=_('Subscription to assign the license under.'),
+    )
+    sku = DynamicModelChoiceField(
+        queryset=LicenseSKU.objects.all(),
+        selector=True,
+        label=_('License SKU'),
+    )
+    start_date = forms.DateField(
+        label=_('Start Date'),
+        widget=DatePicker(),
+    )
+    end_date = forms.DateField(
+        label=_('End Date'),
+        required=False,
+        widget=DatePicker(),
+        help_text=_('Leave blank for open-ended.'),
+    )
+    quantity = forms.IntegerField(
+        min_value=1,
+        initial=1,
+        label=_('Quantity per asset'),
+    )
+    assets = DynamicModelChoiceField(
+        queryset=Asset.objects.all(),
+        selector=True,
+        label=_('Assets'),
+        help_text=_('Assets to assign this license to. Only assets matching the SKU manufacturer are valid.'),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        subscription = cleaned.get('subscription')
+        sku = cleaned.get('sku')
+        start_date = cleaned.get('start_date')
+        end_date = cleaned.get('end_date')
+
+        if subscription and sku:
+            if subscription.manufacturer != sku.manufacturer:
+                raise forms.ValidationError(
+                    _('Subscription manufacturer must match the license SKU manufacturer.')
+                )
+        if start_date and end_date and start_date > end_date:
+            raise forms.ValidationError(_('End date must be on or after start date.'))
+        return cleaned

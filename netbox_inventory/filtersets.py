@@ -62,6 +62,8 @@ __all__ = (
     'VendorProgramFilterSet',
     'AssetProgramCoverageFilterSet',
     'LicenseSKUFilterSet',
+    'SubscriptionFilterSet',
+    'AssetLicenseFilterSet',
 )
 
 
@@ -449,6 +451,10 @@ class AssetFilterSet(PrimaryModelFilterSet):
         label="Contract (ID)",
     )
     program_id = django_filters.NumberFilter(method="filter_program_id")
+    subscription_id = django_filters.NumberFilter(
+        method='filter_by_subscription',
+        label='Subscription (ID)',
+    )
 
     class Meta:
         model = Asset
@@ -511,6 +517,30 @@ class AssetFilterSet(PrimaryModelFilterSet):
                 q |= Q(module_type__manufacturer__name__icontains=v)
                 q |= Q(inventoryitem_type__manufacturer__name__icontains=v)
             return queryset.filter(q)
+
+    def filter_by_subscription(self, queryset, name, value):
+        """
+        Filter assets by a subscription's manufacturer (always) and the
+        subscription's linked order (when one exists).  Used by the
+        AssetLicense add/edit form to narrow the asset dropdown.
+        """
+        try:
+            sub = Subscription.objects.select_related('manufacturer', 'order').get(pk=value)
+        except Subscription.DoesNotExist:
+            return queryset.none()
+
+        # Always restrict to the subscription's manufacturer
+        queryset = queryset.filter(
+            Q(device_type__manufacturer=sub.manufacturer)
+            | Q(module_type__manufacturer=sub.manufacturer)
+            | Q(inventoryitem_type__manufacturer=sub.manufacturer)
+        )
+
+        # Additionally restrict to the linked order when one is set
+        if sub.order_id:
+            queryset = queryset.filter(order=sub.order)
+
+        return queryset
 
     def filter_is_assigned(self, queryset, name, value):
         if value:
@@ -1075,11 +1105,23 @@ class LicenseSKUFilterSet(NetBoxModelFilterSet):
         queryset=Manufacturer.objects.all(),
         label="Manufacturer (ID)",
     )
+    subscription_id = django_filters.NumberFilter(
+        method='filter_by_subscription',
+        label='Subscription (ID)',
+    )
     q = django_filters.CharFilter(method="search", label="Search")
 
     class Meta:
         model = LicenseSKU
         fields = ("manufacturer_id", "license_kind", "sku")
+
+    def filter_by_subscription(self, queryset, name, value):
+        """Filter SKUs to the manufacturer of the given subscription."""
+        try:
+            sub = Subscription.objects.select_related('manufacturer').get(pk=value)
+        except Subscription.DoesNotExist:
+            return queryset.none()
+        return queryset.filter(manufacturer=sub.manufacturer)
 
     def search(self, queryset, name, value):
         if not value:
@@ -1169,4 +1211,70 @@ class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
             | Q(asset__serial__icontains=value)
             | Q(asset__device__name__icontains=value)
             | Q(asset__device__serial__icontains=value)
+        )
+
+
+class SubscriptionFilterSet(NetBoxModelFilterSet):
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer',
+        queryset=Manufacturer.objects.all(),
+        label=_('Manufacturer (ID)'),
+    )
+    order_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='order',
+        queryset=Order.objects.all(),
+        label=_('Order (ID)'),
+    )
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = Subscription
+        fields = ('id', 'manufacturer_id', 'order_id', 'subscription_id')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(subscription_id__icontains=value)
+            | Q(description__icontains=value)
+            | Q(manufacturer__name__icontains=value)
+        )
+
+
+class AssetLicenseFilterSet(NetBoxModelFilterSet):
+    asset_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='asset',
+        queryset=Asset.objects.all(),
+        label=_('Asset (ID)'),
+    )
+    subscription_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='subscription',
+        queryset=Subscription.objects.all(),
+        label=_('Subscription (ID)'),
+    )
+    sku_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='sku',
+        queryset=LicenseSKU.objects.all(),
+        label=_('License SKU (ID)'),
+    )
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='sku__manufacturer',
+        queryset=Manufacturer.objects.all(),
+        label=_('Manufacturer (ID)'),
+    )
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = AssetLicense
+        fields = ('id', 'asset_id', 'subscription_id', 'sku_id', 'manufacturer_id', 'start_date', 'end_date')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(asset__name__icontains=value)
+            | Q(asset__serial__icontains=value)
+            | Q(subscription__subscription_id__icontains=value)
+            | Q(sku__sku__icontains=value)
+            | Q(sku__name__icontains=value)
         )

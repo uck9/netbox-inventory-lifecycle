@@ -181,13 +181,15 @@
             <th scope="row">Purchase</th>
             <td>{{ object.purchase|linkify|placeholder }}{% if object.purchase.date %} on {{ object.purchase.date|isodate }}{% endif %}</td>
           </tr>
+          {% if object.purchase.description %}
+          <tr>
+            <th scope="row">Purchase Description</th>
+            <td>{{ object.purchase.description }}</td>
+          </tr>
+          {% endif %}
           <tr>
             <th scope="row">Order</th>
             <td>{{ object.order|linkify:'name'|placeholder }}</td>
-          </tr>
-          <tr>
-            <th scope="row">Base License</th>
-            <td>{{ object.base_license_sku|linkify:'name'|placeholder }}</td>
           </tr>
         </table>
       </div>

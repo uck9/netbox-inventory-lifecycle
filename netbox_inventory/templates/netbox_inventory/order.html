@@ -36,6 +36,12 @@
               <a href="{% url 'plugins:netbox_inventory:asset_list' %}?order_id={{ object.pk }}">{{ asset_count }}</a>
             </td>
           </tr>
+          <tr>
+            <th scope="row">Subscriptions</th>
+            <td>
+              <a href="{% url 'plugins:netbox_inventory:subscription_list' %}?order_id={{ object.pk }}">{{ subscription_count }}</a>
+            </td>
+          </tr>
         </table>
       </div>
       {% include 'inc/panels/tags.html' %}
@@ -61,6 +67,23 @@
           {% endif %}
         </h5>
         {% htmx_table 'plugins:netbox_inventory:asset_list' order_id=object.pk %}
+      </div>
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <h5 class="card-header">
+          Subscriptions
+          {% if perms.netbox_inventory.add_subscription %}
+            <div class="card-actions">
+              <a href="{% url 'plugins:netbox_inventory:subscription_add' %}?order={{ object.pk }}&manufacturer={{ object.manufacturer.pk }}&return_url={{ object.get_absolute_url }}" class="btn btn-ghost-primary btn-sm">
+                <i class="mdi mdi-plus-thick" aria-hidden="true"></i> Add a Subscription
+              </a>
+            </div>
+          {% endif %}
+        </h5>
+        {% htmx_table 'plugins:netbox_inventory:subscription_list' order_id=object.pk %}
       </div>
       {% plugin_full_width_page object %}
     </div>

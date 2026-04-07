@@ -58,6 +58,8 @@ __all__ = (
     'SupplierFilterForm',
     'PurchaseFilterForm',
     'LicenseSKUFilterForm',
+    'SubscriptionFilterForm',
+    'AssetLicenseFilterForm',
 )
 
 
@@ -746,4 +748,79 @@ class AssetProgramCoverageFilterForm(NetBoxModelFilterSetForm):
         required=False,
     )
     # Optional: tags (if your model is taggable)
+    tag = TagFilterField(model)
+
+
+#
+# Subscriptions & Asset Licenses
+#
+
+
+class SubscriptionFilterForm(NetBoxModelFilterSetForm):
+    model = Subscription
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('manufacturer_id', 'order_id', name='Subscription'),
+    )
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        selector=True,
+        label='Manufacturer',
+    )
+    order_id = DynamicModelMultipleChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        label='Order',
+    )
+    tag = TagFilterField(model)
+
+
+class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
+    model = AssetLicense
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('manufacturer_id', 'subscription_id', 'sku_id', 'asset_id', name='License'),
+        FieldSet('start_date__gte', 'end_date__lte', 'end_date__lt', name='Dates'),
+    )
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        selector=True,
+        label='Manufacturer',
+    )
+    subscription_id = DynamicModelMultipleChoiceField(
+        queryset=Subscription.objects.all(),
+        required=False,
+        selector=True,
+        label='Subscription',
+    )
+    sku_id = DynamicModelMultipleChoiceField(
+        queryset=LicenseSKU.objects.all(),
+        required=False,
+        selector=True,
+        label='License SKU',
+    )
+    asset_id = DynamicModelMultipleChoiceField(
+        queryset=Asset.objects.all(),
+        required=False,
+        selector=True,
+        label='Asset',
+    )
+    start_date__gte = forms.DateField(
+        required=False,
+        label='Start date on or after',
+        widget=DatePicker,
+    )
+    end_date__lte = forms.DateField(
+        required=False,
+        label='End date on or before',
+        widget=DatePicker,
+    )
+    end_date__lt = forms.DateField(
+        required=False,
+        label='Expiring before',
+        widget=DatePicker,
+    )
     tag = TagFilterField(model)

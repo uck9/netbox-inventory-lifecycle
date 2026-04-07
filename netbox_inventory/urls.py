@@ -5,9 +5,11 @@ from utilities.urls import get_model_urls
 
 from . import views
 from .models import (
+    AssetLicense,
     AssetProgramCoverage,
     ContractAssignment,
     HardwareLifecycle,
+    Subscription,
     VendorProgram,
 )
 from .views.jobs import run_cisco_eox_sync
@@ -155,6 +157,23 @@ urlpatterns = [
     path("license-skus/<int:pk>/", views.LicenseSKUView.as_view(), name="licensesku"),
     path("license-skus/<int:pk>/edit/", views.LicenseSKUEditView.as_view(), name="licensesku_edit"),
     path("license-skus/<int:pk>/delete/", views.LicenseSKUDeleteView.as_view(), name="licensesku_delete"),
+
+    # Subscriptions
+    path("subscriptions/", include(get_model_urls('netbox_inventory', 'subscription', detail=False))),
+    path("subscriptions/<int:pk>/", include(get_model_urls('netbox_inventory', 'subscription'))),
+
+    # Asset Licenses
+    path("asset-licenses/", include(get_model_urls('netbox_inventory', 'assetlicense', detail=False))),
+    path("asset-licenses/<int:pk>/", include(get_model_urls('netbox_inventory', 'assetlicense'))),
+    path("asset-licenses/bulk-assign/", views.AssetLicenseBulkAssignView.as_view(), name="assetlicense_bulk_assign"),
+    path("asset-licenses/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
+        name="assetlicense_changelog",
+        kwargs={"model": AssetLicense},
+    ),
+    path("subscriptions/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
+        name="subscription_changelog",
+        kwargs={"model": Subscription},
+    ),
 
     #EoX Button
     path("jobs/run-cisco-eox-sync/", run_cisco_eox_sync, name="run_cisco_eox_sync"),

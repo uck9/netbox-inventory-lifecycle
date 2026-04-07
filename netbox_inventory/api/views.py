@@ -30,6 +30,8 @@ __all__ = (
     'VendorProgramViewSet',
     'AssetProgramCoverageViewSet',
     'LicenseSKUViewSet',
+    'SubscriptionViewSet',
+    'AssetLicenseViewSet',
 )
 
 
@@ -223,3 +225,30 @@ class LicenseSKUViewSet(NetBoxModelViewSet):
     queryset = models.LicenseSKU.objects.all()
     serializer_class = LicenseSKUSerializer
     filterset_class = filtersets.LicenseSKUFilterSet
+
+
+#
+# Subscriptions & Asset Licenses
+#
+
+
+class SubscriptionViewSet(NetBoxModelViewSet):
+    queryset = models.Subscription.objects.prefetch_related(
+        'manufacturer', 'order', 'tags',
+    ).annotate(
+        license_count=count_related(models.AssetLicense, 'subscription')
+    )
+    serializer_class = SubscriptionSerializer
+    filterset_class = filtersets.SubscriptionFilterSet
+
+
+class AssetLicenseViewSet(NetBoxModelViewSet):
+    queryset = models.AssetLicense.objects.select_related(
+        'asset',
+        'subscription',
+        'subscription__manufacturer',
+        'sku',
+        'sku__manufacturer',
+    ).prefetch_related('tags')
+    serializer_class = AssetLicenseSerializer
+    filterset_class = filtersets.AssetLicenseFilterSet

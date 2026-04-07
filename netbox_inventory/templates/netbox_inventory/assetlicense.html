@@ -1,0 +1,94 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load plugins %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">License Assignment</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Asset</th>
+            <td>{{ object.asset|linkify }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Manufacturer</th>
+            <td>{{ object.sku.manufacturer|linkify }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Subscription</th>
+            <td>{{ object.subscription|linkify }}</td>
+          </tr>
+          <tr>
+            <th scope="row">License SKU</th>
+            <td>{{ object.sku|linkify }}</td>
+          </tr>
+        </table>
+      </div>
+      {% include 'inc/panels/tags.html' %}
+      {% plugin_left_page object %}
+    </div>
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">Term</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Start Date</th>
+            <td>{{ object.start_date }}</td>
+          </tr>
+          <tr>
+            <th scope="row">End Date</th>
+            <td>{{ object.end_date|placeholder }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Status</th>
+            <td>
+              {% if object.is_active %}
+                <span class="badge bg-success">Active</span>
+              {% elif object.is_expired %}
+                <span class="badge bg-danger">Expired</span>
+              {% elif object.is_pending %}
+                <span class="badge bg-info">Pending</span>
+              {% else %}
+                <span class="badge bg-secondary">Unknown</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Days Until Expiry</th>
+            <td>
+              {% if object.end_date %}
+                {% if object.days_until_expiry == 0 %}
+                  <span class="text-danger">Expires today</span>
+                {% elif object.is_expired %}
+                  <span class="text-danger">Expired</span>
+                {% else %}
+                  {{ object.days_until_expiry }} days
+                {% endif %}
+              {% else %}
+                <span class="text-muted">Open-ended</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Quantity</th>
+            <td>{{ object.quantity }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Notes</th>
+            <td>{{ object.notes|placeholder }}</td>
+          </tr>
+        </table>
+      </div>
+      {% include 'inc/panels/custom_fields.html' %}
+      {% include 'inc/panels/comments.html' %}
+      {% plugin_right_page object %}
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      {% plugin_full_width_page object %}
+    </div>
+  </div>
+{% endblock content %}

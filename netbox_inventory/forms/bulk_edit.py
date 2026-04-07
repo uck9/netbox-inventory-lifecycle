@@ -44,6 +44,8 @@ __all__ = (
     'PurchaseBulkEditForm',
     'SupplierBulkEditForm',
     'InventoryItemTypeBulkEditForm',
+    'SubscriptionBulkEditForm',
+    'AssetLicenseBulkEditForm',
 )
 
 #
@@ -675,3 +677,72 @@ class HardwareLifecycleBulkEditForm(NetBoxModelBulkEditForm):
         'notice_url',
         'description',
     )
+
+
+#
+# Subscriptions & Asset Licenses
+#
+
+
+class SubscriptionBulkEditForm(NetBoxModelBulkEditForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Manufacturer'),
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Order'),
+    )
+    description = forms.CharField(
+        max_length=200,
+        required=False,
+        label=_('Description'),
+    )
+    comments = CommentField()
+
+    model = Subscription
+    fieldsets = (
+        FieldSet('manufacturer', 'order', 'description'),
+    )
+    nullable_fields = ('order', 'description')
+
+
+class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
+    subscription = DynamicModelChoiceField(
+        queryset=Subscription.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Subscription'),
+    )
+    sku = DynamicModelChoiceField(
+        queryset=LicenseSKU.objects.all(),
+        required=False,
+        selector=True,
+        label=_('License SKU'),
+    )
+    start_date = forms.DateField(
+        required=False,
+        label=_('Start Date'),
+        widget=DatePicker(),
+    )
+    end_date = forms.DateField(
+        required=False,
+        label=_('End Date'),
+        widget=DatePicker(),
+    )
+    quantity = forms.IntegerField(
+        min_value=1,
+        required=False,
+        label=_('Quantity'),
+    )
+    comments = CommentField()
+
+    model = AssetLicense
+    fieldsets = (
+        FieldSet('subscription', 'sku', 'start_date', 'end_date', 'quantity'),
+    )
+    nullable_fields = ('end_date',)

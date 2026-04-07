@@ -22,6 +22,7 @@ class OrderView(generic.ObjectView):
     def get_extra_context(self, request, instance):
         return {
             'asset_count': models.Asset.objects.filter(order=instance).count(),
+            'subscription_count': models.Subscription.objects.filter(order=instance).count(),
         }
 
 
