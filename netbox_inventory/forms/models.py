@@ -563,7 +563,6 @@ class OrderForm(PrimaryModelForm):
             'name',
             'description',
             'tags',
-            'owner',
             name='Order',
         ),
     )
