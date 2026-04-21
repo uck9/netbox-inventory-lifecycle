@@ -1,14 +1,23 @@
+from datetime import date
+
+from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template import Template
 from django.urls import reverse
+from django.views import View
 from django_tables2 import RequestConfig
 
 from netbox.views import generic
 from utilities.views import ViewTab, register_model_view
 
 from .. import filtersets, forms, models, tables
-from ..choices import ProgramCoverageStatusChoices, ProgramEligibilityChoices
+from ..choices import (
+    ProgramCoverageStatusChoices,
+    ProgramEligibilityChoices,
+    ProgramExclusionReasonChoices,
+)
 from ..filtersets import AssetProgramCoverageFilterSet, VendorProgramFilterSet
 from ..forms.models import AssetProgramCoverageForm, VendorProgramForm
 from ..forms.programs import ActivateCoverageForm
@@ -25,6 +34,8 @@ __all__ = (
     'AssetBulkEditView',
     'AssetBulkDeleteView',
     'AssetProgramCoverageTabView',
+    'AssetTerminateCoverageView',
+    'AssetBulkAddToProgramView',
 )
 
 
@@ -180,10 +191,159 @@ class AssetProgramCoverageTabView(generic.ObjectView):
         table = tables.AssetProgramCoverageForAssetTable(qs)
         RequestConfig(request, paginate={"per_page": 50}).configure(table)
 
+        # Show a termination banner when the asset is disposed and has open coverage
+        open_coverage = [
+            c for c in qs
+            if c.status != ProgramCoverageStatusChoices.TERMINATED
+        ]
+        terminate_url = (
+            reverse("plugins:netbox_inventory:asset_terminate_coverage", kwargs={"pk": instance.pk})
+            if instance.status == "disposed" and open_coverage
+            else None
+        )
+
         return {
             "table": table,
             "add_url": (
                 reverse("plugins:netbox_inventory:assetprogramcoverage_add")
                 + f"?asset={instance.pk}"
             ),
+            "terminate_url": terminate_url,
+            "open_coverage_count": len(open_coverage),
         }
+
+
+class AssetTerminateCoverageView(View):
+    """
+    Confirmation page shown when a disposed asset still has open EA coverage records.
+
+    GET  — lists open (non-TERMINATED) coverage records and asks the user to confirm.
+    POST — terminates all open coverage records for the asset (status=TERMINATED,
+           eligibility=INELIGIBLE, reason=DISPOSED, effective_end=disposal_date|today).
+    """
+    template_name = "netbox_inventory/asset/terminate_coverage_confirm.html"
+
+    def get(self, request, pk):
+        asset = get_object_or_404(models.Asset, pk=pk)
+        open_coverages = (
+            AssetProgramCoverage.objects
+            .filter(asset=asset)
+            .exclude(status=ProgramCoverageStatusChoices.TERMINATED)
+            .select_related("program")
+        )
+        return render(request, self.template_name, {
+            "object": asset,
+            "open_coverages": open_coverages,
+        })
+
+    def post(self, request, pk):
+        asset = get_object_or_404(models.Asset, pk=pk)
+        effective_end = getattr(asset, "disposal_date", None) or date.today()
+
+        open_coverages = (
+            AssetProgramCoverage.objects
+            .filter(asset=asset)
+            .exclude(status=ProgramCoverageStatusChoices.TERMINATED)
+        )
+        count = open_coverages.count()
+        for coverage in open_coverages:
+            coverage.status = ProgramCoverageStatusChoices.TERMINATED
+            coverage.eligibility = ProgramEligibilityChoices.INELIGIBLE
+            coverage.decision_reason = ProgramExclusionReasonChoices.DISPOSED
+            coverage.effective_end = effective_end
+            # Skip the active-contract validation since the asset is disposed
+            coverage.save()
+
+        messages.success(
+            request,
+            f"Terminated {count} coverage record(s) for disposed asset '{asset}'.",
+        )
+        return redirect(asset.get_absolute_url() + "?tab=program_coverage")
+
+
+class AssetBulkAddToProgramView(View):
+    """
+    Bulk action: enroll a set of selected assets into a VendorProgram.
+
+    GET  — shows a form to choose the program and initial status (PLANNED or ACTIVE).
+    POST — creates AssetProgramCoverage records for each eligible asset.
+    """
+    template_name = "netbox_inventory/asset/bulk_add_to_program.html"
+
+    def get(self, request):
+        from ..forms.programs import BulkAddToProgramForm
+        asset_pks = request.GET.getlist("pk")
+        assets = models.Asset.objects.filter(pk__in=asset_pks)
+        form = BulkAddToProgramForm()
+        return render(request, self.template_name, {
+            "assets": assets,
+            "form": form,
+            "return_url": request.GET.get("return_url", reverse("plugins:netbox_inventory:asset_list")),
+        })
+
+    def post(self, request):
+        from ..forms.programs import BulkAddToProgramForm
+        from ..models.programs import _get_asset_manufacturer
+        asset_pks = request.POST.getlist("pk")
+        assets = models.Asset.objects.filter(pk__in=asset_pks)
+        form = BulkAddToProgramForm(request.POST)
+
+        if not form.is_valid():
+            return render(request, self.template_name, {
+                "assets": assets,
+                "form": form,
+                "return_url": request.POST.get("return_url", reverse("plugins:netbox_inventory:asset_list")),
+            })
+
+        program = form.cleaned_data["program"]
+        status = form.cleaned_data["status"]
+        effective_start = form.cleaned_data["effective_start"]
+        program_mfr = program.manufacturer
+
+        created = skipped_mfr = skipped_existing = 0
+        for asset in assets:
+            # Skip manufacturer mismatch
+            if program_mfr:
+                asset_mfr = _get_asset_manufacturer(asset)
+                if asset_mfr and asset_mfr.pk != program_mfr.pk:
+                    skipped_mfr += 1
+                    continue
+
+            # Skip if a current (non-terminated) coverage already exists
+            already_exists = AssetProgramCoverage.objects.filter(
+                asset=asset,
+                program=program,
+                effective_end__isnull=True,
+            ).exists()
+            if already_exists:
+                skipped_existing += 1
+                continue
+
+            # Skip if a TERMINATED coverage exists (termination is final)
+            terminated_exists = AssetProgramCoverage.objects.filter(
+                asset=asset,
+                program=program,
+                status=ProgramCoverageStatusChoices.TERMINATED,
+            ).exists()
+            if terminated_exists:
+                skipped_existing += 1
+                continue
+
+            AssetProgramCoverage.objects.create(
+                asset=asset,
+                program=program,
+                status=status,
+                eligibility=ProgramEligibilityChoices.ELIGIBLE,
+                effective_start=effective_start,
+            )
+            created += 1
+
+        msg_parts = [f"Created {created} coverage record(s)."]
+        if skipped_mfr:
+            msg_parts.append(f"{skipped_mfr} skipped (manufacturer mismatch).")
+        if skipped_existing:
+            msg_parts.append(f"{skipped_existing} skipped (existing or terminated coverage).")
+        messages.success(request, " ".join(msg_parts))
+
+        return_url = request.POST.get("return_url", reverse("plugins:netbox_inventory:asset_list"))
+        return redirect(return_url)

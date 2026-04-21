@@ -139,6 +139,7 @@ class ProgramExclusionReasonChoices(ChoiceSet):
     LAB = 'lab'
     NOT_YET_ONBOARDED = 'not_yet_onboarded'
     DECOMMISSION_PLANNED = 'decommission_planned'
+    ALC_CONTRACT_ACTIVE = 'alc_contract_active'
 
     # Ineligible exclusions — hardware cannot join the program
     PAST_END_OF_SUPPORT = 'past_eos'
@@ -152,6 +153,7 @@ class ProgramExclusionReasonChoices(ChoiceSet):
         (LAB, 'Lab Device', 'blue'),
         (NOT_YET_ONBOARDED, 'Not Yet Onboarded', 'cyan'),
         (DECOMMISSION_PLANNED, 'Decommission Planned', 'orange'),
+        (ALC_CONTRACT_ACTIVE, 'ALC Contract Active (eligible for EA)', 'orange'),
         # --- Ineligible exclusions ---
         (PAST_END_OF_SUPPORT, 'Past End of Support', 'red'),
         (VENDOR_EXCLUDED, 'Vendor Excluded', 'red'),
@@ -160,7 +162,7 @@ class ProgramExclusionReasonChoices(ChoiceSet):
     ]
 
     # Convenience sets used in validation
-    ELIGIBLE_REASONS = {SPARE, LAB, NOT_YET_ONBOARDED, DECOMMISSION_PLANNED}
+    ELIGIBLE_REASONS = {SPARE, LAB, NOT_YET_ONBOARDED, DECOMMISSION_PLANNED, ALC_CONTRACT_ACTIVE}
     INELIGIBLE_REASONS = {PAST_END_OF_SUPPORT, VENDOR_EXCLUDED, NEVER_SUPPORTED, DISPOSED}
 
 

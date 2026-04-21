@@ -2,6 +2,17 @@
 {% load buttons %}
 
 {% block content %}
+  {% if terminate_url %}
+  <div class="alert alert-warning d-flex align-items-center justify-content-between mb-3" role="alert">
+    <span>
+      <i class="mdi mdi-alert-circle-outline me-1"></i>
+      This asset is <strong>Disposed</strong> but has <strong>{{ open_coverage_count }}</strong>
+      open coverage record{{ open_coverage_count|pluralize }} that should be terminated.
+    </span>
+    <a href="{{ terminate_url }}" class="btn btn-sm btn-danger ms-3">Terminate Coverage</a>
+  </div>
+  {% endif %}
+
   <div class="row mb-3">
     <div class="col col-md-12">
       <div class="card">

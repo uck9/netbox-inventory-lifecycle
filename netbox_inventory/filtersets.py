@@ -36,6 +36,7 @@ from .choices import (
     ContractTypeChoices,
     HardwareKindChoices,
     ProgramCoverageStatusChoices,
+    ProgramEligibilityChoices,
     PurchaseStatusChoices,
 )
 from .models import *
@@ -1142,12 +1143,14 @@ class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
 
     q = django_filters.CharFilter(method="filter_q", label="Search")
 
-    # Status
     status = django_filters.MultipleChoiceFilter(
-        choices=AssetStatusChoices,
+        choices=ProgramCoverageStatusChoices,
     )
 
-    # Common foreign keys
+    eligibility = django_filters.MultipleChoiceFilter(
+        choices=ProgramEligibilityChoices,
+    )
+
     program_id = django_filters.ModelMultipleChoiceFilter(
         field_name="program",
         queryset=VendorProgram.objects.all(),
@@ -1158,14 +1161,14 @@ class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
         queryset=Asset.objects.all(),
         label="Asset",
     )
-    # If your Asset links to a Device (asset.device or asset.assigned_object), adjust accordingly
     device_id = django_filters.ModelMultipleChoiceFilter(
         field_name="asset__device",
         queryset=Device.objects.all(),
         label="Device",
     )
+    # Covers assets installed via device, installed_site_override (OT), or rack
     site_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="asset__device__site",
+        method="filter_by_site",
         queryset=Site.objects.all(),
         label="Site",
     )
@@ -1175,7 +1178,6 @@ class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
         label="Tenant",
     )
 
-    # Effective dates (range)
     effective_start = django_filters.DateFromToRangeFilter(
         field_name="effective_start",
         label="Effective start (range)",
@@ -1195,9 +1197,29 @@ class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
             "site_id",
             "tenant_id",
             "status",
+            "eligibility",
             "effective_start",
             "effective_end",
         )
+
+    def filter_by_site(self, queryset, name, value):
+        """
+        Match assets whose effective site is any of the selected sites.
+        Precedence mirrors Asset.current_site:
+          1. asset.device.site (or inventoryitem/module host device site)
+          2. asset.installed_site_override
+          3. asset.rack.site
+        """
+        if not value:
+            return queryset
+        site_ids = [s.pk for s in value]
+        return queryset.filter(
+            Q(asset__device__site__in=site_ids)
+            | Q(asset__inventoryitem__device__site__in=site_ids)
+            | Q(asset__module__device__site__in=site_ids)
+            | Q(asset__installed_site_override__in=site_ids)
+            | Q(asset__rack__site__in=site_ids)
+        ).distinct()
 
     def filter_q(self, queryset, name, value):
         if not value:

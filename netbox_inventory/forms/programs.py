@@ -1,7 +1,10 @@
+from datetime import date
+
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from ..models import Contract, ContractSKU
+from ..choices import ProgramCoverageStatusChoices
+from ..models import Contract, ContractSKU, VendorProgram
 
 
 class ActivateCoverageForm(forms.Form):
@@ -54,3 +57,31 @@ class ActivateCoverageForm(forms.Form):
             sku_qs = sku_qs.filter(contract_type=contract_type)
 
         self.fields["sku"].queryset = sku_qs
+
+
+class BulkAddToProgramForm(forms.Form):
+    """
+    Used by AssetBulkAddToProgramView to enrol a set of assets into a VendorProgram.
+    """
+    program = forms.ModelChoiceField(
+        queryset=VendorProgram.objects.all(),
+        label=_("Vendor Program"),
+        help_text=_("Assets will be enrolled into this program."),
+    )
+    status = forms.ChoiceField(
+        choices=[
+            (ProgramCoverageStatusChoices.PLANNED, _("Planned — pending activation")),
+            (ProgramCoverageStatusChoices.ACTIVE, _("Active — immediately active (requires a current contract)")),
+        ],
+        initial=ProgramCoverageStatusChoices.PLANNED,
+        label=_("Initial Status"),
+    )
+    effective_start = forms.DateField(
+        required=False,
+        initial=date.today,
+        label=_("Effective Start"),
+        help_text=_("Defaults to today if blank."),
+    )
+
+    def clean_effective_start(self):
+        return self.cleaned_data.get("effective_start") or date.today()

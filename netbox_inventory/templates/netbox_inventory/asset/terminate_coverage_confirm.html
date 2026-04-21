@@ -1,0 +1,62 @@
+{% extends 'base/layout.html' %}
+
+{% block content %}
+<div class="row">
+  <div class="col col-md-8 offset-md-2">
+
+    <div class="card border-danger">
+      <div class="card-header text-bg-danger">
+        <strong>Terminate EA Coverage Records</strong>
+      </div>
+      <div class="card-body">
+        <p>
+          Asset <strong>{{ object }}</strong> is marked as <strong>Disposed</strong>.
+          The following coverage records are still open and will be permanently terminated:
+        </p>
+
+        <table class="table table-bordered table-sm">
+          <thead>
+            <tr>
+              <th>Program</th>
+              <th>Status</th>
+              <th>Effective Start</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for coverage in open_coverages %}
+            <tr>
+              <td>{{ coverage.program }}</td>
+              <td>
+                <span class="badge bg-{{ coverage.get_status_color }}">
+                  {{ coverage.get_status_display }}
+                </span>
+              </td>
+              <td>{{ coverage.effective_start|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-muted">No open coverage records found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="alert alert-warning">
+          <strong>Note:</strong> Termination is permanent. These records cannot be re-opened.
+          The effective end date will be set to the asset's disposal date (or today if not recorded).
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+          <div class="text-end">
+            <button type="submit" class="btn btn-danger">Confirm Termination</button>
+            <a href="{{ object.get_absolute_url }}?tab=program_coverage" class="btn btn-outline-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

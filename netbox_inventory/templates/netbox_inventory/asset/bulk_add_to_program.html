@@ -1,0 +1,59 @@
+{% extends 'base/layout.html' %}
+{% load form_helpers %}
+
+{% block content %}
+<div class="row">
+  <div class="col col-md-8 offset-md-2">
+
+    <div class="card">
+      <div class="card-header">
+        <strong>Add Assets to EA Program</strong>
+      </div>
+      <div class="card-body">
+
+        <p>
+          Enroll the <strong>{{ assets|length }}</strong> selected asset{{ assets|length|pluralize }} into a Vendor Program.
+          Assets with a manufacturer mismatch or existing coverage will be skipped automatically.
+        </p>
+
+        <form method="post">
+          {% csrf_token %}
+          {% for asset in assets %}
+            <input type="hidden" name="pk" value="{{ asset.pk }}">
+          {% endfor %}
+          <input type="hidden" name="return_url" value="{{ return_url }}">
+
+          {% render_form form %}
+
+          <div class="alert alert-info mt-3">
+            <ul class="mb-0">
+              <li>Choosing <strong>Planned</strong> creates a coverage record pending activation. Use this when the contract has not yet been assigned.</li>
+              <li>Choosing <strong>Active</strong> will fail validation if the asset does not already have a matching contract assignment. Use Planned for batch imports.</li>
+            </ul>
+          </div>
+
+          <div class="text-end mt-3">
+            <button type="submit" class="btn btn-primary">Enroll Assets</button>
+            <a href="{{ return_url }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+
+        <hr>
+        <h6 class="text-muted">Selected Assets ({{ assets|length }})</h6>
+        <ul class="list-unstyled small">
+          {% for asset in assets %}
+          <li>
+            <a href="{{ asset.get_absolute_url }}">{{ asset }}</a>
+            {% if asset.device_type %}
+              <span class="text-muted">— {{ asset.device_type.manufacturer }} {{ asset.device_type }}</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

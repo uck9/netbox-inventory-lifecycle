@@ -5,6 +5,18 @@ from netbox.plugins import (
     get_plugin_config,
 )
 
+
+def _coverage_item(link_text, query_string, permissions=None):
+    """Create a PluginMenuItem for the coverage list with pre-set query filters."""
+    item = PluginMenuItem(
+        link="plugins:netbox_inventory:assetprogramcoverage_list",
+        link_text=link_text,
+        permissions=permissions or ["netbox_inventory.view_assetprogramcoverage"],
+        buttons=[],
+    )
+    item.url = f"/plugins/inventory/asset-program-coverages/?{query_string}"
+    return item
+
 #
 # Assets
 #
@@ -91,6 +103,9 @@ assets_items = (
         buttons=coverage_buttons,
         permissions=["netbox_inventory.view_assetprogramcoverage"],
     ),
+    _coverage_item("Active EA Assets", "status=active"),
+    _coverage_item("Eligible (ALC, Excluded)", "status=excluded&eligibility=eligible"),
+    _coverage_item("Ineligible (Past EoS)", "status=excluded&eligibility=ineligible"),
     PluginMenuItem(
         link="plugins:netbox_inventory:licensesku_list",
         link_text="License SKUs",
