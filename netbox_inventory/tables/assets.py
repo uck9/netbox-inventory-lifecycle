@@ -385,7 +385,7 @@ class AssetTable(PrimaryModelTable):
             'order',
             'contract',
             'purchase_date',
-            'vendor_shop_date',
+            'vendor_ship_date',
             'warranty_start',
             'warranty_end',
             'warranty_progress',
