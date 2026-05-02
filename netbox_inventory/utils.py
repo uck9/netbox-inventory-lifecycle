@@ -136,6 +136,10 @@ def query_located(queryset, field_name, values, assets_shown='all'):
         | Q(**{f'module__device__{field_name}__in': values})
         | Q(**{f'inventoryitem__device__{field_name}__in': values})
     )
+    if field_name == 'site':
+        q_installed = q_installed | Q(installed_site_override__in=values)
+    elif field_name == 'site__slug':
+        q_installed = q_installed | Q(installed_site_override__slug__in=values)
 
     # Q expressions for stored
     if field_name == 'rack':

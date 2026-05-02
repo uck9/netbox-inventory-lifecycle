@@ -799,6 +799,12 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     def get_support_state_color(self):
         return AssetSupportStateChoices.colors.get(self.support_state)
 
+    def get_support_reason_color(self):
+        return AssetSupportReasonChoices.colors.get(self.support_reason)
+
+    def get_support_source_color(self):
+        return AssetSupportSourceChoices.colors.get(self.support_source)
+
     def clean_support_fields(self) -> None:
         """
         Normalize support fields to prevent "fake precision":
