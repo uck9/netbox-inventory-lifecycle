@@ -214,6 +214,18 @@ class AssetTable(PrimaryModelTable):
         verbose_name='Vendor Instance ID',
     )
     disposal_date = columns.DateColumn()
+    support_state = columns.ChoiceFieldColumn()
+    support_reason = columns.ChoiceFieldColumn()
+    support_source = columns.ChoiceFieldColumn()
+    support_validated_at = columns.DateColumn(verbose_name='Support Validated At')
+    base_license_sku = tables.Column(
+        linkify=True,
+        verbose_name='Base License SKU',
+    )
+    installed_site_override = tables.Column(
+        linkify=True,
+        verbose_name='Installed Site Override',
+    )
     tags = columns.TagColumn()
     actions = columns.ActionsColumn(
         extra_buttons="""
@@ -385,7 +397,7 @@ class AssetTable(PrimaryModelTable):
             'order',
             'contract',
             'purchase_date',
-            'vendor_shop_date',
+            'vendor_ship_date',
             'warranty_start',
             'warranty_end',
             'warranty_progress',
@@ -393,6 +405,12 @@ class AssetTable(PrimaryModelTable):
             'disposal_reason',
             'disposal_reference',
             'vendor_instance_id',
+            'support_state',
+            'support_reason',
+            'support_source',
+            'support_validated_at',
+            'base_license_sku',
+            'installed_site_override',
             'description',
             'comments',
             'tags',

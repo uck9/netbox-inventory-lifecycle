@@ -11,7 +11,7 @@
         <thead>
           <tr class="border-bottom">
             <th>Contract ID</th>
-            <th>Type</th>
+            <th>Description</th>
             <th>SKU</th>
             <th>End Date</th>
             <th>Details</th>
@@ -22,7 +22,7 @@
           {% for contract in contracts %}
             <tr>
               <td><a href="{% url 'plugins:netbox_inventory:contract' contract.contract.pk %}">{{ contract.contract }}</a></td>
-              <td>{{ contract.contract.get_contract_type_display }}</td>
+              <td>{{ contract.contract.description|placeholder }}</td>
               <td>{{ contract.sku }}</td>
               {% if contract.effective_end_date == None %}
               <td>No End Date</td>
