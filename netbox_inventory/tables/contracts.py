@@ -65,7 +65,9 @@ class ContractTable(NetBoxTable):
     )
     days_until_expiry = columns.TemplateColumn(
         template_code='''
-        {% if record.is_expired %}
+        {% if not record.end_date %}
+            <span class="text-muted">&mdash;</span>
+        {% elif record.is_expired %}
             <span class="text-danger">
                 <i class="mdi mdi-alert-circle"></i> Expired
             </span>
