@@ -161,6 +161,11 @@ class AssetTable(PrimaryModelTable):
     contact = tables.Column(
         linkify=True,
     )
+    storage_site = tables.Column(
+        linkify=True,
+        verbose_name='Storage Site',
+        orderable=False,
+    )
     storage_location = tables.Column(
         linkify=True,
     )
@@ -207,13 +212,40 @@ class AssetTable(PrimaryModelTable):
     warranty_progress = columns.TemplateColumn(
         template_code=WARRANTY_PROGRESSBAR,
         order_by='warranty_end',
-        # orderable=False,
         verbose_name='Warranty Remaining',
+    )
+    warranty_remaining = columns.TemplateColumn(
+        template_code='{% if value %}{{ value.days }} days{% else %}—{% endif %}',
+        order_by='warranty_end',
+        verbose_name='Warranty Days Left',
+        orderable=True,
+    )
+    vendor_ship_date = columns.DateColumn(
+        verbose_name='Vendor Ship Date',
+    )
+    warranty_start = columns.DateColumn(
+        verbose_name='Warranty Start',
+    )
+    warranty_end = columns.DateColumn(
+        verbose_name='Warranty End',
     )
     vendor_instance_id = tables.Column(
         verbose_name='Vendor Instance ID',
     )
     disposal_date = columns.DateColumn()
+    disposal_reason = columns.ChoiceFieldColumn()
+    support_state = columns.ChoiceFieldColumn()
+    support_reason = columns.ChoiceFieldColumn()
+    support_source = columns.ChoiceFieldColumn()
+    support_validated_at = columns.DateColumn(verbose_name='Support Validated At')
+    base_license_sku = tables.Column(
+        linkify=True,
+        verbose_name='Base License SKU',
+    )
+    installed_site_override = tables.Column(
+        linkify=True,
+        verbose_name='Installed Site Override',
+    )
     tags = columns.TagColumn()
     actions = columns.ActionsColumn(
         extra_buttons="""
@@ -385,14 +417,21 @@ class AssetTable(PrimaryModelTable):
             'order',
             'contract',
             'purchase_date',
-            'vendor_shop_date',
+            'vendor_ship_date',
             'warranty_start',
             'warranty_end',
             'warranty_progress',
+            'warranty_remaining',
             'disposal_date',
             'disposal_reason',
             'disposal_reference',
             'vendor_instance_id',
+            'support_state',
+            'support_reason',
+            'support_source',
+            'support_validated_at',
+            'base_license_sku',
+            'installed_site_override',
             'description',
             'comments',
             'tags',

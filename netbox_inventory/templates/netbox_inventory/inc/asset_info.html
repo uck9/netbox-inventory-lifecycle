@@ -34,12 +34,27 @@
       <td>{% badge asset.get_status_display bg_color=asset.get_status_color %}</a></td>
     </tr>
     <tr>
+      <th scope="row"><span title="Support state">Support State</span></th>
+      <td>{% badge asset.get_support_state_display bg_color=asset.get_support_state_color %}</td>
+    </tr>
+    <tr>
       <th scope="row">Owning Tenant</th>
       <td>{{ asset.owning_tenant|linkify|placeholder }}</td>
     </tr>
     <tr>
       <th scope="row">Purchase</th>
-      <td>{{ asset.purchase|linkify|placeholder }}</td>
+      <td>
+        {% if asset.purchase %}
+          <a href="{{ asset.purchase.supplier.get_absolute_url }}">{{ asset.purchase.supplier }}</a> /
+          <a href="{{ asset.purchase.get_absolute_url }}">{{ asset.purchase.name }}</a>
+          {% if asset.order %} / <a href="{{ asset.order.get_absolute_url }}">{{ asset.order.name }}</a>{% endif %}
+          {% if asset.purchase.description %}
+            <br><small class="text-muted">{{ asset.purchase.description }}</small>
+          {% endif %}
+        {% else %}
+          {{ asset.purchase|placeholder }}
+        {% endif %}
+      </td>
     </tr>
   </table>
   {% else %}

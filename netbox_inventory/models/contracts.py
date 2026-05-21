@@ -322,14 +322,14 @@ class Contract(PrimaryModel):
         # Only auto-update if current status allows it
         # Don't override manually set statuses like 'cancelled' or 'renewed'
         if self.status in ['draft', 'active', 'expired', '']:
-            if self.end_date < today:
+            if self.end_date and self.end_date < today:
                 # Contract has expired
                 self.status = 'expired'
-            elif self.start_date <= today <= self.end_date:
+            elif self.start_date and self.end_date and self.start_date <= today <= self.end_date:
                 # Contract is currently active
                 if self.status != 'active':
                     self.status = 'active'
-            elif self.start_date > today:
+            elif self.start_date and self.start_date > today:
                 # Contract hasn't started yet
                 if self.status not in ['draft']:
                     self.status = 'draft'

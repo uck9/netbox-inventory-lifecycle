@@ -11,6 +11,7 @@ from dcim.models import Device, DeviceType, Manufacturer, Module, ModuleType
 from netbox.jobs import JobRunner, system_job
 
 from netbox_inventory.models import hardware
+from netbox_inventory.models.assets import Asset
 
 WEEKLY_MINUTES = getattr(JobIntervalChoices, "INTERVAL_WEEKLY", 10080)
 
@@ -111,7 +112,7 @@ class SyncCiscoHwEoXDates(JobRunner):
                 self.logger.warning(f"No DeviceType found for Part Number {pid}")
                 return None, 0, None
 
-            hw_count = Device.objects.filter(device_type=hw_obj).count()
+            hw_count = Device.objects.filter(device_type=hw_obj).count() + Asset.objects.filter(device_type=hw_obj).count()
             return hw_obj, hw_count, content_type
 
         if hardware_type == "moduletype":
@@ -125,7 +126,7 @@ class SyncCiscoHwEoXDates(JobRunner):
                 self.logger.warning(f"No ModuleType found for Part Number {pid}")
                 return None, 0, None
 
-            hw_count = Module.objects.filter(module_type=hw_obj).count()
+            hw_count = Module.objects.filter(module_type=hw_obj).count() + Asset.objects.filter(module_type=hw_obj).count()
             return hw_obj, hw_count, content_type
 
         self.logger.warning("Invalid hardware_type argument defined.")
@@ -263,10 +264,10 @@ class SyncCiscoHwEoXDates(JobRunner):
                 continue
 
             if self.LIFECYCLE_ONLY_ACTIVE_PIDS:
-                if devicetype.instances.count() > 0:
+                if devicetype.instances.count() > 0 or Asset.objects.filter(device_type=devicetype).exists():
                     results[devicetype.part_number] = "devicetype"
                 else:
-                    self.logger.info(f'No Instances of "{devicetype}" - only tracking active PIDs; skipping')
+                    self.logger.info(f'No Instances or Assets of "{devicetype}" - only tracking active PIDs; skipping')
             else:
                 results[devicetype.part_number] = "devicetype"
 
@@ -276,10 +277,10 @@ class SyncCiscoHwEoXDates(JobRunner):
                 continue
 
             if self.LIFECYCLE_ONLY_ACTIVE_PIDS:
-                if moduletype.instances.count() > 0:
+                if moduletype.instances.count() > 0 or Asset.objects.filter(module_type=moduletype).exists():
                     results[moduletype.part_number] = "moduletype"
                 else:
-                    self.logger.info(f'No Instances of "{moduletype}" - only tracking active PIDs; skipping')
+                    self.logger.info(f'No Instances or Assets of "{moduletype}" - only tracking active PIDs; skipping')
             else:
                 results[moduletype.part_number] = "moduletype"
 

@@ -10,6 +10,7 @@ from dcim.api.serializers import (
     ModuleTypeSerializer,
     RackSerializer,
     RackTypeSerializer,
+    SiteSerializer,
 )
 from netbox.api.serializers import NestedGroupModelSerializer, PrimaryModelSerializer
 from tenancy.api.serializers import ContactSerializer, TenantSerializer
@@ -176,6 +177,16 @@ class AssetSerializer(PrimaryModelSerializer):
         allow_null=True,
         default=None,
     )
+    installed_site_override = SiteSerializer(
+        nested=True,
+        required=False,
+        allow_null=True,
+        default=None,
+    )
+    contract = NestedContractSerializer(
+        many=True,
+        required=False,
+    )
 
     def to_internal_value(self, data):
         ret = super().to_internal_value(data)
@@ -224,6 +235,11 @@ class AssetSerializer(PrimaryModelSerializer):
             'support_reason',
             'support_source',
             'support_validated_at',
+            'installed_site_override',
+            'contract',
+            'disposal_date',
+            'disposal_reason',
+            'disposal_reference',
             'owner',
             'comments',
             'tags',
