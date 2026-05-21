@@ -78,6 +78,9 @@ class AssetListView(generic.ObjectListView):
         'purchase__supplier',
         'order',
         'storage_location',
+        'base_license_sku',
+        'tenant',
+        'contact',
     )
     table = tables.AssetTable
     filterset = filtersets.AssetFilterSet

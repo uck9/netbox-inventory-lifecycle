@@ -243,6 +243,32 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         required=False,
     )
 
+    def clean(self):
+        cleaned_data = super().clean()
+        support_state = cleaned_data.get('support_state')
+        support_reason = cleaned_data.get('support_reason')
+        nullified = self.data.getlist('_nullify') if hasattr(self.data, 'getlist') else []
+
+        uncovered_states = (AssetSupportStateChoices.UNCOVERED, AssetSupportStateChoices.EXCLUDED)
+        if support_state in uncovered_states:
+            reason_being_cleared = 'support_reason' in nullified
+            reason_is_blank = not support_reason
+            if reason_is_blank and reason_being_cleared:
+                raise forms.ValidationError({
+                    'support_reason': _(
+                        "Support reason is required when setting support state to Uncovered or Excluded."
+                    )
+                })
+            if reason_is_blank and 'support_reason' not in self.changed_data:
+                raise forms.ValidationError(
+                    _(
+                        "Support state '%(state)s' requires a support reason. "
+                        "Please also select a support reason."
+                    ),
+                    params={'state': support_state},
+                )
+        return cleaned_data
+
     model = Asset
     fieldsets = (
         FieldSet(
@@ -305,6 +331,8 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         'owning_tenant',
         'purchase',
         'order',
+        'base_license_sku',
+        'vendor_ship_date',
         'tenant',
         'contact',
         'warranty_start',
