@@ -30,12 +30,11 @@ from utilities.filters import ContentTypeFilter, TreeNodeMultipleChoiceFilter
 
 from .choices import (
     AssetAllocationStatusChoices,
-    AssetDisposalReasonhoices,
+    AssetDisposalReasonChoices,
     AssetStatusChoices,
     ContractStatusChoices,
     ContractTypeChoices,
     HardwareKindChoices,
-    ProgramCoverageStatusChoices,
     PurchaseStatusChoices,
 )
 from .models import *
@@ -59,8 +58,6 @@ __all__ = (
     'OrderFilterSet',
     'PurchaseFilterSet',
     'SupplierFilterSet',
-    'VendorProgramFilterSet',
-    'AssetProgramCoverageFilterSet',
     'LicenseSKUFilterSet',
     'SubscriptionFilterSet',
     'AssetLicenseFilterSet',
@@ -146,7 +143,7 @@ class AssetFilterSet(PrimaryModelFilterSet):
     )
     disposal_date = django_filters.DateFromToRangeFilter()
     disposal_reason = django_filters.MultipleChoiceFilter(
-        choices=AssetDisposalReasonhoices,
+        choices=AssetDisposalReasonChoices,
     )
     disposal_reference = django_filters.CharFilter(
         lookup_expr='icontains',
@@ -450,7 +447,6 @@ class AssetFilterSet(PrimaryModelFilterSet):
         field_name="contract",
         label="Contract (ID)",
     )
-    program_id = django_filters.NumberFilter(method="filter_program_id")
     subscription_id = django_filters.NumberFilter(
         method='filter_by_subscription',
         label='Subscription (ID)',
@@ -458,7 +454,7 @@ class AssetFilterSet(PrimaryModelFilterSet):
 
     class Meta:
         model = Asset
-        fields = ('id', 'name', 'serial', 'asset_tag', 'description', 'program_id',
+        fields = ('id', 'name', 'serial', 'asset_tag', 'description',
                   'allocation_status', 'disposal_date', 'disposal_reason', 'disposal_reference')
 
     def search(self, queryset, name, value):
@@ -580,24 +576,6 @@ class AssetFilterSet(PrimaryModelFilterSet):
             q_list = (Q(tenant__pk=n) | Q(owning_tenant__pk=n) for n in value)
         q_list = reduce(lambda a, b: a | b, q_list)
         return queryset.filter(q_list)
-
-    def filter_program_id(self, queryset, name, value):
-        """
-        Filter assets to only those whose manufacturer matches the selected program's manufacturer.
-        """
-        try:
-            program = VendorProgram.objects.only("id", "manufacturer_id").get(pk=value)
-        except VendorProgram.DoesNotExist:
-            return queryset.none()
-
-        # If your Program.manufacturer is optional, decide your behavior:
-        if not program.manufacturer_id:
-            return queryset.none()  # or: return queryset
-
-        # --- IMPORTANT ---
-        # Your asset's manufacturer is derived via asset.device.device_type.manufacturer
-        # So we filter via relations.
-        return queryset.filter(device__device_type__manufacturer_id=program.manufacturer_id)
 
 
 class HasAssetFilterMixin(NetBoxModelFilterSet):
@@ -1081,24 +1059,6 @@ class HardwareLifecycleFilterSet(NetBoxModelFilterSet):
             return queryset.none()
 
 
-class VendorProgramFilterSet(NetBoxModelFilterSet):
-    q = django_filters.CharFilter(method="search", label="Search")
-    manufacturer_id = filters.MultiValueCharFilter(
-        method='filter_manufacturer',
-        label='Manufacturer (ID)',
-    )
-
-    class Meta:
-        model = VendorProgram
-        fields = (
-            "id",
-            "name",
-            "slug",
-            "manufacturer_id",
-            "tag",
-        )
-
-
 class LicenseSKUFilterSet(NetBoxModelFilterSet):
     manufacturer_id = django_filters.ModelMultipleChoiceFilter(
         field_name="manufacturer",
@@ -1128,89 +1088,6 @@ class LicenseSKUFilterSet(NetBoxModelFilterSet):
             return queryset
         return queryset.filter(
             Q(sku__icontains=value) | Q(name__icontains=value)
-        )
-
-
-class AssetProgramCoverageFilterSet(NetBoxModelFilterSet):
-    """
-    FilterSet for AssetProgramCoverage list view.
-
-    Notes:
-    - Adjust field names (effective_start/effective_end, status choices, etc.) to match your model.
-    - "q" implements a simple search across common related fields.
-    """
-
-    q = django_filters.CharFilter(method="filter_q", label="Search")
-
-    # Status
-    status = django_filters.MultipleChoiceFilter(
-        choices=AssetStatusChoices,
-    )
-
-    # Common foreign keys
-    program_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="program",
-        queryset=VendorProgram.objects.all(),
-        label="Program",
-    )
-    asset_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="asset",
-        queryset=Asset.objects.all(),
-        label="Asset",
-    )
-    # If your Asset links to a Device (asset.device or asset.assigned_object), adjust accordingly
-    device_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="asset__device",
-        queryset=Device.objects.all(),
-        label="Device",
-    )
-    site_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="asset__device__site",
-        queryset=Site.objects.all(),
-        label="Site",
-    )
-    tenant_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="asset__device__tenant",
-        queryset=Tenant.objects.all(),
-        label="Tenant",
-    )
-
-    # Effective dates (range)
-    effective_start = django_filters.DateFromToRangeFilter(
-        field_name="effective_start",
-        label="Effective start (range)",
-    )
-    effective_end = django_filters.DateFromToRangeFilter(
-        field_name="effective_end",
-        label="Effective end (range)",
-    )
-
-    class Meta:
-        model = AssetProgramCoverage
-        fields = (
-            "q",
-            "program_id",
-            "asset_id",
-            "device_id",
-            "site_id",
-            "tenant_id",
-            "status",
-            "effective_start",
-            "effective_end",
-        )
-
-    def filter_q(self, queryset, name, value):
-        if not value:
-            return queryset
-
-        value = value.strip()
-        return queryset.filter(
-            Q(program__name__icontains=value)
-            | Q(program__slug__icontains=value)
-            | Q(asset__name__icontains=value)
-            | Q(asset__serial__icontains=value)
-            | Q(asset__device__name__icontains=value)
-            | Q(asset__device__serial__icontains=value)
         )
 
 

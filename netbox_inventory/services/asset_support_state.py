@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from django.db.models import Q
 from django.utils import timezone
 
 from ..choices import AssetSupportStateChoices, AssetSupportReasonChoices, AssetSupportSourceChoices
@@ -28,31 +27,30 @@ def _is_active_assignment(a: ContractAssignment, today: date) -> bool:
 def compute_asset_support(asset) -> SupportResult:
     """
     Vendor-agnostic:
+    - Disposed assets => DISPOSED (permanent, no further contract evaluation)
     - If any active ContractAssignment exists => COVERED (reason None)
     - Else if asset currently marked EXCLUDED => keep EXCLUDED (reason must exist)
     - Else => UNCOVERED with best-effort reason (CONTRACT_MISSING by default)
     """
+    if asset.status == 'disposed':
+        return SupportResult(state=AssetSupportStateChoices.DISPOSED, reason=None)
+
     today = timezone.now().date()
 
-    # Pull only assignments for this asset. If you support multiple hardware relations,
-    # keep this logic here.
     qs = (
         ContractAssignment.objects
         .filter(asset=asset)
-        .only("id", "start_date", "end_date", "contract_id", "sku_id", "program_id")
+        .only("id", "start_date", "end_date", "contract_id", "sku_id")
     )
 
-    # Determine if any is active "now"
     has_active = any(_is_active_assignment(a, today) for a in qs)
 
     if has_active:
         return SupportResult(state=AssetSupportStateChoices.COVERED, reason=None)
 
-    # If the asset is explicitly excluded, keep it excluded (reason enforced by validation)
     if asset.support_state == AssetSupportStateChoices.EXCLUDED:
         return SupportResult(state=AssetSupportStateChoices.EXCLUDED, reason=asset.support_reason)
 
-    # Otherwise uncovered
     return SupportResult(state=AssetSupportStateChoices.UNCOVERED, reason=AssetSupportReasonChoices.CONTRACT_MISSING)
 
 

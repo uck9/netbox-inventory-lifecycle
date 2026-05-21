@@ -82,86 +82,6 @@ class ContractStatusChoices(ChoiceSet):
     ]
 
 
-class ProgramCoverageStatusChoices(ChoiceSet):
-    key = "ProgramCoverage.status"
-
-    PLANNED = 'planned'
-    ACTIVE = 'active'
-    EXCLUDED = 'excluded'
-    TERMINATED = 'terminated'
-
-    CHOICES = [
-        (PLANNED, 'Planned', 'blue'),
-        (ACTIVE, 'Active', 'green'),
-        (EXCLUDED, 'Excluded', 'gray'),
-        (TERMINATED, 'Terminated', 'red'),
-    ]
-
-
-class ProgramEligibilityChoices(ChoiceSet):
-    key = "ProgramCoverage.eligibility"
-
-    UNKNOWN = 'unknown'
-    ELIGIBLE = 'eligible'
-    INELIGIBLE = 'ineligible'
-
-    CHOICES = [
-        (UNKNOWN, "Unknown", "blue"),
-        (ELIGIBLE, "Eligible", "green"),
-        (INELIGIBLE, "Ineligible", "red"),
-    ]
-
-class ProgramCoverageSourceChoices(ChoiceSet):
-    key = "AssetProgramCoverage.source"
-
-    MANUAL = 'manual'
-    SYNC = 'sync'
-    IMPORT = 'import'
-
-    CHOICES = [
-        (MANUAL, "Manual", "blue"),
-        (SYNC, "Sync", "cyan"),
-        (IMPORT, "Import", "purple"),
-    ]
-
-
-class ProgramExclusionReasonChoices(ChoiceSet):
-    """
-    Structured reason codes for AssetProgramCoverage.decision_reason.
-
-    Eligible reasons (EXCLUDED+ELIGIBLE): asset can still be added to the program later.
-    Ineligible reasons (EXCLUDED+INELIGIBLE or TERMINATED+INELIGIBLE): asset cannot be added.
-    """
-    key = 'AssetProgramCoverage.decision_reason'
-
-    # Eligible exclusions — hardware is supportable but intentionally not on the program
-    SPARE = 'spare'
-    LAB = 'lab'
-    NOT_YET_ONBOARDED = 'not_yet_onboarded'
-    DECOMMISSION_PLANNED = 'decommission_planned'
-
-    # Ineligible exclusions — hardware cannot join the program
-    PAST_END_OF_SUPPORT = 'past_eos'
-    VENDOR_EXCLUDED = 'vendor_excluded'
-    NEVER_SUPPORTED = 'never_supported'
-    DISPOSED = 'disposed'
-
-    CHOICES = [
-        # --- Eligible exclusions ---
-        (SPARE, 'Spare / Pool', 'blue'),
-        (LAB, 'Lab Device', 'blue'),
-        (NOT_YET_ONBOARDED, 'Not Yet Onboarded', 'cyan'),
-        (DECOMMISSION_PLANNED, 'Decommission Planned', 'orange'),
-        # --- Ineligible exclusions ---
-        (PAST_END_OF_SUPPORT, 'Past End of Support', 'red'),
-        (VENDOR_EXCLUDED, 'Vendor Excluded', 'red'),
-        (NEVER_SUPPORTED, 'Never Supported', 'purple'),
-        (DISPOSED, 'Disposed / Decommissioned', 'gray'),
-    ]
-
-    # Convenience sets used in validation
-    ELIGIBLE_REASONS = {SPARE, LAB, NOT_YET_ONBOARDED, DECOMMISSION_PLANNED}
-    INELIGIBLE_REASONS = {PAST_END_OF_SUPPORT, VENDOR_EXCLUDED, NEVER_SUPPORTED, DISPOSED}
 
 
 #
@@ -169,7 +89,7 @@ class ProgramExclusionReasonChoices(ChoiceSet):
 #
 
 
-class AssetDisposalReasonhoices(ChoiceSet):
+class AssetDisposalReasonChoices(ChoiceSet):
     key = 'AssetDisposal.reason'
 
     SCRAPPED = 'scrapped'
@@ -214,12 +134,14 @@ class AssetSupportStateChoices(ChoiceSet):
     UNCOVERED = 'uncovered'
     EXCLUDED = 'excluded'
     UNKNOWN = 'unknown'
+    DISPOSED = 'disposed'
 
     CHOICES = [
         (COVERED, 'Covered', 'green'),
         (UNCOVERED, 'Uncovered', 'red'),
         (EXCLUDED, 'Excluded', 'orange'),
         (UNKNOWN, 'Unknown', 'gray'),
+        (DISPOSED, 'Disposed', 'dark'),
     ]
 
 #

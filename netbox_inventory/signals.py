@@ -11,12 +11,10 @@ from utilities.exceptions import AbortRequest
 
 from .choices import (
     AssetSupportStateChoices,
-    ProgramCoverageStatusChoices,
-    ProgramEligibilityChoices,
     AssetSupportReasonChoices,
     AssetSupportSourceChoices,
 )
-from .models import Asset, Order, ContractAssignment, AssetProgramCoverage
+from .models import Asset, Order, ContractAssignment
 from .services.asset_support_state import apply_computed_support
 from .utils import get_plugin_setting, get_status_for, is_equal_none
 
@@ -89,54 +87,7 @@ def handle_order_purchase_change(instance, created, **kwargs):
     if not created:
         Asset.objects.filter(order=instance).update(purchase=instance.purchase)
 
-def _has_current_matching_assignment(coverage: AssetProgramCoverage) -> bool:
-    """
-    Does this asset currently have a contract assignment that satisfies ACTIVE rules
-    for this coverage's program?
-    """
-    program = coverage.program
-    today = _date.today()
-
-    qs = ContractAssignment.objects.filter(
-        asset=coverage.asset,
-        contract__contract_type=program.contract_type,
-    ).select_related("contract", "sku")
-
-    if program.manufacturer_id:
-        qs = qs.filter(sku__manufacturer_id=program.manufacturer_id)
-
-    return any(
-        a.effective_start_date and a.effective_start_date <= today <= (a.effective_end_date or _date.max)
-        for a in qs
-    )
-
-
-def _reconcile_coverages_for_asset(asset_id: int) -> None:
-    coverages = (
-        AssetProgramCoverage.objects
-        .filter(asset_id=asset_id, status=ProgramCoverageStatusChoices.ACTIVE)
-        .select_related("program", "asset")
-    )
-
-    today = _date.today()
-
-    for coverage in coverages:
-        if _has_current_matching_assignment(coverage):
-            continue
-
-        # Downgrade: ACTIVE -> PLANNED + UNKNOWN
-        coverage.status = ProgramCoverageStatusChoices.PLANNED
-        coverage.eligibility = ProgramEligibilityChoices.UNKNOWN
-
-        # Optional: close out effective period
-        if coverage.effective_start and not coverage.effective_end:
-            coverage.effective_end = today
-
-        # Avoid recursion issues: save only changed fields
-        coverage.save(update_fields=["status", "eligibility", "effective_end"])
-
 def _reconcile_all_for_asset(asset_id: int) -> None:
-    _reconcile_coverages_for_asset(asset_id)
     _reconcile_asset_support(asset_id)
 
 def _assignment_is_active(a: ContractAssignment, today: _date) -> bool:
@@ -165,15 +116,19 @@ def _reconcile_asset_support(asset_id: int) -> None:
     """
     Vendor-agnostic support state:
     - If any active assignment exists => COVERED
-    - Else => UNCOVERED (unless EXCLUDED is sticky)
+    - Else => UNCOVERED (unless EXCLUDED or DISPOSED is sticky)
     """
     asset = (
         Asset.objects
         .filter(id=asset_id)
-        .only("id", "support_state", "support_reason", "support_source", "support_validated_at")
+        .only("id", "status", "support_state", "support_reason", "support_source", "support_validated_at")
         .first()
     )
     if not asset:
+        return
+
+    # Disposed assets have permanent support state — contract changes cannot override it
+    if asset.status == 'disposed':
         return
 
     today = timezone.now().date()

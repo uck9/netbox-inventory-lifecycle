@@ -54,24 +54,6 @@ asset_buttons = [
     ),
 ]
 
-program_buttons = [
-    PluginMenuButton(
-        link="plugins:netbox_inventory:vendorprogram_add",
-        title="Add",
-        icon_class="mdi mdi-plus-thick",
-        permissions=["netbox_inventory.add_vendorprogram"],
-    ),
-]
-
-coverage_buttons = [
-    PluginMenuButton(
-        link="plugins:netbox_inventory:assetprogramcoverage_add",
-        title="Add",
-        icon_class="mdi mdi-plus-thick",
-        permissions=["netbox_inventory.add_assetprogramcoverage"],
-    ),
-]
-
 assets_items = (
     PluginMenuItem(
         link='plugins:netbox_inventory:asset_list',

@@ -43,8 +43,6 @@ __all__ = (
     'PurchaseForm',
     'SupplierForm',
     'HardwareLifecycleForm',
-    'VendorProgramForm',
-    'AssetProgramCoverageForm',
     'LicenseSKUForm',
     'SubscriptionForm',
     'AssetLicenseForm',
@@ -265,7 +263,13 @@ class AssetForm(PrimaryModelForm):
             "support_reason",
             "support_validated_at",
             "support_source",
-            name = 'Support State'
+            name='Support State',
+        ),
+        FieldSet(
+            'disposal_date',
+            'disposal_reason',
+            'disposal_reference',
+            name='Disposal',
         ),
         FieldSet('tenant', 'contact_group', 'contact', name='Assigned to'),
         FieldSet('storage_site', 'storage_location', name='Location'),
@@ -306,12 +310,16 @@ class AssetForm(PrimaryModelForm):
             'support_reason',
             'support_validated_at',
             'support_source',
+            'disposal_date',
+            'disposal_reason',
+            'disposal_reference',
         )
         widgets = {
             'vendor_ship_date': DatePicker(),
             'warranty_start': DatePicker(),
             'warranty_end': DatePicker(),
             'support_validated_at': DatePicker(),
+            'disposal_date': DatePicker(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -424,6 +432,33 @@ class AssetForm(PrimaryModelForm):
         # If the asset is not in a state where the override is meaningful, clear it
         if not is_deployed_without_device:
             self.cleaned_data["installed_site_override"] = None
+
+        # ----------------------------
+        # Disposal logic
+        # ----------------------------
+        if status == 'disposed':
+            # Block disposal if the asset is still assigned to hardware
+            if self.instance and any(
+                getattr(self.instance, kind, None)
+                for kind in ('device', 'module', 'inventoryitem', 'rack')
+            ):
+                self.add_error(
+                    'status',
+                    "Cannot mark as Disposed while the asset is assigned to a device, module, "
+                    "inventory item, or rack. Unassign it first.",
+                )
+
+            # Disposal date is required when disposing
+            if not self.cleaned_data.get('disposal_date'):
+                self.add_error('disposal_date', "Disposal date is required when marking an asset as Disposed.")
+
+            # Clear allocation — a disposed asset has no allocation state
+            self.cleaned_data['allocation_status'] = None
+        else:
+            # Clear disposal fields when not disposing — keeps data consistent
+            self.cleaned_data['disposal_date'] = None
+            self.cleaned_data['disposal_reason'] = None
+            self.cleaned_data['disposal_reference'] = None
 
         return self.cleaned_data
 
@@ -804,103 +839,6 @@ class HardwareLifecycleForm(NetBoxModelForm):
             self.instance.assigned_object = self.cleaned_data[selected_objects[0]]
         else:
             self.instance.assigned_object = None
-
-
-class VendorProgramForm(NetBoxModelForm):
-    slug = SlugField(slug_source='name')
-    comments = CommentField()
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # If an asset is selected/known, constrain program choices to matching manufacturer
-        asset = self.initial.get('asset') or getattr(self.instance, 'asset', None)
-        if asset is None and 'asset' in self.data:
-            try:
-                asset = AssetProgramCoverage._meta.get_field('asset').remote_field.model.objects.get(pk=self.data.get('asset'))
-            except Exception:
-                asset = None
-
-        asset_mfr = None
-        asset_device = getattr(asset, 'device', None) if asset else None
-        if asset_device is not None:
-            device_type = getattr(asset_device, 'device_type', None)
-            if device_type is not None:
-                asset_mfr = getattr(device_type, 'manufacturer', None)
-
-        if asset_mfr is not None:
-            self.fields['program'].queryset = VendorProgram.objects.filter(manufacturer=asset_mfr).order_by('name')
-
-    class Meta:
-        model = VendorProgram
-        fields = (
-            "name",
-            "slug",
-            "manufacturer",
-            'contract_type',
-            "description",
-            "tags",
-            "comments",
-        )
-
-
-class AssetProgramCoverageForm(NetBoxModelForm):
-    comments = CommentField()
-    program = DynamicModelChoiceField(
-        queryset=VendorProgram.objects.all(),
-        required=True,
-    )
-    asset = DynamicModelChoiceField(
-        queryset=Asset.objects.all(),
-        required=True,
-        query_params={
-            # This will call the Asset API with ?program_id=<selected_program_id>
-            "program_id": "$program",
-        },
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # If an asset is selected/known, constrain program choices to matching manufacturer
-        asset = self.initial.get('asset') or getattr(self.instance, 'asset', None)
-        if asset is None and 'asset' in self.data:
-            try:
-                asset = AssetProgramCoverage._meta.get_field('asset').remote_field.model.objects.get(pk=self.data.get('asset'))
-            except Exception:
-                asset = None
-
-        asset_mfr = None
-        asset_device = getattr(asset, 'device', None) if asset else None
-        if asset_device is not None:
-            device_type = getattr(asset_device, 'device_type', None)
-            if device_type is not None:
-                asset_mfr = getattr(device_type, 'manufacturer', None)
-
-        if asset_mfr is not None:
-            self.fields['program'].queryset = VendorProgram.objects.filter(manufacturer=asset_mfr).order_by('name')
-
-    class Meta:
-        model = AssetProgramCoverage
-        fields = (
-            "program",
-            "asset",
-            "status",
-            "eligibility",
-            "effective_start",
-            "effective_end",
-            "decision_reason",
-            "evidence_url",
-            "source",
-            "last_synced",
-            "tags",
-            "comments",
-            "notes",
-        )
-        widgets = {
-            'effective_start': DatePicker(),
-            'effective_end': DatePicker(),
-        }
 
 
 class LicenseSKUForm(NetBoxModelForm):

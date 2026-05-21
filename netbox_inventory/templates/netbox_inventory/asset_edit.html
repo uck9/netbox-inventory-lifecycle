@@ -109,6 +109,15 @@
         {% render_field form.support_validated_at %}
     </div>
 
+    <div class="field-group my-5" id="asset-disposal-group">
+        <div class="row mb-2">
+          <h2 class="col-9 offset-3">Disposal</h2>
+        </div>
+        {% render_field form.disposal_date %}
+        {% render_field form.disposal_reason %}
+        {% render_field form.disposal_reference %}
+    </div>
+
     {% if form.custom_fields %}
         <div class="field-group my-5">
           <div class="row mb-2">
@@ -220,7 +229,20 @@
       }
     }
 
-    document.addEventListener("DOMContentLoaded", toggleAssetLocationUX);
+    function toggleDisposalUX() {
+      const isDisposed = getVal("id_status") === "disposed";
+      setVisibleById("asset-disposal-group", isDisposed);
+
+      if (!isDisposed) {
+        // Clear disposal fields when switching away from disposed
+        ["id_disposal_date", "id_disposal_reason", "id_disposal_reference"].forEach(clearField);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      toggleAssetLocationUX();
+      toggleDisposalUX();
+    });
 
     // Re-evaluate whenever key fields change
     [
@@ -236,5 +258,8 @@
       const el = getEl(id);
       if (el) el.addEventListener("change", toggleAssetLocationUX);
     });
+
+    const statusEl = getEl("id_status");
+    if (statusEl) statusEl.addEventListener("change", toggleDisposalUX);
   </script>
 {% endblock %}
