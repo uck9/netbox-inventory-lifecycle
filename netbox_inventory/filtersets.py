@@ -59,6 +59,8 @@ __all__ = (
     'PurchaseFilterSet',
     'SupplierFilterSet',
     'LicenseSKUFilterSet',
+    'SmartAccountFilterSet',
+    'VirtualAccountFilterSet',
     'SubscriptionFilterSet',
     'AssetLicenseFilterSet',
 )
@@ -1091,6 +1093,55 @@ class LicenseSKUFilterSet(NetBoxModelFilterSet):
         )
 
 
+class SmartAccountFilterSet(NetBoxModelFilterSet):
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer',
+        queryset=Manufacturer.objects.all(),
+        label=_('Manufacturer (ID)'),
+    )
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = SmartAccount
+        fields = ('id', 'manufacturer_id', 'account_domain')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(account_domain__icontains=value)
+            | Q(description__icontains=value)
+            | Q(manufacturer__name__icontains=value)
+        )
+
+
+class VirtualAccountFilterSet(NetBoxModelFilterSet):
+    smart_account_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='smart_account',
+        queryset=SmartAccount.objects.all(),
+        label=_('Smart Account (ID)'),
+    )
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='smart_account__manufacturer',
+        queryset=Manufacturer.objects.all(),
+        label=_('Manufacturer (ID)'),
+    )
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = VirtualAccount
+        fields = ('id', 'smart_account_id', 'manufacturer_id', 'name')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(name__icontains=value)
+            | Q(description__icontains=value)
+            | Q(smart_account__account_domain__icontains=value)
+        )
+
+
 class SubscriptionFilterSet(NetBoxModelFilterSet):
     manufacturer_id = django_filters.ModelMultipleChoiceFilter(
         field_name='manufacturer',
@@ -1102,11 +1153,20 @@ class SubscriptionFilterSet(NetBoxModelFilterSet):
         queryset=Order.objects.all(),
         label=_('Order (ID)'),
     )
+    virtual_account_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='virtual_account',
+        queryset=VirtualAccount.objects.all(),
+        label=_('Virtual Account (ID)'),
+    )
+    subscription_type = django_filters.MultipleChoiceFilter(
+        choices=SubscriptionTypeChoices.choices,
+        label=_('Subscription Type'),
+    )
     q = django_filters.CharFilter(method='search', label=_('Search'))
 
     class Meta:
         model = Subscription
-        fields = ('id', 'manufacturer_id', 'order_id', 'subscription_id')
+        fields = ('id', 'manufacturer_id', 'order_id', 'virtual_account_id', 'subscription_type', 'subscription_id')
 
     def search(self, queryset, name, value):
         if not value.strip():
@@ -1143,7 +1203,7 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
 
     class Meta:
         model = AssetLicense
-        fields = ('id', 'asset_id', 'subscription_id', 'sku_id', 'manufacturer_id', 'start_date', 'end_date')
+        fields = ('id', 'asset_id', 'subscription_id', 'sku_id', 'manufacturer_id', 'license_source', 'start_date', 'end_date')
 
     def search(self, queryset, name, value):
         if not value.strip():

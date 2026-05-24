@@ -56,6 +56,8 @@ __all__ = (
     'SupplierFilterForm',
     'PurchaseFilterForm',
     'LicenseSKUFilterForm',
+    'SmartAccountFilterForm',
+    'VirtualAccountFilterForm',
     'SubscriptionFilterForm',
     'AssetLicenseFilterForm',
 )
@@ -715,17 +717,65 @@ class LicenseSKUFilterForm(NetBoxModelFilterSetForm):
 #
 
 
-class SubscriptionFilterForm(NetBoxModelFilterSetForm):
-    model = Subscription
+class SmartAccountFilterForm(NetBoxModelFilterSetForm):
+    model = SmartAccount
     fieldsets = (
         FieldSet('q', 'filter_id', 'tag'),
-        FieldSet('manufacturer_id', 'order_id', name='Subscription'),
+        FieldSet('manufacturer_id', name='Smart Account'),
     )
     manufacturer_id = DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(),
         required=False,
         selector=True,
         label='Manufacturer',
+    )
+    tag = TagFilterField(model)
+
+
+class VirtualAccountFilterForm(NetBoxModelFilterSetForm):
+    model = VirtualAccount
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('manufacturer_id', 'smart_account_id', name='Virtual Account'),
+    )
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        selector=True,
+        label='Manufacturer',
+    )
+    smart_account_id = DynamicModelMultipleChoiceField(
+        queryset=SmartAccount.objects.all(),
+        required=False,
+        selector=True,
+        label='Smart Account',
+    )
+    tag = TagFilterField(model)
+
+
+class SubscriptionFilterForm(NetBoxModelFilterSetForm):
+    model = Subscription
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('manufacturer_id', 'subscription_type', 'virtual_account_id', 'order_id', name='Subscription'),
+    )
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        selector=True,
+        label='Manufacturer',
+    )
+    subscription_type = forms.MultipleChoiceField(
+        choices=SubscriptionTypeChoices.choices,
+        required=False,
+        label='Type',
+        widget=APISelectMultiple(),
+    )
+    virtual_account_id = DynamicModelMultipleChoiceField(
+        queryset=VirtualAccount.objects.all(),
+        required=False,
+        selector=True,
+        label='Virtual Account',
     )
     order_id = DynamicModelMultipleChoiceField(
         queryset=Order.objects.all(),

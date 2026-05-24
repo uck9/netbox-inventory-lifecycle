@@ -719,6 +719,17 @@ class SubscriptionBulkEditForm(NetBoxModelBulkEditForm):
         selector=True,
         label=_('Manufacturer'),
     )
+    subscription_type = forms.ChoiceField(
+        choices=[('', '---------')] + SubscriptionTypeChoices.choices,
+        required=False,
+        label=_('Subscription Type'),
+    )
+    virtual_account = DynamicModelChoiceField(
+        queryset=VirtualAccount.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Virtual Account'),
+    )
     order = DynamicModelChoiceField(
         queryset=Order.objects.all(),
         required=False,
@@ -734,9 +745,9 @@ class SubscriptionBulkEditForm(NetBoxModelBulkEditForm):
 
     model = Subscription
     fieldsets = (
-        FieldSet('manufacturer', 'order', 'description'),
+        FieldSet('manufacturer', 'subscription_type', 'virtual_account', 'order', 'description'),
     )
-    nullable_fields = ('order', 'description')
+    nullable_fields = ('virtual_account', 'order', 'description')
 
 
 class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
@@ -769,8 +780,14 @@ class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
     )
     comments = CommentField()
 
+    license_source = forms.ChoiceField(
+        choices=[('', '---------')] + LicenseSourceChoices.choices,
+        required=False,
+        label=_('License Source'),
+    )
+
     model = AssetLicense
     fieldsets = (
-        FieldSet('subscription', 'sku', 'start_date', 'end_date', 'quantity'),
+        FieldSet('subscription', 'sku', 'license_source', 'start_date', 'end_date', 'quantity'),
     )
-    nullable_fields = ('end_date',)
+    nullable_fields = ('license_source', 'end_date',)

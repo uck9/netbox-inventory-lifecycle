@@ -40,6 +40,8 @@ router.register('audit-trail-sources', views.AuditTrailSourceViewSet)
 router.register('audit-trails', views.AuditTrailViewSet)
 
 router.register("license-skus", views.LicenseSKUViewSet)
+router.register("smart-accounts", views.SmartAccountViewSet)
+router.register("virtual-accounts", views.VirtualAccountViewSet)
 router.register("subscriptions", views.SubscriptionViewSet)
 router.register("asset-licenses", views.AssetLicenseViewSet)
 

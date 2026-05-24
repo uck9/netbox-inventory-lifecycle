@@ -66,25 +66,64 @@ assets_items = (
         link_text="License SKUs",
         permissions=["netbox_inventory.view_licensesku"],
     ),
-    #PluginMenuItem(
-    #    link="plugins:netbox_inventory:assetlicense_list",
-    #    link_text="Asset Licenses",
-    #    permissions=["netbox_inventory.view_assetlicense"],
-    #    buttons=[
-    #        PluginMenuButton(
-    #            link="plugins:netbox_inventory:assetlicense_add",
-    #            title="Add",
-    #            icon_class="mdi mdi-plus-thick",
-    #            permissions=["netbox_inventory.add_assetlicense"],
-    #        ),
-    #        PluginMenuButton(
-    #            link="plugins:netbox_inventory:assetlicense_bulk_assign",
-    #            title="Bulk Assign",
-    #            icon_class="mdi mdi-playlist-plus",
-    #            permissions=["netbox_inventory.add_assetlicense"],
-    #        ),
-    #    ],
-    #),
+    PluginMenuItem(
+        link="plugins:netbox_inventory:smartaccount_list",
+        link_text="Smart Accounts",
+        permissions=["netbox_inventory.view_smartaccount"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:netbox_inventory:smartaccount_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["netbox_inventory.add_smartaccount"],
+            ),
+        ],
+    ),
+    PluginMenuItem(
+        link="plugins:netbox_inventory:virtualaccount_list",
+        link_text="Virtual Accounts",
+        permissions=["netbox_inventory.view_virtualaccount"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:netbox_inventory:virtualaccount_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["netbox_inventory.add_virtualaccount"],
+            ),
+        ],
+    ),
+    PluginMenuItem(
+        link="plugins:netbox_inventory:subscription_list",
+        link_text="Subscriptions",
+        permissions=["netbox_inventory.view_subscription"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:netbox_inventory:subscription_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["netbox_inventory.add_subscription"],
+            ),
+        ],
+    ),
+    PluginMenuItem(
+        link="plugins:netbox_inventory:assetlicense_list",
+        link_text="Asset Licenses",
+        permissions=["netbox_inventory.view_assetlicense"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:netbox_inventory:assetlicense_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["netbox_inventory.add_assetlicense"],
+            ),
+            PluginMenuButton(
+                link="plugins:netbox_inventory:assetlicense_bulk_assign",
+                title="Bulk Assign",
+                icon_class="mdi mdi-playlist-plus",
+                permissions=["netbox_inventory.add_assetlicense"],
+            ),
+        ],
+    ),
     #PluginMenuItem(
     #    link='plugins:netbox_inventory:inventoryitemtype_list',
     #    link_text='Inventory Item Types',

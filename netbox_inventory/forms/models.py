@@ -44,6 +44,8 @@ __all__ = (
     'SupplierForm',
     'HardwareLifecycleForm',
     'LicenseSKUForm',
+    'SmartAccountForm',
+    'VirtualAccountForm',
     'SubscriptionForm',
     'AssetLicenseForm',
     'AssetLicenseBulkAssignForm',
@@ -859,6 +861,68 @@ class LicenseSKUForm(NetBoxModelForm):
 
 
 #
+# Smart Accounts & Virtual Accounts
+#
+
+
+class SmartAccountForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        selector=True,
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet(
+            'manufacturer',
+            'account_domain',
+            'description',
+            'tags',
+            name=_('Smart Account'),
+        ),
+    )
+
+    class Meta:
+        model = SmartAccount
+        fields = (
+            'manufacturer',
+            'account_domain',
+            'description',
+            'comments',
+            'tags',
+        )
+
+
+class VirtualAccountForm(NetBoxModelForm):
+    smart_account = DynamicModelChoiceField(
+        queryset=SmartAccount.objects.all(),
+        selector=True,
+        label=_('Smart Account'),
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet(
+            'smart_account',
+            'name',
+            'description',
+            'tags',
+            name=_('Virtual Account'),
+        ),
+    )
+
+    class Meta:
+        model = VirtualAccount
+        fields = (
+            'smart_account',
+            'name',
+            'description',
+            'comments',
+            'tags',
+        )
+
+
+#
 # Subscriptions & Asset Licenses
 #
 
@@ -867,6 +931,13 @@ class SubscriptionForm(NetBoxModelForm):
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all(),
         selector=True,
+    )
+    virtual_account = DynamicModelChoiceField(
+        queryset=VirtualAccount.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Virtual Account'),
+        help_text=_('Virtual account within the smart account that holds this subscription.'),
     )
     order = DynamicModelChoiceField(
         queryset=Order.objects.all(),
@@ -882,11 +953,22 @@ class SubscriptionForm(NetBoxModelForm):
         FieldSet(
             'manufacturer',
             'subscription_id',
+            'subscription_type',
             'description',
-            'order',
-            'tags',
             name=_('Subscription'),
         ),
+        FieldSet(
+            'virtual_account',
+            'order',
+            name=_('Account & Purchase'),
+        ),
+        FieldSet(
+            'quantity',
+            'start_date',
+            'end_date',
+            name=_('Entitlement'),
+        ),
+        FieldSet('tags', name=_('Tags')),
     )
 
     class Meta:
@@ -894,16 +976,24 @@ class SubscriptionForm(NetBoxModelForm):
         fields = (
             'manufacturer',
             'subscription_id',
-            'description',
+            'subscription_type',
+            'virtual_account',
             'order',
+            'quantity',
+            'start_date',
+            'end_date',
+            'description',
             'comments',
             'tags',
         )
+        widgets = {
+            'start_date': DatePicker(),
+            'end_date': DatePicker(),
+        }
 
 
 class AssetLicenseForm(NetBoxModelForm):
-    # Pick subscription first — it drives both the asset and SKU dropdowns
-    # via server-side subscription_id filters on each API endpoint.
+    # Pick subscription first — it drives both the asset and SKU dropdowns.
     subscription = DynamicModelChoiceField(
         queryset=Subscription.objects.all(),
         selector=True,
@@ -933,7 +1023,7 @@ class AssetLicenseForm(NetBoxModelForm):
     fieldsets = (
         FieldSet('subscription', 'asset', 'sku', name=_('License')),
         FieldSet('start_date', 'end_date', name=_('Term')),
-        FieldSet('quantity', 'notes', 'tags', name=_('Details')),
+        FieldSet('license_source', 'quantity', 'notes', 'tags', name=_('Details')),
     )
 
     class Meta:
@@ -942,6 +1032,7 @@ class AssetLicenseForm(NetBoxModelForm):
             'asset',
             'subscription',
             'sku',
+            'license_source',
             'start_date',
             'end_date',
             'quantity',
@@ -953,6 +1044,22 @@ class AssetLicenseForm(NetBoxModelForm):
             'start_date': DatePicker(),
             'end_date': DatePicker(),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-populate term dates from EA subscription contract dates when creating a new record.
+        if not self.instance.pk:
+            sub_pk = self.initial.get('subscription') or self.data.get('subscription')
+            if sub_pk:
+                try:
+                    sub = Subscription.objects.get(pk=sub_pk)
+                    if sub.subscription_type == SubscriptionTypeChoices.EA:
+                        if sub.start_date and not self.initial.get('start_date'):
+                            self.initial['start_date'] = sub.start_date
+                        if sub.end_date and not self.initial.get('end_date'):
+                            self.initial['end_date'] = sub.end_date
+                except Subscription.DoesNotExist:
+                    pass
 
 
 class AssetLicenseBulkAssignForm(forms.Form):

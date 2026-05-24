@@ -28,6 +28,8 @@ __all__ = (
     'PurchaseViewSet',
     'SupplierViewSet',
 'LicenseSKUViewSet',
+    'SmartAccountViewSet',
+    'VirtualAccountViewSet',
     'SubscriptionViewSet',
     'AssetLicenseViewSet',
 )
@@ -213,14 +215,32 @@ class LicenseSKUViewSet(NetBoxModelViewSet):
 
 
 #
-# Subscriptions & Asset Licenses
+# Smart Accounts, Virtual Accounts, Subscriptions & Asset Licenses
 #
 
 
-class SubscriptionViewSet(NetBoxModelViewSet):
-    queryset = models.Subscription.objects.prefetch_related(
-        'manufacturer', 'order', 'tags',
+class SmartAccountViewSet(NetBoxModelViewSet):
+    queryset = models.SmartAccount.objects.select_related('manufacturer').annotate(
+        virtual_account_count=count_related(models.VirtualAccount, 'smart_account')
+    )
+    serializer_class = SmartAccountSerializer
+    filterset_class = filtersets.SmartAccountFilterSet
+
+
+class VirtualAccountViewSet(NetBoxModelViewSet):
+    queryset = models.VirtualAccount.objects.select_related(
+        'smart_account__manufacturer'
     ).annotate(
+        subscription_count=count_related(models.Subscription, 'virtual_account')
+    )
+    serializer_class = VirtualAccountSerializer
+    filterset_class = filtersets.VirtualAccountFilterSet
+
+
+class SubscriptionViewSet(NetBoxModelViewSet):
+    queryset = models.Subscription.objects.select_related(
+        'manufacturer', 'order', 'virtual_account__smart_account',
+    ).prefetch_related('tags').annotate(
         license_count=count_related(models.AssetLicense, 'subscription')
     )
     serializer_class = SubscriptionSerializer

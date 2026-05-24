@@ -17,6 +17,18 @@ __all__ = (
     'LicenseSKUView',
     'LicenseSKUEditView',
     'LicenseSKUDeleteView',
+    # SmartAccount
+    'SmartAccountListView',
+    'SmartAccountView',
+    'SmartAccountEditView',
+    'SmartAccountDeleteView',
+    'SmartAccountBulkDeleteView',
+    # VirtualAccount
+    'VirtualAccountListView',
+    'VirtualAccountView',
+    'VirtualAccountEditView',
+    'VirtualAccountDeleteView',
+    'VirtualAccountBulkDeleteView',
     # Subscription
     'SubscriptionListView',
     'SubscriptionView',
@@ -62,12 +74,128 @@ class LicenseSKUDeleteView(generic.ObjectDeleteView):
 
 
 # ---------------------------------------------------------------------------
+# SmartAccount
+# ---------------------------------------------------------------------------
+
+@register_model_view(models.SmartAccount, 'list', path='', detail=False)
+class SmartAccountListView(generic.ObjectListView):
+    queryset = models.SmartAccount.objects.prefetch_related('manufacturer').annotate(
+        virtual_account_count=Count('virtual_accounts', distinct=True)
+    )
+    filterset = filtersets.SmartAccountFilterSet
+    filterset_form = forms.SmartAccountFilterForm
+    table = tables.SmartAccountTable
+    actions = {
+        'add': {'add'},
+        'export': {'view'},
+        'bulk_delete': {'delete'},
+    }
+
+
+@register_model_view(models.SmartAccount)
+class SmartAccountView(generic.ObjectView):
+    queryset = models.SmartAccount.objects.prefetch_related('manufacturer')
+
+    def get_extra_context(self, request, instance):
+        virtual_accounts = (
+            models.VirtualAccount.objects
+            .filter(smart_account=instance)
+            .annotate(subscription_count=Count('subscriptions', distinct=True))
+            .order_by('name')
+        )
+        va_table = tables.VirtualAccountTable(virtual_accounts)
+        va_table.configure(request)
+        return {
+            'virtual_accounts_table': va_table,
+            'virtual_account_count': virtual_accounts.count(),
+        }
+
+
+@register_model_view(models.SmartAccount, 'add', detail=False)
+@register_model_view(models.SmartAccount, 'edit')
+class SmartAccountEditView(generic.ObjectEditView):
+    queryset = models.SmartAccount.objects.all()
+    form = forms.SmartAccountForm
+
+
+@register_model_view(models.SmartAccount, 'delete')
+class SmartAccountDeleteView(generic.ObjectDeleteView):
+    queryset = models.SmartAccount.objects.all()
+
+
+@register_model_view(models.SmartAccount, 'bulk_delete', detail=False)
+class SmartAccountBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.SmartAccount.objects.all()
+    filterset = filtersets.SmartAccountFilterSet
+    table = tables.SmartAccountTable
+
+
+# ---------------------------------------------------------------------------
+# VirtualAccount
+# ---------------------------------------------------------------------------
+
+@register_model_view(models.VirtualAccount, 'list', path='', detail=False)
+class VirtualAccountListView(generic.ObjectListView):
+    queryset = models.VirtualAccount.objects.select_related('smart_account__manufacturer').annotate(
+        subscription_count=Count('subscriptions', distinct=True)
+    )
+    filterset = filtersets.VirtualAccountFilterSet
+    filterset_form = forms.VirtualAccountFilterForm
+    table = tables.VirtualAccountTable
+    actions = {
+        'add': {'add'},
+        'export': {'view'},
+        'bulk_delete': {'delete'},
+    }
+
+
+@register_model_view(models.VirtualAccount)
+class VirtualAccountView(generic.ObjectView):
+    queryset = models.VirtualAccount.objects.select_related('smart_account__manufacturer')
+
+    def get_extra_context(self, request, instance):
+        subscriptions = (
+            models.Subscription.objects
+            .filter(virtual_account=instance)
+            .annotate(license_count=Count('asset_licenses', distinct=True))
+            .order_by('subscription_id')
+        )
+        sub_table = tables.SubscriptionTable(subscriptions)
+        sub_table.configure(request)
+        return {
+            'subscriptions_table': sub_table,
+            'subscription_count': subscriptions.count(),
+        }
+
+
+@register_model_view(models.VirtualAccount, 'add', detail=False)
+@register_model_view(models.VirtualAccount, 'edit')
+class VirtualAccountEditView(generic.ObjectEditView):
+    queryset = models.VirtualAccount.objects.all()
+    form = forms.VirtualAccountForm
+
+
+@register_model_view(models.VirtualAccount, 'delete')
+class VirtualAccountDeleteView(generic.ObjectDeleteView):
+    queryset = models.VirtualAccount.objects.all()
+
+
+@register_model_view(models.VirtualAccount, 'bulk_delete', detail=False)
+class VirtualAccountBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.VirtualAccount.objects.all()
+    filterset = filtersets.VirtualAccountFilterSet
+    table = tables.VirtualAccountTable
+
+
+# ---------------------------------------------------------------------------
 # Subscription
 # ---------------------------------------------------------------------------
 
 @register_model_view(models.Subscription, 'list', path='', detail=False)
 class SubscriptionListView(generic.ObjectListView):
-    queryset = models.Subscription.objects.prefetch_related('manufacturer', 'order').annotate(
+    queryset = models.Subscription.objects.select_related(
+        'manufacturer', 'order', 'virtual_account__smart_account'
+    ).annotate(
         license_count=Count('asset_licenses', distinct=True)
     )
     filterset = filtersets.SubscriptionFilterSet
@@ -83,7 +211,9 @@ class SubscriptionListView(generic.ObjectListView):
 
 @register_model_view(models.Subscription)
 class SubscriptionView(generic.ObjectView):
-    queryset = models.Subscription.objects.all()
+    queryset = models.Subscription.objects.select_related(
+        'manufacturer', 'order', 'virtual_account__smart_account'
+    )
 
     def get_extra_context(self, request, instance):
         licenses = (
@@ -97,6 +227,9 @@ class SubscriptionView(generic.ObjectView):
         return {
             'licenses_table': licenses_table,
             'license_count': licenses.count(),
+            'used_quantity': instance.used_quantity,
+            'available_quantity': instance.available_quantity,
+            'is_over_allocated': instance.is_over_allocated,
         }
 
 

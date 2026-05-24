@@ -3,11 +3,20 @@ from rest_framework import serializers
 from dcim.api.serializers import ManufacturerSerializer
 from netbox.api.serializers import NetBoxModelSerializer
 
-from netbox_inventory.models import AssetLicense, LicenseSKU, Order, Subscription
+from netbox_inventory.models import (
+    AssetLicense,
+    LicenseSKU,
+    Order,
+    SmartAccount,
+    Subscription,
+    VirtualAccount,
+)
 from netbox_inventory.models.assets import Asset
 
 __all__ = (
     'LicenseSKUSerializer',
+    'SmartAccountSerializer',
+    'VirtualAccountSerializer',
     'SubscriptionSerializer',
     'AssetLicenseSerializer',
 )
@@ -28,12 +37,70 @@ class LicenseSKUSerializer(NetBoxModelSerializer):
         )
 
 
+class SmartAccountSerializer(NetBoxModelSerializer):
+    url = serializers.HyperlinkedIdentityField(
+        view_name='plugins-api:netbox_inventory-api:smartaccount-detail'
+    )
+    manufacturer = ManufacturerSerializer(nested=True)
+    virtual_account_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = SmartAccount
+        fields = (
+            "id", "url", "display",
+            "manufacturer",
+            "account_domain",
+            "description",
+            "virtual_account_count",
+            "comments",
+            "tags", "custom_fields", "created", "last_updated",
+        )
+        brief_fields = (
+            "id", "url", "display", "manufacturer", "account_domain",
+        )
+
+
+class VirtualAccountSerializer(NetBoxModelSerializer):
+    url = serializers.HyperlinkedIdentityField(
+        view_name='plugins-api:netbox_inventory-api:virtualaccount-detail'
+    )
+    smart_account = SmartAccountSerializer(nested=True)
+    smart_account_id = serializers.PrimaryKeyRelatedField(
+        source='smart_account',
+        queryset=SmartAccount.objects.all(),
+        write_only=True,
+    )
+    subscription_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = VirtualAccount
+        fields = (
+            "id", "url", "display",
+            "smart_account", "smart_account_id",
+            "name",
+            "description",
+            "subscription_count",
+            "comments",
+            "tags", "custom_fields", "created", "last_updated",
+        )
+        brief_fields = (
+            "id", "url", "display", "smart_account", "name",
+        )
+
+
 class SubscriptionSerializer(NetBoxModelSerializer):
     url = serializers.HyperlinkedIdentityField(
         view_name='plugins-api:netbox_inventory-api:subscription-detail'
     )
     manufacturer = ManufacturerSerializer(nested=True)
-    # Lightweight order representation (avoids importing OrderSerializer which causes circular refs)
+    virtual_account = VirtualAccountSerializer(nested=True, read_only=True)
+    virtual_account_id = serializers.PrimaryKeyRelatedField(
+        source='virtual_account',
+        queryset=VirtualAccount.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
     order = serializers.SerializerMethodField(read_only=True)
     order_id = serializers.PrimaryKeyRelatedField(
         source='order',
@@ -50,14 +117,20 @@ class SubscriptionSerializer(NetBoxModelSerializer):
             "id", "url", "display",
             "manufacturer",
             "subscription_id",
-            "description",
+            "subscription_type",
+            "virtual_account", "virtual_account_id",
             "order", "order_id",
+            "quantity",
+            "start_date",
+            "end_date",
+            "description",
             "license_count",
             "comments",
             "tags", "custom_fields", "created", "last_updated",
         )
         brief_fields = (
-            "id", "url", "display", "manufacturer", "subscription_id", "description",
+            "id", "url", "display", "manufacturer", "subscription_id",
+            "subscription_type", "description",
         )
 
     def get_order(self, obj):
@@ -86,11 +159,9 @@ class AssetLicenseSerializer(NetBoxModelSerializer):
     url = serializers.HyperlinkedIdentityField(
         view_name='plugins-api:netbox_inventory-api:assetlicense-detail'
     )
-    # Read: nested representations
     asset = _NestedAssetSerializer(nested=True)
     subscription = SubscriptionSerializer(nested=True)
     sku = LicenseSKUSerializer(nested=True)
-    # Write: accept PKs directly (use _id suffix — DRF resolves source automatically)
     asset_id = serializers.PrimaryKeyRelatedField(
         source='asset',
         queryset=Asset.objects.all(),
@@ -106,7 +177,6 @@ class AssetLicenseSerializer(NetBoxModelSerializer):
         queryset=LicenseSKU.objects.all(),
         write_only=True,
     )
-    # Computed read-only fields
     status = serializers.CharField(source='status_label', read_only=True)
     is_active = serializers.BooleanField(read_only=True)
     is_expired = serializers.BooleanField(read_only=True)
@@ -116,15 +186,11 @@ class AssetLicenseSerializer(NetBoxModelSerializer):
         model = AssetLicense
         fields = (
             "id", "url", "display",
-            # write-only FK fields
             "asset_id", "subscription_id", "sku_id",
-            # read nested representations
             "asset", "subscription", "sku",
-            # dates & quantities
+            "license_source",
             "start_date", "end_date", "quantity",
-            # computed
             "status", "is_active", "is_expired", "days_until_expiry",
-            # misc
             "notes", "comments",
             "tags", "custom_fields", "created", "last_updated",
         )

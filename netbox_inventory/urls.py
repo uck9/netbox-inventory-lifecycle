@@ -8,7 +8,9 @@ from .models import (
     AssetLicense,
     ContractAssignment,
     HardwareLifecycle,
+    SmartAccount,
     Subscription,
+    VirtualAccount,
 )
 from .views.jobs import run_cisco_eox_sync
 
@@ -132,9 +134,29 @@ urlpatterns = [
     path("license-skus/<int:pk>/edit/", views.LicenseSKUEditView.as_view(), name="licensesku_edit"),
     path("license-skus/<int:pk>/delete/", views.LicenseSKUDeleteView.as_view(), name="licensesku_delete"),
 
+    # Smart Accounts
+    path("smart-accounts/", include(get_model_urls('netbox_inventory', 'smartaccount', detail=False))),
+    path("smart-accounts/<int:pk>/", include(get_model_urls('netbox_inventory', 'smartaccount'))),
+    path("smart-accounts/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
+        name="smartaccount_changelog",
+        kwargs={"model": SmartAccount},
+    ),
+
+    # Virtual Accounts
+    path("virtual-accounts/", include(get_model_urls('netbox_inventory', 'virtualaccount', detail=False))),
+    path("virtual-accounts/<int:pk>/", include(get_model_urls('netbox_inventory', 'virtualaccount'))),
+    path("virtual-accounts/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
+        name="virtualaccount_changelog",
+        kwargs={"model": VirtualAccount},
+    ),
+
     # Subscriptions
     path("subscriptions/", include(get_model_urls('netbox_inventory', 'subscription', detail=False))),
     path("subscriptions/<int:pk>/", include(get_model_urls('netbox_inventory', 'subscription'))),
+    path("subscriptions/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
+        name="subscription_changelog",
+        kwargs={"model": Subscription},
+    ),
 
     # Asset Licenses
     path("asset-licenses/", include(get_model_urls('netbox_inventory', 'assetlicense', detail=False))),
@@ -143,10 +165,6 @@ urlpatterns = [
     path("asset-licenses/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
         name="assetlicense_changelog",
         kwargs={"model": AssetLicense},
-    ),
-    path("subscriptions/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
-        name="subscription_changelog",
-        kwargs={"model": Subscription},
     ),
 
     #EoX Button
