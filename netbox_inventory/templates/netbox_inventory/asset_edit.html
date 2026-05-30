@@ -28,7 +28,14 @@
       {# Only meaningful for OT / manusal install site for assets that are used+allocated without hardware assigned #}
       {% render_field form.installed_site_override %}
       {% render_field form.storage_site %}
-      {% render_field form.storage_location %}  
+      {% render_field form.storage_location %}
+    </div>
+
+    <div class="field-group mb-5">
+      <div class="row">
+        <h2 class="col-9 offset-3">Vendor Location</h2>
+      </div>
+      {% render_field form.installed_at %}
     </div>
 
     <div class="field-group mb-5">

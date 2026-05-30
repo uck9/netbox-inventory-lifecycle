@@ -17,6 +17,7 @@ from utilities.forms.fields import (
     CommentField,
     ContentTypeChoiceField,
     DynamicModelChoiceField,
+    DynamicModelMultipleChoiceField,
     JSONField,
     SlugField,
 )
@@ -37,6 +38,7 @@ __all__ = (
     'ContractSKUForm',
     'ContractVendorForm',
     'ContractAssignmentForm',
+    'InstalledAtLocationForm',
     'OrderForm',
     'InventoryItemGroupForm',
     'InventoryItemTypeForm',
@@ -48,6 +50,60 @@ __all__ = (
     'AssetLicenseForm',
     'AssetLicenseBulkAssignForm',
 )
+
+
+#
+# Installed-At Locations
+#
+
+
+class InstalledAtLocationForm(PrimaryModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        initial_params={'installed_at_locations': '$manufacturer'},
+    )
+    sites = DynamicModelMultipleChoiceField(
+        queryset=Site.objects.all(),
+        required=False,
+        label='NetBox Sites',
+        help_text=InstalledAtLocation._meta.get_field('sites').help_text,
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet(
+            'manufacturer',
+            'vendor_site_id',
+            'sites',
+            'description',
+            'tags',
+            name='Installed-At Location',
+        ),
+        FieldSet(
+            'address',
+            'city',
+            'state',
+            'postcode',
+            'country',
+            name='Address',
+        ),
+    )
+
+    class Meta:
+        model = InstalledAtLocation
+        fields = (
+            'manufacturer',
+            'vendor_site_id',
+            'address',
+            'city',
+            'state',
+            'postcode',
+            'country',
+            'sites',
+            'description',
+            'comments',
+            'tags',
+        )
 
 
 #
@@ -224,6 +280,13 @@ class AssetForm(PrimaryModelForm):
             "manufacturer_id": "$manufacturer",
         },
     )
+    installed_at = DynamicModelChoiceField(
+        queryset=InstalledAtLocation.objects.all(),
+        required=False,
+        query_params={'manufacturer_id': '$manufacturer'},
+        help_text=Asset._meta.get_field('installed_at').help_text,
+        label='Installed-At Location',
+    )
 
     fieldsets = (
         FieldSet(
@@ -273,6 +336,7 @@ class AssetForm(PrimaryModelForm):
         ),
         FieldSet('tenant', 'contact_group', 'contact', name='Assigned to'),
         FieldSet('storage_site', 'storage_location', name='Location'),
+        FieldSet('installed_at', name='Vendor Location'),
     )
 
     class Meta:
@@ -306,6 +370,7 @@ class AssetForm(PrimaryModelForm):
             'comments',
             'storage_site',
             'installed_site_override',
+            'installed_at',
             'support_state',
             'support_reason',
             'support_validated_at',

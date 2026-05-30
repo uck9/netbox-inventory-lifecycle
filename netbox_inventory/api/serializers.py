@@ -3,4 +3,5 @@ from .serializers_.audit import *
 from .serializers_.contracts import *
 from .serializers_.hardware import *
 from .serializers_.licenses import *
+from .serializers_.locations import *
 from .serializers_.purchases import *

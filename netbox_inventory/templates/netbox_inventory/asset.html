@@ -164,6 +164,49 @@
           </tr>
         </table>
       </div>
+      {% if object.installed_at %}
+      <div class="card">
+        <h5 class="card-header">
+          Vendor Installed-At Location
+          {% if object.installed_at_mismatch %}
+            <span class="badge bg-warning text-dark ms-2" title="Vendor location site ({{ object.installed_at.site }}) does not match the asset's current site ({{ object.current_site }})">
+              <i class="mdi mdi-alert-outline"></i> Address Mismatch
+            </span>
+          {% elif object.installed_at.sites.exists %}
+            <span class="badge bg-success ms-2">
+              <i class="mdi mdi-check-circle-outline"></i> Matches Site
+            </span>
+          {% else %}
+            <span class="badge bg-secondary ms-2" title="No NetBox sites linked to this vendor location — mismatch detection unavailable">
+              <i class="mdi mdi-help-circle-outline"></i> Sites Unlinked
+            </span>
+          {% endif %}
+        </h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Vendor Location</th>
+            <td>{{ object.installed_at|linkify }}</td>
+          </tr>
+          {% with sites=object.installed_at.sites.all %}
+          {% if sites %}
+          <tr>
+            <th scope="row">Linked NetBox Sites</th>
+            <td>
+              {% for site in sites %}
+                {{ site|linkify }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              {% if object.installed_at_mismatch %}
+                <br><span class="text-warning" title="Asset's current site is not among the linked sites">
+                  <i class="mdi mdi-arrow-right-bold"></i> Current site: {{ object.current_site|linkify }}
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endif %}
+          {% endwith %}
+        </table>
+      </div>
+      {% endif %}
       {% include 'inc/panels/custom_fields.html' %}
       {% include 'inc/panels/tags.html' %}
       {% include 'inc/panels/comments.html' %}

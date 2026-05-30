@@ -30,6 +30,7 @@ __all__ = (
     'AuditTrailImportForm',
     'AuditTrailSourceImportForm',
     'ContractImportForm',
+    'InstalledAtLocationImportForm',
     'OrderImportForm',
     'InventoryItemGroupImportForm',
     'PurchaseImportForm',
@@ -601,4 +602,34 @@ class AuditTrailImportForm(BaseFlowImportForm):
             'object_type',
             'object_id',
             'source',
+        )
+
+
+class InstalledAtLocationImportForm(PrimaryModelImportForm):
+    manufacturer = CSVModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        to_field_name='name',
+        help_text='Manufacturer name',
+    )
+    site = CSVModelChoiceField(
+        queryset=Site.objects.all(),
+        to_field_name='slug',
+        required=False,
+        help_text='NetBox site slug',
+    )
+
+    class Meta:
+        model = InstalledAtLocation
+        fields = (
+            'manufacturer',
+            'vendor_site_id',
+            'address',
+            'city',
+            'state',
+            'postcode',
+            'country',
+            'site',
+            'description',
+            'comments',
+            'tags',
         )

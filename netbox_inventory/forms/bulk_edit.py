@@ -38,6 +38,7 @@ __all__ = (
     'ContractSKUBulkEditForm',
     'ContractBulkEditForm',
     'ContractAssignmentBulkEditForm',
+    'InstalledAtLocationBulkEditForm',
     'HardwareLifecycleBulkEditForm',
     'OrderBulkEditForm',
     'InventoryItemGroupBulkEditForm',
@@ -47,6 +48,27 @@ __all__ = (
     'SubscriptionBulkEditForm',
     'AssetLicenseBulkEditForm',
 )
+
+#
+# Installed-At Locations
+#
+
+
+class InstalledAtLocationBulkEditForm(PrimaryModelBulkEditForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+    )
+    country = forms.CharField(required=False, max_length=100)
+    state = forms.CharField(required=False, max_length=100)
+
+    model = InstalledAtLocation
+    nullable_fields = ('state', 'postcode')
+
+    fieldsets = (
+        FieldSet('manufacturer', 'country', 'state', name='Installed-At Location'),
+    )
+
 
 #
 # Assets
@@ -213,6 +235,11 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         help_text=Asset._meta.get_field('installed_site_override').help_text,
         required=False,
     )
+    installed_at = DynamicModelChoiceField(
+        queryset=InstalledAtLocation.objects.all(),
+        required=False,
+        label='Installed-At Location',
+    )
     support_state = forms.ChoiceField(
         choices=add_blank_choice(AssetSupportStateChoices),
         required=False,
@@ -321,6 +348,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
             'installed_site_override',
             name='Location',
         ),
+        FieldSet('installed_at', name='Vendor Location'),
     )
     nullable_fields = (
         'name',
@@ -340,6 +368,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         'vendor_instance_id',
         'storage_location',
         'installed_site_override',
+        'installed_at',
         'support_reason',
         'support_validated_at',
         'disposal_date',

@@ -51,6 +51,7 @@ __all__ = (
     'ContractFilterSet',
     'DeviceAssetFilterSet',
     'HardwareLifecycleFilterSet',
+    'InstalledAtLocationFilterSet',
     'InventoryItemAssetFilterSet',
     'InventoryItemGroupFilterSet',
     'InventoryItemTypeFilterSet',
@@ -451,6 +452,15 @@ class AssetFilterSet(PrimaryModelFilterSet):
         method='filter_by_subscription',
         label='Subscription (ID)',
     )
+    installed_at_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='installed_at',
+        queryset=InstalledAtLocation.objects.all(),
+        label='Installed-At Location (ID)',
+    )
+    installed_at_mismatch = django_filters.BooleanFilter(
+        method='filter_installed_at_mismatch',
+        label='Vendor location mismatch',
+    )
 
     class Meta:
         model = Asset
@@ -576,6 +586,69 @@ class AssetFilterSet(PrimaryModelFilterSet):
             q_list = (Q(tenant__pk=n) | Q(owning_tenant__pk=n) for n in value)
         q_list = reduce(lambda a, b: a | b, q_list)
         return queryset.filter(q_list)
+
+    def filter_installed_at_mismatch(self, queryset, name, value):
+        """
+        Filter assets where none of the vendor's installed_at sites match the
+        asset's current_site rollup (device.site > installed_site_override > rack.site).
+        Only considers assets whose installed_at has at least one linked site.
+        """
+        from django.db.models import Exists, OuterRef
+        through = InstalledAtLocation.sites.through
+        # Subqueries: does the vendor location's sites include this asset's current-site source?
+        device_match = through.objects.filter(
+            installedatlocation_id=OuterRef('installed_at_id'),
+            site_id=OuterRef('device__site_id'),
+        )
+        override_match = through.objects.filter(
+            installedatlocation_id=OuterRef('installed_at_id'),
+            site_id=OuterRef('installed_site_override_id'),
+        )
+        rack_match = through.objects.filter(
+            installedatlocation_id=OuterRef('installed_at_id'),
+            site_id=OuterRef('rack__site_id'),
+        )
+        # Assets where installed_at has at least one site
+        candidates = queryset.filter(installed_at__sites__isnull=False).distinct()
+        matched_pks = candidates.filter(
+            Q(Exists(device_match)) | Q(Exists(override_match)) | Q(Exists(rack_match))
+        ).values_list('pk', flat=True)
+        mismatched_pks = candidates.exclude(pk__in=matched_pks).values_list('pk', flat=True)
+
+        if value:
+            return queryset.filter(pk__in=mismatched_pks)
+        else:
+            return queryset.exclude(pk__in=mismatched_pks)
+
+
+class InstalledAtLocationFilterSet(PrimaryModelFilterSet):
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer',
+        queryset=Manufacturer.objects.all(),
+        label='Manufacturer (ID)',
+    )
+    site_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='sites',
+        queryset=Site.objects.all(),
+        label='NetBox Site (ID)',
+    )
+    country = django_filters.CharFilter(lookup_expr='icontains', label='Country')
+    city = django_filters.CharFilter(lookup_expr='icontains', label='City')
+    state = django_filters.CharFilter(lookup_expr='icontains', label='State / Region')
+
+    class Meta:
+        model = InstalledAtLocation
+        fields = ('id', 'vendor_site_id', 'address', 'city', 'state', 'country', 'postcode')
+
+    def search(self, queryset, name, value):
+        return queryset.filter(
+            Q(vendor_site_id__icontains=value)
+            | Q(address__icontains=value)
+            | Q(city__icontains=value)
+            | Q(country__icontains=value)
+            | Q(manufacturer__name__icontains=value)
+            | Q(sites__name__icontains=value)
+        ).distinct()
 
 
 class HasAssetFilterMixin(NetBoxModelFilterSet):
