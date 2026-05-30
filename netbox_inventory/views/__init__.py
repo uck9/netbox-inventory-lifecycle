@@ -13,6 +13,7 @@ from .htmx import *
 from .inventoryitem_group import *
 from .inventoryitem_type import *
 from .licenses import *
+from .locations import *
 from .order import *
 from .purchase import *
 from .supplier import *

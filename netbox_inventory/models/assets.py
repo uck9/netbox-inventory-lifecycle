@@ -278,6 +278,15 @@ class Asset(NamedModel, ImageAttachmentsMixin):
             "Ignored if asset is assigned to a device."
         ),
     )
+    installed_at = models.ForeignKey(
+        to='netbox_inventory.InstalledAtLocation',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='assets',
+        verbose_name='Installed-At Location',
+        help_text='Vendor-recorded physical location where this asset is installed',
+    )
     #
     # purchase info
     #
@@ -521,6 +530,22 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         if installed or self.installed_site:
             return installed
         return self.storage_location
+
+    @property
+    def installed_at_mismatch(self):
+        """
+        True when none of the vendor's installed_at sites match the asset's
+        current rollup site. False when there is no installed_at, no sites are
+        linked on it, or the current site is among the linked sites.
+        """
+        if not self.installed_at_id:
+            return False
+        if not self.installed_at.sites.exists():
+            return False
+        current = self.current_site
+        if not current:
+            return False
+        return not self.installed_at.sites.filter(pk=current.pk).exists()
 
     @property
     def warranty_remaining(self):

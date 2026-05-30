@@ -66,6 +66,10 @@ urlpatterns = [
     path('contract-vendors/', include(get_model_urls('netbox_inventory', 'contractvendor', detail=False))),
     path('contract-vendors/<int:pk>/', include(get_model_urls('netbox_inventory', 'contractvendor'))),
 
+    # Installed-At Locations
+    path('installed-at-locations/', include(get_model_urls('netbox_inventory', 'installedatlocation', detail=False))),
+    path('installed-at-locations/<int:pk>/', include(get_model_urls('netbox_inventory', 'installedatlocation'))),
+
     # Suppliers
     path('suppliers/', include(get_model_urls('netbox_inventory', 'supplier', detail=False))),
     path('suppliers/<int:pk>/', include(get_model_urls('netbox_inventory', 'supplier'))),

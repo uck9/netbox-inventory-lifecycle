@@ -1,0 +1,107 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load plugins %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{% url 'plugins:netbox_inventory:installedatlocation_list' %}">Installed-At Locations</a></li>
+{% endblock %}
+
+{% block extra_controls %}
+  {% if perms.netbox_inventory.add_asset %}
+    <a href="{% url 'plugins:netbox_inventory:asset_add' %}?installed_at={{ object.pk }}" class="btn btn-primary">
+      <i class="mdi mdi-plus-thick" aria-hidden="true"></i> Add Asset
+    </a>
+  {% endif %}
+{% endblock extra_controls %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">Installed-At Location</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Manufacturer</th>
+            <td>{{ object.manufacturer|linkify }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Vendor Site ID</th>
+            <td class="font-monospace">{{ object.vendor_site_id }}</td>
+          </tr>
+          <tr>
+            <th scope="row">NetBox Sites</th>
+            <td>
+              {% with sites=object.sites.all %}
+              {% if sites %}
+                {% for site in sites %}
+                  {{ site|linkify }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              {% else %}
+                <span class="text-muted">—</span>
+                <span class="badge bg-warning text-dark ms-1" title="No NetBox sites linked — address mismatch detection is unavailable">
+                  <i class="mdi mdi-alert-outline"></i> Unlinked
+                </span>
+              {% endif %}
+              {% endwith %}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Assets</th>
+            <td>
+              <a href="{% url 'plugins:netbox_inventory:asset_list' %}?installed_at_id={{ object.pk }}">{{ asset_count }}</a>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Description</th>
+            <td>{{ object.description|placeholder }}</td>
+          </tr>
+        </table>
+      </div>
+      {% include 'inc/panels/tags.html' %}
+      {% plugin_left_page object %}
+    </div>
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">Address</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Street Address</th>
+            <td>{{ object.address }}</td>
+          </tr>
+          <tr>
+            <th scope="row">City</th>
+            <td>{{ object.city }}</td>
+          </tr>
+          {% if object.state %}
+          <tr>
+            <th scope="row">State / Region</th>
+            <td>{{ object.state }}</td>
+          </tr>
+          {% endif %}
+          {% if object.postcode %}
+          <tr>
+            <th scope="row">Postcode / ZIP</th>
+            <td>{{ object.postcode }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <th scope="row">Country</th>
+            <td>{{ object.country }}</td>
+          </tr>
+        </table>
+      </div>
+      {% include 'inc/panels/custom_fields.html' %}
+      {% include 'inc/panels/comments.html' %}
+      {% plugin_right_page object %}
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <h5 class="card-header">Assets at this Location</h5>
+        {% htmx_table 'plugins:netbox_inventory:asset_list' installed_at_id=object.pk %}
+      </div>
+      {% plugin_full_width_page object %}
+    </div>
+  </div>
+{% endblock content %}

@@ -54,12 +54,33 @@ asset_buttons = [
     ),
 ]
 
+installed_at_location_buttons = [
+    PluginMenuButton(
+        link='plugins:netbox_inventory:installedatlocation_add',
+        title='Add',
+        icon_class='mdi mdi-plus-thick',
+        permissions=['netbox_inventory.add_installedatlocation'],
+    ),
+    PluginMenuButton(
+        link='plugins:netbox_inventory:installedatlocation_bulk_import',
+        title='Import',
+        icon_class='mdi mdi-upload',
+        permissions=['netbox_inventory.add_installedatlocation'],
+    ),
+]
+
 assets_items = (
     PluginMenuItem(
         link='plugins:netbox_inventory:asset_list',
         link_text='Assets',
         permissions=['netbox_inventory.view_asset'],
         buttons=asset_buttons,
+    ),
+    PluginMenuItem(
+        link='plugins:netbox_inventory:installedatlocation_list',
+        link_text='Installed-At Locations',
+        permissions=['netbox_inventory.view_installedatlocation'],
+        buttons=installed_at_location_buttons,
     ),
     PluginMenuItem(
         link="plugins:netbox_inventory:licensesku_list",

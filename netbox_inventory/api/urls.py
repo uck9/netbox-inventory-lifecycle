@@ -14,6 +14,7 @@ router.register('inventory-item-groups', views.InventoryItemGroupViewSet)
 router.register('dcim/devices', views.DeviceAssetViewSet)
 router.register('dcim/modules', views.ModuleAssetViewSet)
 router.register('dcim/inventory-items', views.InventoryItemAssetViewSet)
+router.register('installed-at-locations', views.InstalledAtLocationViewSet)
 
 
 # HardwareLifecycle

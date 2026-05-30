@@ -19,6 +19,7 @@ __all__ = (
     'ContractAssignmentViewSet',
     'ContractViewSet',
     'HardwareLifecycleViewSet',
+    'InstalledAtLocationViewSet',
     'OrderViewSet',
     'DeviceAssetViewSet',
     'InventoryItemAssetViewSet',
@@ -27,7 +28,7 @@ __all__ = (
     'ModuleAssetViewSet',
     'PurchaseViewSet',
     'SupplierViewSet',
-'LicenseSKUViewSet',
+    'LicenseSKUViewSet',
     'SubscriptionViewSet',
     'AssetLicenseViewSet',
 )
@@ -61,6 +62,16 @@ class InventoryItemTypeViewSet(NetBoxModelViewSet):
     )
     serializer_class = InventoryItemTypeSerializer
     filterset_class = filtersets.InventoryItemTypeFilterSet
+
+
+class InstalledAtLocationViewSet(NetBoxModelViewSet):
+    queryset = models.InstalledAtLocation.objects.select_related(
+        'manufacturer'
+    ).prefetch_related('sites', 'tags').annotate(
+        asset_count=count_related(models.Asset, 'installed_at'),
+    )
+    serializer_class = InstalledAtLocationSerializer
+    filterset_class = filtersets.InstalledAtLocationFilterSet
 
 
 class AssetViewSet(NetBoxModelViewSet):

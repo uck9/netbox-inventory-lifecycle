@@ -49,6 +49,7 @@ __all__ = (
     'ContractFilterForm',
     'ContractVendorFilterForm',
     'ContractAssignmentFilterForm',
+    'InstalledAtLocationFilterForm',
     'OrderFilterForm',
     'HardwareLifecycleFilterForm',
     'InventoryItemGroupFilterForm',
@@ -156,6 +157,11 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
             'located_site_id',
             'located_location_id',
             name='Location',
+        ),
+        FieldSet(
+            'installed_at_id',
+            'installed_at_mismatch',
+            name='Vendor Location',
         ),
     )
 
@@ -391,6 +397,46 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
         null_option='None',
         label='Contract',
     )
+    installed_at_id = DynamicModelMultipleChoiceField(
+        queryset=InstalledAtLocation.objects.all(),
+        required=False,
+        null_option='None',
+        label='Installed-At Location',
+    )
+    installed_at_mismatch = forms.NullBooleanField(
+        required=False,
+        label='Vendor location mismatch',
+        help_text='Show only assets where vendor installed-at site differs from current site',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    tag = TagFilterField(model)
+
+
+#
+# Installed-At Locations
+#
+
+
+class InstalledAtLocationFilterForm(PrimaryModelFilterSetForm):
+    model = InstalledAtLocation
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('manufacturer_id', 'site_id', name='Location'),
+        FieldSet('country', 'city', 'state', name='Address'),
+    )
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        label='Manufacturer',
+    )
+    site_id = DynamicModelMultipleChoiceField(
+        queryset=Site.objects.all(),
+        required=False,
+        label='NetBox Sites',
+    )
+    country = forms.CharField(required=False, label='Country')
+    city = forms.CharField(required=False, label='City')
+    state = forms.CharField(required=False, label='State / Region')
     tag = TagFilterField(model)
 
 
