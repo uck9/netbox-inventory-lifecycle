@@ -17,7 +17,7 @@ from utilities.forms.widgets import BulkEditNullBooleanSelect, DatePicker
 
 from ..choices import (
     AssetAllocationStatusChoices,
-    AssetDisposalReasonhoices,
+    AssetDisposalReasonChoices,
     AssetStatusChoices,
     AssetSupportReasonChoices,
     AssetSupportStateChoices,
@@ -234,7 +234,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         widget=DatePicker(),
     )
     disposal_reason = forms.ChoiceField(
-        choices=add_blank_choice(AssetDisposalReasonhoices),
+        choices=add_blank_choice(AssetDisposalReasonChoices),
         required=False,
         initial='',
     )

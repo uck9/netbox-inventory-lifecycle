@@ -9,7 +9,7 @@ from netbox.models.features import ImageAttachmentsMixin
 
 from ..choices import (
     AssetAllocationStatusChoices,
-    AssetDisposalReasonhoices,
+    AssetDisposalReasonChoices,
     AssetStatusChoices,
     AssetSupportReasonChoices,
     AssetSupportSourceChoices,
@@ -33,6 +33,7 @@ UNCOVERED_STATES_REQUIRE_REASON = {
 
 COVERED_STATES_FORBID_REASON = {
     AssetSupportStateChoices.COVERED,
+    AssetSupportStateChoices.DISPOSED,
 }
 
 
@@ -358,7 +359,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     )
     disposal_reason = models.CharField(
         max_length=30,
-        choices=AssetDisposalReasonhoices,
+        choices=AssetDisposalReasonChoices,
         help_text='Asset disposal reason',
         blank=True,
         null=True,
@@ -571,7 +572,10 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         self.clean_storage_fields()
         self.clean_installed_site_override()
 
-        # Support fields validation (new)
+        # Disposal validation
+        self.validate_disposal()
+
+        # Support fields validation
         self.clean_support_fields()
         self.validate_support_rules()
 
@@ -805,6 +809,34 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     def get_support_source_color(self):
         return AssetSupportSourceChoices.colors.get(self.support_source)
 
+    def validate_disposal(self) -> None:
+        if self.status != 'disposed':
+            # Clear disposal data when status is not disposed
+            self.disposal_date = None
+            self.disposal_reason = None
+            self.disposal_reference = None
+            return
+
+        # Block disposal of an assigned asset
+        assigned_to = next(
+            (kind for kind in HardwareKindChoices.values() if getattr(self, kind + '_id', None)),
+            None,
+        )
+        if assigned_to:
+            raise ValidationError({
+                'status': _(
+                    f"Cannot mark as Disposed while assigned to a {assigned_to}. "
+                    "Unassign the asset first."
+                )
+            })
+
+        # Auto-set support state and clear allocation when disposing
+        self.support_state = AssetSupportStateChoices.DISPOSED
+        self.support_reason = None
+        self.support_source = AssetSupportSourceChoices.COMPUTED
+        self.support_validated_at = date.today()
+        self.allocation_status = None
+
     def clean_support_fields(self) -> None:
         """
         Normalize support fields to prevent "fake precision":
@@ -815,12 +847,15 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         if self.support_reason in ("", None):
             self.support_reason = None
 
-        # Keep the model honest: reason only makes sense for Uncovered/Excluded
-        if self.support_state in (AssetSupportStateChoices.COVERED, AssetSupportStateChoices.UNKNOWN):
+        # Reason only makes sense for Uncovered/Excluded
+        if self.support_state in (
+            AssetSupportStateChoices.COVERED,
+            AssetSupportStateChoices.UNKNOWN,
+            AssetSupportStateChoices.DISPOSED,
+        ):
             self.support_reason = None
 
         if self.support_state == AssetSupportStateChoices.UNKNOWN:
-            # optional:
             self.support_validated_at = None
 
 
@@ -828,7 +863,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         """
         Enforce support integrity rules:
         - If state is UNCOVERED or EXCLUDED, reason is required
-        - If state is COVERED or UNKNOWN, reason must be empty (normalized in clean_support_fields)
+        - If state is COVERED, UNKNOWN, or DISPOSED, reason must be empty (normalized in clean_support_fields)
         """
         errors = {}
 

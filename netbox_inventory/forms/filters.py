@@ -31,7 +31,6 @@ from utilities.forms.widgets import APISelectMultiple, DatePicker, DateTimePicke
 
 from ..choices import (
     AssetStatusChoices,
-    ProgramCoverageStatusChoices,
     HardwareKindChoices,
     PurchaseStatusChoices,
     AssetSupportStateChoices,
@@ -42,7 +41,6 @@ from ..models import *
 
 __all__ = (
     'AssetFilterForm',
-    'AssetProgramCoverageFilterForm',
     'AuditFlowFilterForm',
     'AuditFlowPageFilterForm',
     'AuditTrailFilterForm',
@@ -710,45 +708,6 @@ class LicenseSKUFilterForm(NetBoxModelFilterSetForm):
     )
     fields = (FieldSet("q", "manufacturer_id", "license_kind"))
 
-
-class AssetProgramCoverageFilterForm(NetBoxModelFilterSetForm):
-    model = AssetProgramCoverage
-
-    q = forms.CharField(
-        required=False,
-        label="Search",
-    )
-    program_id = DynamicModelMultipleChoiceField(
-        queryset=VendorProgram.objects.all(),
-        required=False,
-        label="Program",
-    )
-    asset_id = DynamicModelMultipleChoiceField(
-        queryset=Asset.objects.all(),
-        required=False,
-        label="Asset",
-    )
-    device_id = DynamicModelMultipleChoiceField(
-        queryset=Device.objects.all(),
-        required=False,
-        label="Device",
-    )
-    site_id = DynamicModelMultipleChoiceField(
-        queryset=Site.objects.all(),
-        required=False,
-        label="Site",
-    )
-    tenant_id = DynamicModelMultipleChoiceField(
-        queryset=Tenant.objects.all(),
-        required=False,
-        label="Tenant",
-    )
-    status = forms.MultipleChoiceField(
-        choices=ProgramCoverageStatusChoices,
-        required=False,
-    )
-    # Optional: tags (if your model is taggable)
-    tag = TagFilterField(model)
 
 
 #

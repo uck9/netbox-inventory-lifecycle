@@ -6,11 +6,9 @@ from utilities.urls import get_model_urls
 from . import views
 from .models import (
     AssetLicense,
-    AssetProgramCoverage,
     ContractAssignment,
     HardwareLifecycle,
     Subscription,
-    VendorProgram,
 )
 from .views.jobs import run_cisco_eox_sync
 
@@ -126,30 +124,6 @@ urlpatterns = [
     # AuditTrails
     path('audit-trails/', include(get_model_urls('netbox_inventory', 'audittrail', detail=False))),
     path('audit-trails/<int:pk>/', include(get_model_urls('netbox_inventory', 'audittrail'))),
-
-    # Vendor Programs
-    path("vendor-programs/", views.VendorProgramListView.as_view(), name="vendorprogram_list"),
-    path("vendor-programs/add/", views.VendorProgramEditView.as_view(), name="vendorprogram_add"),
-    path("vendor-programs/<int:pk>/", views.VendorProgramView.as_view(), name="vendorprogram"),
-    path("vendor-programs/<int:pk>/edit/", views.VendorProgramEditView.as_view(), name="vendorprogram_edit"),
-    path("vendor-programs/<int:pk>/delete/", views.VendorProgramDeleteView.as_view(), name="vendorprogram_delete"),
-    path('vendor-programs/<int:pk>/changelog', ObjectChangeLogView.as_view(),
-        name='vendorprogram_changelog',
-        kwargs={'model': VendorProgram},
-    ),
-
-    # Asset Program Coverage
-    path("asset-program-coverages/", views.AssetProgramCoverageListView.as_view(), name="assetprogramcoverage_list"),
-    path("asset-program-coverages/add/", views.AssetProgramCoverageEditView.as_view(), name="assetprogramcoverage_add"),
-    path("asset-program-coverages/delete/", views.AssetProgramCoverageBulkDeleteView.as_view(), name="assetprogramcoverage_bulk_delete"),
-    path("asset-program-coverages/<int:pk>/", views.AssetProgramCoverageView.as_view(), name="assetprogramcoverage"),
-    path("asset-program-coverages/<int:pk>/edit/", views.AssetProgramCoverageEditView.as_view(), name="assetprogramcoverage_edit"),
-    path("asset-program-coverages/<int:pk>/delete/", views.AssetProgramCoverageDeleteView.as_view(), name="assetprogramcoverage_delete"),
-    path("asset-program-coverages/<int:pk>/activate/", views.AssetProgramCoverageActivateView.as_view(), name="assetprogramcoverage_activate"),
-    path('asset-program-coverages/<int:pk>/changelog', ObjectChangeLogView.as_view(),
-            name='assetprogramcoverage_changelog',
-            kwargs={'model': AssetProgramCoverage},
-        ),
 
     # License SKUs
     path("license-skus/", views.LicenseSKUListView.as_view(), name="licensesku_list"),

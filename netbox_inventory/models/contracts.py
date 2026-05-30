@@ -1,6 +1,5 @@
 from datetime import date
 
-from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -19,7 +18,6 @@ from netbox_inventory.choices import (
     ContractTypeChoices,
 )
 
-# from netbox_inventory.models.programs import VendorProgram
 
 __all__ = (
     'ContractVendor',
@@ -358,13 +356,6 @@ class ContractAssignment(PrimaryModel):
         blank=True,
         related_name='assignments',
     )
-    program = models.ForeignKey(
-        to='netbox_inventory.VendorProgram',
-        on_delete=models.PROTECT,
-        related_name='contract_assignments',
-        null=True,
-        blank=True,
-    )
     asset = models.ForeignKey(
         to='netbox_inventory.Asset',
         on_delete=models.CASCADE,
@@ -606,14 +597,6 @@ class ContractAssignment(PrimaryModel):
 
         # Normalize "open" end as max date for comparison
         this_end = end or date.max
-
-        # Set Contract and Program if not set
-        if self.contract and self.sku and not self.program:
-            VendorProgram = apps.get_model('netbox_inventory', 'VendorProgram')
-            self.program = VendorProgram.objects.filter(
-                manufacturer=self.sku.manufacturer,
-                contract_type=self.contract.contract_type,
-            ).first()
 
         # Ensure SKU contract_type matches Contract contract_type
         if self.contract and self.sku:
