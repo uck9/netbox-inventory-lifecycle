@@ -65,6 +65,9 @@ class PurchaseIndex(SearchIndex):
     fields = (
         ('name', 100),
         ('description', 500),
+        ('supplier_reference', 200),
+        ('purchase_requisition', 200),
+        ('purchase_order', 200),
         ('comments', 5000),
     )
 
