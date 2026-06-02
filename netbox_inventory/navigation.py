@@ -271,6 +271,78 @@ lifecycle_items = (
 )
 
 #
+# Cisco Licenses
+#
+
+cisco_license_items = (
+    PluginMenuItem(
+        link='plugins:netbox_inventory:ciscosmartaccount_list',
+        link_text='Smart Accounts',
+        permissions=['netbox_inventory.view_ciscosmartaccount'],
+        buttons=[
+            PluginMenuButton(
+                link='plugins:netbox_inventory:ciscosmartaccount_add',
+                title='Add',
+                icon_class='mdi mdi-plus-thick',
+                permissions=['netbox_inventory.add_ciscosmartaccount'],
+            ),
+        ],
+    ),
+    PluginMenuItem(
+        link='plugins:netbox_inventory:virtualaccount_list',
+        link_text='Virtual Accounts',
+        permissions=['netbox_inventory.view_virtualaccount'],
+        buttons=[
+            PluginMenuButton(
+                link='plugins:netbox_inventory:virtualaccount_add',
+                title='Add',
+                icon_class='mdi mdi-plus-thick',
+                permissions=['netbox_inventory.add_virtualaccount'],
+            ),
+        ],
+    ),
+    PluginMenuItem(
+        link='plugins:netbox_inventory:licenseorder_list',
+        link_text='License Orders',
+        permissions=['netbox_inventory.view_licenseorder'],
+        buttons=[
+            PluginMenuButton(
+                link='plugins:netbox_inventory:licenseorder_add',
+                title='Add',
+                icon_class='mdi mdi-plus-thick',
+                permissions=['netbox_inventory.add_licenseorder'],
+            ),
+        ],
+    ),
+    PluginMenuItem(
+        link='plugins:netbox_inventory:licenseorderlineitem_list',
+        link_text='Line Items',
+        permissions=['netbox_inventory.view_licenseorderlineitem'],
+        buttons=[
+            PluginMenuButton(
+                link='plugins:netbox_inventory:licenseorderlineitem_add',
+                title='Add',
+                icon_class='mdi mdi-plus-thick',
+                permissions=['netbox_inventory.add_licenseorderlineitem'],
+            ),
+        ],
+    ),
+    PluginMenuItem(
+        link='plugins:netbox_inventory:licenselineitemallocation_list',
+        link_text='Allocations',
+        permissions=['netbox_inventory.view_licenselineitemallocation'],
+        buttons=[
+            PluginMenuButton(
+                link='plugins:netbox_inventory:licenselineitemallocation_add',
+                title='Add',
+                icon_class='mdi mdi-plus-thick',
+                permissions=['netbox_inventory.add_licenselineitemallocation'],
+            ),
+        ],
+    ),
+)
+
+#
 # Audit
 #
 
@@ -360,10 +432,11 @@ if get_plugin_config('netbox_inventory', 'top_level_menu'):
             ('Contracts', contracts_items),
             ('Lifecycle', lifecycle_items),
             ('Purchases', purchases_items),
+            ('Cisco Licenses', cisco_license_items),
             ('Audit', audit_admin_items),
         ),
         icon_class='mdi mdi-clipboard-text-multiple-outline',
     )
 else:
     # display under plugins
-    menu_items = assets_items + contracts_items + purchases_items + audit_admin_items
+    menu_items = assets_items + contracts_items + purchases_items + cisco_license_items + audit_admin_items

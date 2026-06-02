@@ -155,4 +155,24 @@ urlpatterns = [
 
     #EoX Button
     path("jobs/run-cisco-eox-sync/", run_cisco_eox_sync, name="run_cisco_eox_sync"),
+
+    # Cisco Smart Accounts
+    path('cisco-smart-accounts/', include(get_model_urls('netbox_inventory', 'ciscosmartaccount', detail=False))),
+    path('cisco-smart-accounts/<int:pk>/', include(get_model_urls('netbox_inventory', 'ciscosmartaccount'))),
+
+    # Virtual Accounts
+    path('virtual-accounts/', include(get_model_urls('netbox_inventory', 'virtualaccount', detail=False))),
+    path('virtual-accounts/<int:pk>/', include(get_model_urls('netbox_inventory', 'virtualaccount'))),
+
+    # License Orders
+    path('license-orders/', include(get_model_urls('netbox_inventory', 'licenseorder', detail=False))),
+    path('license-orders/<int:pk>/', include(get_model_urls('netbox_inventory', 'licenseorder'))),
+
+    # License Order Line Items
+    path('license-order-line-items/', include(get_model_urls('netbox_inventory', 'licenseorderlineitem', detail=False))),
+    path('license-order-line-items/<int:pk>/', include(get_model_urls('netbox_inventory', 'licenseorderlineitem'))),
+
+    # License Line Item Allocations
+    path('license-line-item-allocations/', include(get_model_urls('netbox_inventory', 'licenselineitemallocation', detail=False))),
+    path('license-line-item-allocations/<int:pk>/', include(get_model_urls('netbox_inventory', 'licenselineitemallocation'))),
 ]

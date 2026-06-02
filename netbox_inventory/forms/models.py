@@ -49,6 +49,11 @@ __all__ = (
     'SubscriptionForm',
     'AssetLicenseForm',
     'AssetLicenseBulkAssignForm',
+    'CiscoSmartAccountForm',
+    'VirtualAccountForm',
+    'LicenseOrderForm',
+    'LicenseOrderLineItemForm',
+    'LicenseLineItemAllocationForm',
 )
 
 
@@ -1073,3 +1078,113 @@ class AssetLicenseBulkAssignForm(forms.Form):
         if start_date and end_date and start_date > end_date:
             raise forms.ValidationError(_('End date must be on or after start date.'))
         return cleaned
+
+
+#
+# Cisco License Tracking
+#
+
+class CiscoSmartAccountForm(NetBoxModelForm):
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet('name', 'domain', 'tags', name=_('Smart Account')),
+    )
+
+    class Meta:
+        model = CiscoSmartAccount
+        fields = ('name', 'domain', 'comments', 'tags')
+
+
+class VirtualAccountForm(NetBoxModelForm):
+    smart_account = DynamicModelChoiceField(
+        queryset=CiscoSmartAccount.objects.all(),
+        selector=True,
+    )
+    site = DynamicModelChoiceField(
+        queryset=Site.objects.all(),
+        required=False,
+        selector=True,
+    )
+    tenant = DynamicModelChoiceField(
+        queryset=Tenant.objects.all(),
+        required=False,
+        selector=True,
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet('smart_account', 'name', 'site', 'tenant', 'tags', name=_('Virtual Account')),
+        FieldSet('va_token', 'va_token_expiry', name=_('Device Registration')),
+    )
+
+    class Meta:
+        model = VirtualAccount
+        fields = ('smart_account', 'name', 'site', 'tenant', 'va_token', 'va_token_expiry', 'comments', 'tags')
+        widgets = {
+            'va_token_expiry': DatePicker(),
+        }
+
+
+class LicenseOrderForm(NetBoxModelForm):
+    purchase = DynamicModelChoiceField(
+        queryset=Purchase.objects.all(),
+        required=False,
+        selector=True,
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet('cisco_order_number', 'subscription_id', 'source', 'purchase', 'tags', name=_('License Order')),
+        FieldSet('notes', name=_('Notes')),
+    )
+
+    class Meta:
+        model = LicenseOrder
+        fields = ('cisco_order_number', 'subscription_id', 'source', 'purchase', 'notes', 'comments', 'tags')
+
+
+class LicenseOrderLineItemForm(NetBoxModelForm):
+    license_order = DynamicModelChoiceField(
+        queryset=LicenseOrder.objects.all(),
+        selector=True,
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet('license_order', 'po_line_item_number', 'product_sku', 'product_name', name=_('Line Item')),
+        FieldSet('license_type', 'quantity_ordered', 'subscription_id', name=_('License Details')),
+        FieldSet('start_date', 'end_date', name=_('Term')),
+    )
+
+    class Meta:
+        model = LicenseOrderLineItem
+        fields = (
+            'license_order', 'po_line_item_number', 'product_sku', 'product_name',
+            'license_type', 'quantity_ordered', 'subscription_id',
+            'start_date', 'end_date', 'comments', 'tags',
+        )
+        widgets = {
+            'start_date': DatePicker(),
+            'end_date': DatePicker(),
+        }
+
+
+class LicenseLineItemAllocationForm(NetBoxModelForm):
+    line_item = DynamicModelChoiceField(
+        queryset=LicenseOrderLineItem.objects.all(),
+        selector=True,
+    )
+    virtual_account = DynamicModelChoiceField(
+        queryset=VirtualAccount.objects.all(),
+        selector=True,
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet('line_item', 'virtual_account', 'quantity', 'data_source', 'tags', name=_('Allocation')),
+    )
+
+    class Meta:
+        model = LicenseLineItemAllocation
+        fields = ('line_item', 'virtual_account', 'quantity', 'data_source', 'comments', 'tags')

@@ -85,6 +85,48 @@ class ContractStatusChoices(ChoiceSet):
 
 
 #
+# Cisco License Tracking
+#
+
+class LicenseOrderSourceChoices(ChoiceSet):
+    key = 'LicenseOrder.source'
+
+    STANDARD = 'standard'
+    EA_PORTAL = 'ea_portal'
+    SUBSCRIPTION = 'subscription'
+
+    CHOICES = [
+        (STANDARD, 'Standard Purchase', 'blue'),
+        (EA_PORTAL, 'EA Portal', 'purple'),
+        (SUBSCRIPTION, 'Subscription', 'cyan'),
+    ]
+
+
+class LicenseTypeChoices(ChoiceSet):
+    key = 'LicenseOrderLineItem.license_type'
+
+    TERM = 'term'
+    PERPETUAL = 'perpetual'
+
+    CHOICES = [
+        (TERM, 'Term', 'blue'),
+        (PERPETUAL, 'Perpetual', 'green'),
+    ]
+
+
+class LicenseDataSourceChoices(ChoiceSet):
+    key = 'LicenseLineItemAllocation.data_source'
+
+    MANUAL = 'manual'
+    API_SYNC = 'api_sync'
+
+    CHOICES = [
+        (MANUAL, 'Manual', 'green'),
+        (API_SYNC, 'API Sync', 'cyan'),
+    ]
+
+
+#
 # Disposals
 #
 

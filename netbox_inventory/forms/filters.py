@@ -59,6 +59,11 @@ __all__ = (
     'LicenseSKUFilterForm',
     'SubscriptionFilterForm',
     'AssetLicenseFilterForm',
+    'CiscoSmartAccountFilterForm',
+    'VirtualAccountFilterForm',
+    'LicenseOrderFilterForm',
+    'LicenseOrderLineItemFilterForm',
+    'LicenseLineItemAllocationFilterForm',
 )
 
 
@@ -828,4 +833,100 @@ class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
         label='Expiring before',
         widget=DatePicker,
     )
+    tag = TagFilterField(model)
+
+
+#
+# Cisco License Tracking
+#
+
+class CiscoSmartAccountFilterForm(NetBoxModelFilterSetForm):
+    model = CiscoSmartAccount
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+    )
+    tag = TagFilterField(model)
+
+
+class VirtualAccountFilterForm(NetBoxModelFilterSetForm):
+    model = VirtualAccount
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('smart_account_id', 'site_id', 'tenant_id', name='Virtual Account'),
+    )
+    smart_account_id = DynamicModelMultipleChoiceField(
+        queryset=CiscoSmartAccount.objects.all(),
+        required=False,
+        selector=True,
+        label='Smart Account',
+    )
+    site_id = DynamicModelMultipleChoiceField(
+        queryset=Site.objects.all(),
+        required=False,
+        selector=True,
+        label='Site',
+    )
+    tenant_id = DynamicModelMultipleChoiceField(
+        queryset=Tenant.objects.all(),
+        required=False,
+        selector=True,
+        label='Tenant',
+    )
+    tag = TagFilterField(model)
+
+
+class LicenseOrderFilterForm(NetBoxModelFilterSetForm):
+    model = LicenseOrder
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('source', 'purchase_id', name='Order'),
+    )
+    purchase_id = DynamicModelMultipleChoiceField(
+        queryset=Purchase.objects.all(),
+        required=False,
+        selector=True,
+        label='Purchase',
+    )
+    tag = TagFilterField(model)
+
+
+class LicenseOrderLineItemFilterForm(NetBoxModelFilterSetForm):
+    model = LicenseOrderLineItem
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('license_order_id', 'license_type', name='Line Item'),
+        FieldSet('start_date__gte', 'end_date__lte', name='Term'),
+    )
+    license_order_id = DynamicModelMultipleChoiceField(
+        queryset=LicenseOrder.objects.all(),
+        required=False,
+        selector=True,
+        label='License Order',
+    )
+    start_date__gte = forms.DateField(
+        required=False,
+        label='Start date on or after',
+        widget=DatePicker,
+    )
+    end_date__lte = forms.DateField(
+        required=False,
+        label='End date on or before',
+        widget=DatePicker,
+    )
+    tag = TagFilterField(model)
+
+
+class LicenseLineItemAllocationFilterForm(NetBoxModelFilterSetForm):
+    model = LicenseLineItemAllocation
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('virtual_account_id', 'data_source', name='Allocation'),
+    )
+    virtual_account_id = DynamicModelMultipleChoiceField(
+        queryset=VirtualAccount.objects.all(),
+        required=False,
+        selector=True,
+        label='Virtual Account',
+    )
+    tag = TagFilterField(model)
     tag = TagFilterField(model)

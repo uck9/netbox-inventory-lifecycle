@@ -7,6 +7,7 @@ from .auditflowpage import *
 from .auditflowpageassignments import *
 from .audittrail import *
 from .audittrailsource import *
+from .cisco_licenses import *
 from .contract import *
 from .hardwarelifecycle import *
 from .htmx import *

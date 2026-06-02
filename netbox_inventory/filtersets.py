@@ -62,6 +62,11 @@ __all__ = (
     'LicenseSKUFilterSet',
     'SubscriptionFilterSet',
     'AssetLicenseFilterSet',
+    'CiscoSmartAccountFilterSet',
+    'VirtualAccountFilterSet',
+    'LicenseOrderFilterSet',
+    'LicenseOrderLineItemFilterSet',
+    'LicenseLineItemAllocationFilterSet',
 )
 
 
@@ -1227,4 +1232,129 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
             | Q(subscription__subscription_id__icontains=value)
             | Q(sku__sku__icontains=value)
             | Q(sku__name__icontains=value)
+        )
+
+
+#
+# Cisco License Tracking
+#
+
+class CiscoSmartAccountFilterSet(NetBoxModelFilterSet):
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = CiscoSmartAccount
+        fields = ('id', 'name', 'domain')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(name__icontains=value) | Q(domain__icontains=value)
+        )
+
+
+class VirtualAccountFilterSet(NetBoxModelFilterSet):
+    smart_account_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='smart_account',
+        queryset=CiscoSmartAccount.objects.all(),
+        label=_('Smart Account (ID)'),
+    )
+    site_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='site',
+        queryset=Site.objects.all(),
+        label=_('Site (ID)'),
+    )
+    tenant_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='tenant',
+        queryset=Tenant.objects.all(),
+        label=_('Tenant (ID)'),
+    )
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = VirtualAccount
+        fields = ('id', 'smart_account_id', 'name', 'site_id', 'tenant_id')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(name__icontains=value)
+            | Q(smart_account__name__icontains=value)
+            | Q(smart_account__domain__icontains=value)
+        )
+
+
+class LicenseOrderFilterSet(NetBoxModelFilterSet):
+    purchase_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='purchase',
+        queryset=Purchase.objects.all(),
+        label=_('Purchase (ID)'),
+    )
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = LicenseOrder
+        fields = ('id', 'cisco_order_number', 'subscription_id', 'source', 'purchase_id')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(cisco_order_number__icontains=value)
+            | Q(subscription_id__icontains=value)
+            | Q(notes__icontains=value)
+        )
+
+
+class LicenseOrderLineItemFilterSet(NetBoxModelFilterSet):
+    license_order_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='license_order',
+        queryset=LicenseOrder.objects.all(),
+        label=_('License Order (ID)'),
+    )
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = LicenseOrderLineItem
+        fields = ('id', 'license_order_id', 'product_sku', 'license_type', 'start_date', 'end_date')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(product_sku__icontains=value)
+            | Q(product_name__icontains=value)
+            | Q(po_line_item_number__icontains=value)
+            | Q(subscription_id__icontains=value)
+            | Q(license_order__cisco_order_number__icontains=value)
+        )
+
+
+class LicenseLineItemAllocationFilterSet(NetBoxModelFilterSet):
+    line_item_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='line_item',
+        queryset=LicenseOrderLineItem.objects.all(),
+        label=_('Line Item (ID)'),
+    )
+    virtual_account_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='virtual_account',
+        queryset=VirtualAccount.objects.all(),
+        label=_('Virtual Account (ID)'),
+    )
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = LicenseLineItemAllocation
+        fields = ('id', 'line_item_id', 'virtual_account_id', 'data_source')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(virtual_account__name__icontains=value)
+            | Q(line_item__product_sku__icontains=value)
+            | Q(line_item__product_name__icontains=value)
+            | Q(line_item__license_order__cisco_order_number__icontains=value)
         )
