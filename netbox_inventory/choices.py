@@ -64,7 +64,7 @@ class ContractTypeChoices(ChoiceSet):
 
     CHOICES = [
         ('support-ea', 'Support - Enterprise Agreement', 'blue'),
-        ('support-alc', 'Support - À la carte', 'red'),
+        ('support-alc', 'Support - A la carte', 'red'),
         ('warranty', 'Warranty', 'blue'),
         ('other', 'Other', 'gray'),
     ]

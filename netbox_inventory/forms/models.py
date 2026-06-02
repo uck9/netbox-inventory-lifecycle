@@ -676,6 +676,7 @@ class OrderForm(PrimaryModelForm):
             'purchase',
             'manufacturer',
             'name',
+            'owner',
             'description',
             'comments',
             'tags',
