@@ -150,6 +150,10 @@ class AssetSupportStateChoices(ChoiceSet):
 class AssetSupportReasonChoices(ChoiceSet):
     key = 'Asset.support_reason'
 
+    # Covered detail
+    COVERED_BY_CONTRACT = 'covered_contract'
+    COVERED_BY_WARRANTY = 'covered_warranty'
+
     # Operational Gaps (fixable)
     CONTRACT_MISSING = "contract_missing"
     CONTRACT_EXPIRED = "contract_expired"
@@ -166,6 +170,9 @@ class AssetSupportReasonChoices(ChoiceSet):
     VENDOR_UNSUPPORTED = 'vendor_unsupported'
 
     CHOICES = [
+        (COVERED_BY_CONTRACT, _("Covered by contract"), "green"),
+        (COVERED_BY_WARRANTY, _("Covered by warranty"), "green"),
+
         (CONTRACT_MISSING, _("Contract missing"), "orange"),
         (CONTRACT_EXPIRED, _("Contract expired"), "orange"),
         (COVERAGE_PENDING, _("Coverage pending"), "cyan"),
@@ -177,4 +184,23 @@ class AssetSupportReasonChoices(ChoiceSet):
         (LAB, _("Lab"), "blue"),
         (SPARE, _("Spare"), "blue"),
         (DECOMMISSION_PLANNED, _("Decommission planned"), "blue"),
+    ]
+
+
+#
+# Asset Warranty Type
+#
+class AssetWarrantyTypeChoices(ChoiceSet):
+    key = 'Asset.warranty_type'
+
+    WARR_1YR_LTD_HW = 'WARR-1YR-LTD-HW'
+    WARR_ELTD_LIFE_HW = 'WARR-ELTD-LIFE-HW'
+    WARR_LTD_LIFE_HW = 'WARR-LTD-LIFE-HW'
+    OTHER = 'other'
+
+    CHOICES = [
+        (WARR_1YR_LTD_HW, 'Cisco - WARR-1YR-LTD-HW', 'blue'),
+        (WARR_ELTD_LIFE_HW, 'Cisco - WARR-ELTD-LIFE-HW', 'green'),
+        (WARR_LTD_LIFE_HW, 'Cisco - WARR-LTD-LIFE-HW', 'cyan'),
+        (OTHER, 'Other', 'gray'),
     ]

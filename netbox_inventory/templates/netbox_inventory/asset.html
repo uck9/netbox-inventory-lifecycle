@@ -244,11 +244,15 @@
             <td>{{ object.vendor_ship_date|isodate|placeholder }}</td>
           </tr>
           <tr>
-            <th scope="row">Warranty start</th>
+            <th scope="row">Warranty Type</th>
+            <td>{{ object.get_warranty_type_display|placeholder }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Warranty Start</th>
             <td>{{ object.warranty_start|isodate|placeholder }}</td>
           </tr>
           <tr>
-            <th scope="row">Warranty end</th>
+            <th scope="row">Warranty End</th>
             <td>{{ object.warranty_end|isodate|placeholder }}</td>
           </tr>
           <tr>
@@ -266,7 +270,7 @@
             <th scope="row">Support State</th>
             <td>{% badge object.get_support_state_display bg_color=object.get_support_state_color %}</td>
           </tr>
-          {% if object.support_state != "covered" and object.support_state != "unknown" %}
+          {% if object.support_state != "unknown" %}
           <tr>
             <th scope="row">Support Reason</th>
             <td>{% badge object.get_support_reason_display bg_color=object.get_support_reason_color %}</td>
