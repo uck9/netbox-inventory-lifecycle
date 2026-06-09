@@ -115,13 +115,17 @@ def _has_any_active_assignment(asset_id: int) -> bool:
 def _reconcile_asset_support(asset_id: int) -> None:
     """
     Vendor-agnostic support state:
-    - If any active assignment exists => COVERED
+    - If any active ContractAssignment exists => COVERED (covered_contract)
+    - Else if active warranty => COVERED (covered_warranty)
     - Else => UNCOVERED (unless EXCLUDED or DISPOSED is sticky)
     """
     asset = (
         Asset.objects
         .filter(id=asset_id)
-        .only("id", "status", "support_state", "support_reason", "support_source", "support_validated_at")
+        .only(
+            "id", "status", "support_state", "support_reason", "support_source",
+            "support_validated_at", "warranty_start", "warranty_end",
+        )
         .first()
     )
     if not asset:
@@ -134,11 +138,14 @@ def _reconcile_asset_support(asset_id: int) -> None:
     today = timezone.now().date()
     has_active = _has_any_active_assignment(asset_id)
 
+    has_active_warranty = (
+        asset.warranty_end is not None
+        and asset.warranty_end >= today
+        and (asset.warranty_start is None or asset.warranty_start <= today)
+    )
+
     # Policy choice: EXCLUDED is sticky (recommended)
     if asset.support_state == AssetSupportStateChoices.EXCLUDED:
-        # Still stamp validation/source as computed if you want
-        # (or leave source as manual if you want exclusions to remain manual)
-        # I’d keep the exclusion "owner intent" as manual if set that way.
         changed_fields = []
         if asset.support_validated_at != today:
             asset.support_validated_at = today
@@ -154,7 +161,10 @@ def _reconcile_asset_support(asset_id: int) -> None:
     # Compute new state/reason
     if has_active:
         new_state = AssetSupportStateChoices.COVERED
-        new_reason = None
+        new_reason = AssetSupportReasonChoices.COVERED_BY_CONTRACT
+    elif has_active_warranty:
+        new_state = AssetSupportStateChoices.COVERED
+        new_reason = AssetSupportReasonChoices.COVERED_BY_WARRANTY
     else:
         new_state = AssetSupportStateChoices.UNCOVERED
         # If reason already set (e.g. coverage_pending), keep it; else default

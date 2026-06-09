@@ -28,7 +28,8 @@ def compute_asset_support(asset) -> SupportResult:
     """
     Vendor-agnostic:
     - Disposed assets => DISPOSED (permanent, no further contract evaluation)
-    - If any active ContractAssignment exists => COVERED (reason None)
+    - If any active ContractAssignment exists => COVERED (reason: covered_contract)
+    - Else if active warranty (warranty_end >= today) => COVERED (reason: covered_warranty)
     - Else if asset currently marked EXCLUDED => keep EXCLUDED (reason must exist)
     - Else => UNCOVERED with best-effort reason (CONTRACT_MISSING by default)
     """
@@ -43,10 +44,25 @@ def compute_asset_support(asset) -> SupportResult:
         .only("id", "start_date", "end_date", "contract_id", "sku_id")
     )
 
-    has_active = any(_is_active_assignment(a, today) for a in qs)
+    has_active_contract = any(_is_active_assignment(a, today) for a in qs)
 
-    if has_active:
-        return SupportResult(state=AssetSupportStateChoices.COVERED, reason=None)
+    if has_active_contract:
+        return SupportResult(
+            state=AssetSupportStateChoices.COVERED,
+            reason=AssetSupportReasonChoices.COVERED_BY_CONTRACT,
+        )
+
+    has_active_warranty = (
+        asset.warranty_end is not None
+        and asset.warranty_end >= today
+        and (asset.warranty_start is None or asset.warranty_start <= today)
+    )
+
+    if has_active_warranty:
+        return SupportResult(
+            state=AssetSupportStateChoices.COVERED,
+            reason=AssetSupportReasonChoices.COVERED_BY_WARRANTY,
+        )
 
     if asset.support_state == AssetSupportStateChoices.EXCLUDED:
         return SupportResult(state=AssetSupportStateChoices.EXCLUDED, reason=asset.support_reason)
