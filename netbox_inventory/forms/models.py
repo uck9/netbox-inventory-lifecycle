@@ -324,6 +324,7 @@ class AssetForm(PrimaryModelForm):
             'vendor_ship_date',
             'warranty_start',
             'warranty_end',
+            'warranty_type',
             name='Key Hardware Dates',
         ),
         FieldSet(
@@ -366,6 +367,7 @@ class AssetForm(PrimaryModelForm):
             'vendor_ship_date',
             'warranty_start',
             'warranty_end',
+            'warranty_type',
             'tenant',
             'contact_group',
             'contact',

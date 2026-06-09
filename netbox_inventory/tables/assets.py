@@ -229,6 +229,9 @@ class AssetTable(PrimaryModelTable):
     warranty_end = columns.DateColumn(
         verbose_name='Warranty End',
     )
+    warranty_type = columns.ChoiceFieldColumn(
+        verbose_name='Warranty Type',
+    )
     vendor_instance_id = tables.Column(
         verbose_name='Vendor Instance ID',
     )
@@ -420,6 +423,7 @@ class AssetTable(PrimaryModelTable):
             'vendor_ship_date',
             'warranty_start',
             'warranty_end',
+            'warranty_type',
             'warranty_progress',
             'warranty_remaining',
             'disposal_date',

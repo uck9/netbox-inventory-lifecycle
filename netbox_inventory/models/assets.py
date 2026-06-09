@@ -14,6 +14,7 @@ from ..choices import (
     AssetSupportReasonChoices,
     AssetSupportSourceChoices,
     AssetSupportStateChoices,
+    AssetWarrantyTypeChoices,
     HardwareKindChoices,
 )
 from ..managers import AssetManager
@@ -32,7 +33,6 @@ UNCOVERED_STATES_REQUIRE_REASON = {
 }
 
 COVERED_STATES_FORBID_REASON = {
-    AssetSupportStateChoices.COVERED,
     AssetSupportStateChoices.DISPOSED,
 }
 
@@ -338,6 +338,14 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         blank=True,
         null=True,
         verbose_name='Warranty End',
+    )
+    warranty_type = models.CharField(
+        max_length=30,
+        choices=AssetWarrantyTypeChoices,
+        help_text='Warranty type for this asset',
+        verbose_name='Warranty Type',
+        blank=True,
+        null=True,
     )
     base_license_sku = models.ForeignKey(
         to="netbox_inventory.LicenseSKU",
@@ -872,9 +880,8 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         if self.support_reason in ("", None):
             self.support_reason = None
 
-        # Reason only makes sense for Uncovered/Excluded
+        # Reason is cleared for terminal/unknown states; COVERED may carry coverage detail
         if self.support_state in (
-            AssetSupportStateChoices.COVERED,
             AssetSupportStateChoices.UNKNOWN,
             AssetSupportStateChoices.DISPOSED,
         ):
@@ -888,7 +895,8 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         """
         Enforce support integrity rules:
         - If state is UNCOVERED or EXCLUDED, reason is required
-        - If state is COVERED, UNKNOWN, or DISPOSED, reason must be empty (normalized in clean_support_fields)
+        - If state is COVERED, reason is optional (covered_contract / covered_warranty)
+        - If state is UNKNOWN or DISPOSED, reason is cleared by clean_support_fields
         """
         errors = {}
 
