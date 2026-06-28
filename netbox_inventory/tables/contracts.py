@@ -138,14 +138,18 @@ class ContractVendorTable(NetBoxTable):
         linkify=True,
         verbose_name=_('Name')
     )
+    manufacturer = tables.Column(
+        linkify=True,
+        verbose_name=_('Manufacturer'),
+    )
 
     class Meta(NetBoxTable.Meta):
         model = ContractVendor
         fields = (
-            'id', 'pk', 'name',
+            'id', 'pk', 'name', 'manufacturer',
         )
         default_columns = (
-            'id', 'pk', 'name',
+            'id', 'pk', 'name', 'manufacturer',
         )
 
 

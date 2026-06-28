@@ -18,11 +18,12 @@ __all__ = (
 
 class ContractVendorSerializer(NetBoxModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='plugins-api:netbox_inventory-api:contractvendor-detail')
+    manufacturer = ManufacturerSerializer(nested=True, required=False, allow_null=True)
 
     class Meta:
         model = ContractVendor
-        fields = ('url', 'id', 'display', 'name', 'description', 'comments', 'tags', 'custom_fields', )
-        brief_fields = ('url', 'id', 'display', 'name', )
+        fields = ('url', 'id', 'display', 'name', 'manufacturer', 'description', 'comments', 'tags', 'custom_fields', )
+        brief_fields = ('url', 'id', 'display', 'name', 'manufacturer', )
 
 class ContractSKUSerializer(NetBoxModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='plugins-api:netbox_inventory-api:contractsku-detail')

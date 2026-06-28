@@ -476,7 +476,13 @@ class ContractFilterForm(NetBoxModelFilterSetForm):
 class ContractVendorFilterForm(NetBoxModelFilterSetForm):
     model = ContractVendor
     fieldsets = (
-        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('q', 'filter_id', 'tag', 'manufacturer_id'),
+    )
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Manufacturer'),
     )
     tag = TagFilterField(model)
 
