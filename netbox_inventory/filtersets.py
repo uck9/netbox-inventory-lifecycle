@@ -686,6 +686,17 @@ class InventoryItemAssetFilterSet(HasAssetFilterMixin, InventoryItemFilterSet):
 #
 
 class ContractVendorFilterSet(NetBoxModelFilterSet):
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer',
+        queryset=Manufacturer.objects.all(),
+        label=_('Manufacturer (ID)'),
+    )
+    manufacturer = django_filters.ModelMultipleChoiceFilter(
+        field_name='manufacturer__slug',
+        queryset=Manufacturer.objects.all(),
+        to_field_name='slug',
+        label=_('Manufacturer (slug)'),
+    )
 
     class Meta:
         model = ContractVendor
@@ -695,7 +706,8 @@ class ContractVendorFilterSet(NetBoxModelFilterSet):
         if not value.strip():
             return queryset
         qs_filter = (
-            Q(name__icontains=value)
+            Q(name__icontains=value) |
+            Q(manufacturer__name__icontains=value)
         )
         return queryset.filter(qs_filter).distinct()
 
@@ -716,21 +728,32 @@ class ContractSKUFilterSet(NetBoxModelFilterSet):
         method="filter_contract_id",
         label=_("Contract (ID)"),
     )
+    asset_id = django_filters.NumberFilter(
+        method="filter_asset_id",
+        label=_("Asset (ID)"),
+    )
 
     class Meta:
         model = ContractSKU
-        fields = ('id', 'q', 'sku', 'contract_id')
+        fields = ('id', 'q', 'sku', 'contract_id', 'asset_id')
 
     def filter_contract_id(self, queryset, name, value):
-        """
-        Filter SKUs to the type of the selected contract.
-        Expects: ?contract_id=<pk>
-        """
+        """Filter SKUs to those matching the selected contract's type."""
         contract = Contract.objects.filter(pk=value).only("contract_type").first()
         if not contract:
             return queryset.none()
-
         return queryset.filter(contract_type=contract.contract_type)
+
+    def filter_asset_id(self, queryset, name, value):
+        """Filter SKUs to those matching the manufacturer of the selected asset."""
+        from .models import Asset
+        asset = Asset.objects.filter(pk=value).select_related(
+            'device_type__manufacturer'
+        ).first()
+        if not asset or not asset.device_type_id:
+            return queryset
+        manufacturer = asset.device_type.manufacturer
+        return queryset.filter(manufacturer=manufacturer)
 
     def search(self, queryset, name, value):
         if not value.strip():
@@ -775,6 +798,10 @@ class ContractFilterSet(NetBoxModelFilterSet):
         method='filter_needs_renewal',
         label='Needs renewal',
     )
+    asset_id = django_filters.NumberFilter(
+        method='filter_asset_id',
+        label=_('Asset (ID)'),
+    )
 
     class Meta:
         model = Contract
@@ -788,6 +815,7 @@ class ContractFilterSet(NetBoxModelFilterSet):
             'end_date',
             'renewal_date',
             'description',
+            'asset_id',
         )
 
     def search(self, queryset, name, value):
@@ -822,6 +850,23 @@ class ContractFilterSet(NetBoxModelFilterSet):
             return queryset.filter(renewal_date__lte=today).exclude(renewal_date__isnull=True)
         else:
             return queryset.exclude(renewal_date__lte=today).filter(renewal_date__isnull=False)
+
+    def filter_asset_id(self, queryset, name, value):
+        """
+        Filter contracts to those whose vendor's manufacturer matches the asset's
+        device type manufacturer. Contracts with no vendor or vendor with no
+        manufacturer are included (unset = applies to all).
+        """
+        from .models import Asset
+        asset = Asset.objects.filter(pk=value).select_related(
+            'device_type__manufacturer'
+        ).first()
+        if not asset or not asset.device_type_id:
+            return queryset
+        manufacturer = asset.device_type.manufacturer
+        return queryset.filter(
+            Q(vendor__manufacturer=manufacturer) | Q(vendor__manufacturer__isnull=True)
+        )
 
 
 class ContractAssignmentFilterSet(NetBoxModelFilterSet):

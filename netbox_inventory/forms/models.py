@@ -540,10 +540,17 @@ class AssetForm(PrimaryModelForm):
 
 
 class ContractVendorForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Manufacturer'),
+        help_text=_('Hardware manufacturer this vendor is contracted through (e.g. Cisco)'),
+    )
 
     class Meta:
         model = ContractVendor
-        fields = ('name', 'description', 'comments', 'tags', )
+        fields = ('name', 'manufacturer', 'description', 'comments', 'tags', )
 
 
 class ContractSKUForm(NetBoxModelForm):
@@ -574,29 +581,37 @@ class ContractForm(NetBoxModelForm):
 
 
 class ContractAssignmentForm(NetBoxModelForm):
-    contract = DynamicModelChoiceField(
-        queryset=Contract.objects.all(),
-        required=False,
-        selector=True,
-    )
-    sku = DynamicModelChoiceField(
-        queryset=ContractSKU.objects.all(),
-        required=True,
-        label=_('SKU'),
-        query_params={
-            "contract_id": "$contract",   # <-- this makes Select2 re-query when contract changes
-        },
-    )
     asset = DynamicModelChoiceField(
         queryset=Asset.objects.all(),
         required=False,
         selector=True,
         label=_('Asset'),
     )
+    contract = DynamicModelChoiceField(
+        queryset=Contract.objects.all(),
+        required=False,
+        selector=True,
+        query_params={
+            # Re-filter contracts when asset changes: only show contracts whose
+            # vendor manufacturer matches the asset's device type manufacturer.
+            "asset_id": "$asset",
+        },
+    )
+    sku = DynamicModelChoiceField(
+        queryset=ContractSKU.objects.all(),
+        required=True,
+        label=_('SKU'),
+        query_params={
+            # Filter by contract type when contract is set.
+            "contract_id": "$contract",
+            # Filter by manufacturer when asset is set.
+            "asset_id": "$asset",
+        },
+    )
 
     class Meta:
         model = ContractAssignment
-        fields = ('contract', 'sku', 'asset', 'end_date', 'description', 'comments', 'tags', )
+        fields = ('asset', 'contract', 'sku', 'end_date', 'description', 'comments', 'tags', )
         widgets = {
             'end_date': DatePicker(),
         }

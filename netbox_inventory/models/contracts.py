@@ -28,6 +28,15 @@ __all__ = (
 
 class ContractVendor(PrimaryModel):
     name = models.CharField(max_length=100)
+    manufacturer = models.ForeignKey(
+        to='dcim.Manufacturer',
+        on_delete=models.SET_NULL,
+        related_name='contract_vendors',
+        null=True,
+        blank=True,
+        verbose_name=_('Manufacturer'),
+        help_text=_('Hardware manufacturer this vendor is contracted through (e.g. Cisco)'),
+    )
 
     clone_fields = ()
     prerequisite_models = ()
