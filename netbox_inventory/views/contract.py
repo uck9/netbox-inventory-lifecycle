@@ -200,6 +200,7 @@ class ContractAssignmentsView(ObjectChildrenView):
         'delete': {'delete'},
         'bulk_edit': {'change'},
         'bulk_delete': {'delete'},
+        'export': {'view'},
     }
     tab = ViewTab(
         label='Assignments',

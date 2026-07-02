@@ -157,6 +157,7 @@ class AssetSupportReasonChoices(ChoiceSet):
     # Operational Gaps (fixable)
     CONTRACT_MISSING = "contract_missing"
     CONTRACT_EXPIRED = "contract_expired"
+    CONTRACT_NOT_PLANNED = "no_contract_planned"
     COVERAGE_PENDING = "coverage_pending"
     DATA_MISSING = "data_missing"
 
@@ -175,6 +176,7 @@ class AssetSupportReasonChoices(ChoiceSet):
 
         (CONTRACT_MISSING, _("Contract missing"), "orange"),
         (CONTRACT_EXPIRED, _("Contract expired"), "orange"),
+        (CONTRACT_NOT_PLANNED, _("Contract not planned"), "orange"),
         (COVERAGE_PENDING, _("Coverage pending"), "cyan"),
         (DATA_MISSING, _("Data missing"), "gray"),
 

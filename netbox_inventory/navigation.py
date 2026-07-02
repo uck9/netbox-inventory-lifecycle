@@ -188,6 +188,11 @@ contracts_items = (
         permissions=['netbox_inventory.view_contractvendors'],
         buttons=vendor_buttons,
     ),
+    PluginMenuItem(
+        link='plugins:netbox_inventory:contractassignment_list',
+        link_text='Contract Assignments',
+        permissions=['netbox_inventory.view_contractassignment'],
+    ),
 )
 
 
