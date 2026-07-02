@@ -3,14 +3,20 @@
 {% load helpers %}
 {% load static %}
 
-{% if perms.netbox_inventory.add_contractassignment %}
-  {% block extra_controls %}
+{% block extra_controls %}
+  {% if perms.netbox_inventory.add_contractassignment %}
     <a href="{% url 'plugins:netbox_inventory:contractassignment_add' %}?contract={{ object.pk }}"
       class="btn btn-primary">
       <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Add Assignment
     </a>
-  {% endblock %}
-{% endif %}
+  {% endif %}
+  {% if perms.netbox_inventory.view_contractassignment %}
+    <a href="{% url 'plugins:netbox_inventory:contractassignment_list' %}?contract_id={{ object.pk }}&export"
+      class="btn btn-purple">
+      <span class="mdi mdi-download" aria-hidden="true"></span> Export
+    </a>
+  {% endif %}
+{% endblock %}
 
 {% block content %}
   {% include 'inc/table_controls_htmx.html' with table_modal="ObjectTable_config" %}
