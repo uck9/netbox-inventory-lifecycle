@@ -792,7 +792,7 @@ class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
     model = AssetLicense
     fieldsets = (
         FieldSet('q', 'filter_id', 'tag'),
-        FieldSet('manufacturer_id', 'subscription_id', 'sku_id', 'asset_id', name='License'),
+        FieldSet('manufacturer_id', 'subscription_id', 'order_id', 'sku_id', 'asset_id', name='License'),
         FieldSet('start_date__gte', 'end_date__lte', 'end_date__lt', name='Dates'),
     )
     manufacturer_id = DynamicModelMultipleChoiceField(
@@ -806,6 +806,12 @@ class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
         required=False,
         selector=True,
         label='Subscription',
+    )
+    order_id = DynamicModelMultipleChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        label='Order',
     )
     sku_id = DynamicModelMultipleChoiceField(
         queryset=LicenseSKU.objects.all(),

@@ -243,6 +243,7 @@ class AssetLicenseViewSet(NetBoxModelViewSet):
         'asset',
         'subscription',
         'subscription__manufacturer',
+        'order',
         'sku',
         'sku__manufacturer',
     ).prefetch_related('tags')

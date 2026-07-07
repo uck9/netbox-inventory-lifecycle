@@ -37,6 +37,12 @@
       <th scope="row"><span title="Support state">Support State</span></th>
       <td>{% badge asset.get_support_state_display bg_color=asset.get_support_state_color %}</td>
     </tr>
+    {% if asset.support_state != "unknown" %}
+    <tr>
+      <th scope="row"><span title="Support reason">Support Reason</span></th>
+      <td>{% badge asset.get_support_reason_display bg_color=asset.get_support_reason_color %}</td>
+    </tr>
+    {% endif %}
     <tr>
       <th scope="row">Owning Tenant</th>
       <td>{{ asset.owning_tenant|linkify|placeholder }}</td>

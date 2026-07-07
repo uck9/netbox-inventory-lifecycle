@@ -1187,6 +1187,14 @@ class LicenseSKUFilterSet(NetBoxModelFilterSet):
         method='filter_by_subscription',
         label='Subscription (ID)',
     )
+    order_id = django_filters.NumberFilter(
+        method='filter_by_order',
+        label='Order (ID)',
+    )
+    asset_id = django_filters.NumberFilter(
+        method='filter_by_asset',
+        label='Asset (ID)',
+    )
     q = django_filters.CharFilter(method="search", label="Search")
 
     class Meta:
@@ -1200,6 +1208,32 @@ class LicenseSKUFilterSet(NetBoxModelFilterSet):
         except Subscription.DoesNotExist:
             return queryset.none()
         return queryset.filter(manufacturer=sub.manufacturer)
+
+    def filter_by_order(self, queryset, name, value):
+        """Filter SKUs to the manufacturer of the given order."""
+        try:
+            order = Order.objects.select_related('manufacturer').get(pk=value)
+        except Order.DoesNotExist:
+            return queryset.none()
+        return queryset.filter(manufacturer=order.manufacturer)
+
+    def filter_by_asset(self, queryset, name, value):
+        """
+        Filter SKUs to the manufacturer of the given asset's hardware type
+        (device/module/inventory item/rack type). Covers the case where a
+        license is being assigned straight to an asset with no subscription
+        or order selected.
+        """
+        from .models import Asset
+        asset = Asset.objects.filter(pk=value).select_related(
+            'device_type__manufacturer',
+            'module_type__manufacturer',
+            'inventoryitem_type__manufacturer',
+            'rack_type__manufacturer',
+        ).first()
+        if not asset or not asset.hardware_type:
+            return queryset.none()
+        return queryset.filter(manufacturer=asset.hardware_type.manufacturer)
 
     def search(self, queryset, name, value):
         if not value:
@@ -1247,6 +1281,11 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
         queryset=Subscription.objects.all(),
         label=_('Subscription (ID)'),
     )
+    order_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='order',
+        queryset=Order.objects.all(),
+        label=_('Order (ID)'),
+    )
     sku_id = django_filters.ModelMultipleChoiceFilter(
         field_name='sku',
         queryset=LicenseSKU.objects.all(),
@@ -1261,7 +1300,7 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
 
     class Meta:
         model = AssetLicense
-        fields = ('id', 'asset_id', 'subscription_id', 'sku_id', 'manufacturer_id', 'start_date', 'end_date')
+        fields = ('id', 'asset_id', 'subscription_id', 'order_id', 'sku_id', 'manufacturer_id', 'start_date', 'end_date')
 
     def search(self, queryset, name, value):
         if not value.strip():
@@ -1270,6 +1309,8 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
             Q(asset__name__icontains=value)
             | Q(asset__serial__icontains=value)
             | Q(subscription__subscription_id__icontains=value)
+            | Q(order__name__icontains=value)
             | Q(sku__sku__icontains=value)
             | Q(sku__name__icontains=value)
+            | Q(license_key__icontains=value)
         )

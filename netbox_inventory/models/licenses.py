@@ -51,6 +51,17 @@ class LicenseSKU(NetBoxModel):
         blank=True,
         verbose_name=_("Description"),
     )
+    renewal_budget_per_unit = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name=_("Renewal Budget (per unit)"),
+        help_text=_(
+            'Estimated/list renewal cost per unit (seat) per term, used for budget reporting. '
+            'Multiply by an AssetLicense quantity to estimate total renewal cost for that assignment.'
+        ),
+    )
 
     class Meta:
         ordering = ("manufacturer", "sku")
@@ -125,11 +136,15 @@ class Subscription(NetBoxModel):
 
 class AssetLicense(NetBoxModel):
     """
-    Assignment of a specific LicenseSKU to an Asset under a Subscription,
-    for a defined time period.  Multiple AssetLicense records per asset are
-    supported (concurrent or sequential).
+    Assignment of a specific LicenseSKU to an Asset for a defined time period,
+    linked to either a Subscription (recurring/entitlement-ID licensing, e.g.
+    Cisco EA) or directly to an Order (one-off/qty-based licensing bought
+    under a PO with no entitlement ID, e.g. traditional Cisco licenses).
+    Multiple AssetLicense records per asset are supported (concurrent or
+    sequential, one per SKU).
 
-    Validation enforces that the asset and license SKU share the same manufacturer.
+    Validation enforces that the asset and license SKU share the same manufacturer,
+    and that any linked subscription/order also match that manufacturer.
     """
     asset = models.ForeignKey(
         to='netbox_inventory.Asset',
@@ -142,6 +157,22 @@ class AssetLicense(NetBoxModel):
         on_delete=models.PROTECT,
         related_name='asset_licenses',
         verbose_name=_('Subscription'),
+        null=True,
+        blank=True,
+        help_text=_('Subscription/entitlement this license is enrolled under (if any).'),
+    )
+    order = models.ForeignKey(
+        to='netbox_inventory.Order',
+        on_delete=models.PROTECT,
+        related_name='asset_licenses',
+        verbose_name=_('Order'),
+        null=True,
+        blank=True,
+        help_text=_(
+            'Purchase order this license was bought under, for licenses with no '
+            'subscription/entitlement ID (e.g. a quantity of Cisco licenses bought '
+            'under a hardware or standalone order).'
+        ),
     )
     sku = models.ForeignKey(
         to='netbox_inventory.LicenseSKU',
@@ -151,8 +182,13 @@ class AssetLicense(NetBoxModel):
         help_text=_('The specific license product being assigned.'),
     )
     start_date = models.DateField(
+        null=True,
+        blank=True,
         verbose_name=_('Start Date'),
-        help_text=_('Date this license term begins.'),
+        help_text=_(
+            'Date this license term begins. Leave blank if not yet known (e.g. awaiting '
+            'manual calculation) — treated as already active until an end date says otherwise.'
+        ),
     )
     end_date = models.DateField(
         null=True,
@@ -165,6 +201,15 @@ class AssetLicense(NetBoxModel):
         verbose_name=_('Quantity'),
         help_text=_('Number of license seats/units (usually 1).'),
     )
+    license_key = models.CharField(
+        max_length=128,
+        blank=True,
+        verbose_name=_('License Key'),
+        help_text=_(
+            'Vendor-issued unique activation/license key, where one exists (e.g. Palo Alto). '
+            'Leave blank for quantity-based licensing with no per-asset key (e.g. Cisco).'
+        ),
+    )
     notes = models.CharField(
         max_length=255,
         blank=True,
@@ -176,10 +221,9 @@ class AssetLicense(NetBoxModel):
         verbose_name=_('Comments'),
     )
 
-    clone_fields = ('subscription', 'sku', 'start_date', 'end_date', 'quantity')
+    clone_fields = ('subscription', 'order', 'sku', 'start_date', 'end_date', 'quantity')
     prerequisite_models = (
         'netbox_inventory.Asset',
-        'netbox_inventory.Subscription',
         'netbox_inventory.LicenseSKU',
     )
 
@@ -198,8 +242,9 @@ class AssetLicense(NetBoxModel):
         )
 
     def __str__(self):
+        start = self.start_date.isoformat() if self.start_date else 'unknown start'
         end = self.end_date.isoformat() if self.end_date else 'ongoing'
-        return f'{self.asset} – {self.sku.sku} ({self.start_date} → {end})'
+        return f'{self.asset} – {self.sku.sku} ({start} → {end})'
 
     def get_absolute_url(self):
         return reverse('plugins:netbox_inventory:assetlicense', args=[self.pk])
@@ -211,7 +256,9 @@ class AssetLicense(NetBoxModel):
     @property
     def is_active(self) -> bool:
         today = date.today()
-        if self.start_date > today:
+        # An unknown start date is treated as already active (we're tracking
+        # a license that exists today, just haven't back-filled when it began).
+        if self.start_date and self.start_date > today:
             return False
         if self.end_date and self.end_date < today:
             return False
@@ -225,6 +272,8 @@ class AssetLicense(NetBoxModel):
 
     @property
     def is_pending(self) -> bool:
+        if not self.start_date:
+            return False
         return self.start_date > date.today()
 
     @property
@@ -265,7 +314,7 @@ class AssetLicense(NetBoxModel):
                     )
                 })
 
-        # Subscription manufacturer must also match.
+        # Subscription manufacturer must also match, when a subscription is set.
         if self.subscription_id and self.sku_id:
             if self.subscription.manufacturer != self.sku.manufacturer:
                 raise ValidationError({
@@ -275,11 +324,35 @@ class AssetLicense(NetBoxModel):
                     )
                 })
 
+        # Order manufacturer must also match, when an order is set directly (no subscription).
+        if self.order_id and self.sku_id:
+            if self.order.manufacturer != self.sku.manufacturer:
+                raise ValidationError({
+                    'order': _(
+                        f'Order manufacturer ({self.order.manufacturer}) does not match '
+                        f'license SKU manufacturer ({self.sku.manufacturer}).'
+                    )
+                })
+
         # Date sanity.
         if self.start_date and self.end_date and self.start_date > self.end_date:
             raise ValidationError({
                 'end_date': _('End date must be on or after start date.'),
             })
+
+        # The (asset, sku, start_date) DB constraint can't catch duplicates when
+        # start_date is NULL (NULL != NULL), so guard against it here instead.
+        if self.asset_id and self.sku_id and not self.start_date:
+            duplicates = AssetLicense.objects.filter(
+                asset_id=self.asset_id, sku_id=self.sku_id, start_date__isnull=True,
+            ).exclude(pk=self.pk)
+            if duplicates.exists():
+                raise ValidationError({
+                    'start_date': _(
+                        'Another asset license record for this asset and SKU already has no '
+                        'start date set. Fill in a start date to disambiguate, or edit the existing record.'
+                    ),
+                })
 
 
 def _get_asset_manufacturer(asset):

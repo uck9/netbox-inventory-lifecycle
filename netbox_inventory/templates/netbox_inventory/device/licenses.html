@@ -1,0 +1,108 @@
+{% extends 'generic/object.html' %}
+{% load buttons %}
+{% load helpers %}
+{% load inventory_filters %}
+
+{% block content %}
+  {% if not asset %}
+  <div class="alert alert-info">
+    No inventory asset is linked to this device, so there is no license or contract data to show.
+  </div>
+  {% else %}
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>Contracts</strong>
+          <div>
+            <a href="{% url 'plugins:netbox_inventory:contractassignment_add' %}?asset={{ asset.pk }}&return_url={{ request.path }}"
+               class="btn btn-sm btn-primary">
+              <i class="mdi mdi-plus-thick"></i> Add Contract
+            </a>
+          </div>
+        </div>
+        {% if contracts %}
+        <table class="table table-hover attr-table mb-0">
+          <thead>
+            <tr class="border-bottom">
+              <th>Contract ID</th>
+              <th>Type</th>
+              <th>SKU</th>
+              <th>End Date</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for contract in contracts %}
+              <tr>
+                <td><a href="{% url 'plugins:netbox_inventory:contract' contract.contract.pk %}">{{ contract.contract }}</a></td>
+                <td>{{ contract.contract.get_contract_type_display }}</td>
+                <td>{{ contract.sku }}</td>
+                {% if contract.effective_end_date == None %}
+                <td>No End Date</td>
+                {% else %}
+                <td><span {{ contract.effective_end_date|date_badge_class }}>{{ contract.effective_end_date }}</span></td>
+                {% endif %}
+                <td><a href="{% url 'plugins:netbox_inventory:contractassignment' contract.pk %}"><i class="mdi mdi-chevron-right-box-outline" aria-hidden="true"></i></a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="card-body">
+          <span class="text-muted">No contract assignments</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% if asset.base_license_sku %}
+  <div class="row mb-3">
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">Base / Perpetual License</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Manufacturer</th>
+            <td>{{ asset.base_license_sku.manufacturer|linkify }}</td>
+          </tr>
+          <tr>
+            <th scope="row">SKU</th>
+            <td>{{ asset.base_license_sku|linkify:'sku' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Name</th>
+            <td>{{ asset.base_license_sku.name }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Description</th>
+            <td>{{ asset.base_license_sku.description|placeholder }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>Subscription Licenses</strong>
+          <div>
+            <a href="{{ asset.get_absolute_url }}licenses/" class="btn btn-sm btn-secondary">
+              <i class="mdi mdi-open-in-new"></i> View on Asset
+            </a>
+            <a href="{% url 'plugins:netbox_inventory:assetlicense_add' %}?asset={{ asset.pk }}"
+               class="btn btn-sm btn-primary">
+              <i class="mdi mdi-plus-thick"></i> Add License
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          {% include 'inc/table.html' with table=licenses_table %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+{% endblock content %}

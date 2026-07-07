@@ -113,24 +113,6 @@ class AssetLocationCounts(PluginTemplateExtension):
         )
 
 
-class AssetContractInfoExtension(PluginTemplateExtension):
-    def right_page(self):
-        obj = self.context.get("object")
-
-        asset = Asset.objects.filter(**{self.kind: obj}).first()
-        if not asset:
-            return self.render(
-                "netbox_inventory/inc/contract_info.html",
-                extra_context={"asset": None, "contracts": []},
-            )
-
-        contracts = asset.contracts.all()
-        return self.render(
-            "netbox_inventory/inc/contract_info.html",
-            extra_context={"asset": asset, "contracts": contracts},
-        )
-
-
 class BaseLifecycleInfo(PluginTemplateExtension):
     """Base class for lifecycle template extensions."""
 
@@ -205,11 +187,6 @@ class DeviceAssetInfo(AssetInfoExtension):
 class ModuleAssetInfo(AssetInfoExtension):
     models = ['dcim.module']
     kind = 'module'
-
-
-class AssetContractInfo(AssetContractInfoExtension):
-    models = ['dcim.device']
-    kind = 'device'
 
 
 class InventoryItemAssetInfo(AssetInfoExtension):
@@ -557,7 +534,6 @@ template_extensions = (
     # Assets
     DeviceAssetInfo,
     ModuleAssetInfo,
-    AssetContractInfo,
     InventoryItemAssetInfo,
     RackAssetInfo,
     ManufacturerAssetCounts,

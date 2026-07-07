@@ -14,6 +14,7 @@ from utilities.tables import register_table_column
 
 from ..models import *
 from ..template_content import WARRANTY_PROGRESSBAR
+from .licenses import LicenseSKUColumn
 
 __all__ = (
     'AssetTable',
@@ -241,8 +242,7 @@ class AssetTable(PrimaryModelTable):
     support_reason = columns.ChoiceFieldColumn()
     support_source = columns.ChoiceFieldColumn()
     support_validated_at = columns.DateColumn(verbose_name='Support Validated At')
-    base_license_sku = tables.Column(
-        linkify=True,
+    base_license_sku = LicenseSKUColumn(
         verbose_name='Base License SKU',
     )
     installed_site_override = tables.Column(

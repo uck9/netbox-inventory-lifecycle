@@ -775,6 +775,12 @@ class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
         selector=True,
         label=_('Subscription'),
     )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Order'),
+    )
     sku = DynamicModelChoiceField(
         queryset=LicenseSKU.objects.all(),
         required=False,
@@ -800,6 +806,6 @@ class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
 
     model = AssetLicense
     fieldsets = (
-        FieldSet('subscription', 'sku', 'start_date', 'end_date', 'quantity'),
+        FieldSet('subscription', 'order', 'sku', 'start_date', 'end_date', 'quantity'),
     )
-    nullable_fields = ('end_date',)
+    nullable_fields = ('subscription', 'order', 'start_date', 'end_date')

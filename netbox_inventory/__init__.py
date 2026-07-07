@@ -47,6 +47,21 @@ class NetBoxInventoryConfig(PluginConfig):
                 'netbox_inventory.views.ObjectAuditTrailView',
             )
 
+    def register_device_license_tab(self) -> None:
+        """
+        Register the Licenses tab on dcim.Device. Must happen here (during
+        app loading) rather than relying on this plugin's own urls.py, since
+        dcim's urls.py is imported before plugin urls.py in netbox/urls.py —
+        by then dcim's get_model_urls('dcim', 'device') call has already run
+        and would miss a registration done later.
+        """
+        from dcim.models import Device
+        from utilities.views import register_model_view
+
+        register_model_view(Device, 'licenses')(
+            'netbox_inventory.views.DeviceLicenseTabView',
+        )
+
     def ready(self):
         super().ready()
         from . import (
@@ -55,6 +70,7 @@ class NetBoxInventoryConfig(PluginConfig):
         )
 
         self.register_feature_views()
+        self.register_device_license_tab()
 
 
 config = NetBoxInventoryConfig

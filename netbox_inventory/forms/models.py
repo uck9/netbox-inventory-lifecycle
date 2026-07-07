@@ -937,6 +937,7 @@ class LicenseSKUForm(NetBoxModelForm):
             "name",
             "license_kind",
             "description",
+            "renewal_budget_per_unit",
             "tags",
         )
 
@@ -985,21 +986,32 @@ class SubscriptionForm(NetBoxModelForm):
 
 
 class AssetLicenseForm(NetBoxModelForm):
-    # Pick subscription first — it drives both the asset and SKU dropdowns
-    # via server-side subscription_id filters on each API endpoint.
+    # Pick a subscription (recurring/entitlement-ID licensing) or an order
+    # (qty-based licensing bought under a PO, no entitlement ID) — whichever
+    # is set drives the asset and SKU dropdowns via server-side filters.
     subscription = DynamicModelChoiceField(
         queryset=Subscription.objects.all(),
+        required=False,
         selector=True,
-        help_text=_('Subscription this license is enrolled under.'),
+        help_text=_('Subscription/entitlement this license is enrolled under, if any.'),
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        help_text=_(
+            'Purchase order this license was bought under, for licenses with no '
+            'subscription/entitlement ID (e.g. a quantity of Cisco licenses).'
+        ),
     )
     asset = DynamicModelChoiceField(
         queryset=Asset.objects.all(),
         selector=True,
-        query_params={'subscription_id': '$subscription'},
-        help_text=_(
-            'Filtered to the subscription\'s manufacturer. '
-            'If the subscription is linked to an order, only assets on that order are shown.'
-        ),
+        query_params={
+            'subscription_id': '$subscription',
+            'order_id': '$order',
+        },
+        help_text=_('Filtered to the selected subscription\'s or order\'s manufacturer/assets, when set.'),
     )
     sku = DynamicModelChoiceField(
         queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.SUBSCRIPTION),
@@ -1007,16 +1019,21 @@ class AssetLicenseForm(NetBoxModelForm):
         label=_('License SKU'),
         query_params={
             'subscription_id': '$subscription',
+            'order_id': '$order',
+            'asset_id': '$asset',
             'license_kind': 'subscription',
         },
-        help_text=_('Subscription-type SKUs only, filtered to the subscription\'s manufacturer.'),
+        help_text=_(
+            'Subscription-type SKUs only, filtered to the selected subscription\'s or order\'s '
+            'manufacturer, or the asset\'s manufacturer if neither is set.'
+        ),
     )
     comments = CommentField()
 
     fieldsets = (
-        FieldSet('subscription', 'asset', 'sku', name=_('License')),
+        FieldSet('subscription', 'order', 'asset', 'sku', name=_('License')),
         FieldSet('start_date', 'end_date', name=_('Term')),
-        FieldSet('quantity', 'notes', 'tags', name=_('Details')),
+        FieldSet('quantity', 'license_key', 'notes', 'tags', name=_('Details')),
     )
 
     class Meta:
@@ -1024,10 +1041,12 @@ class AssetLicenseForm(NetBoxModelForm):
         fields = (
             'asset',
             'subscription',
+            'order',
             'sku',
             'start_date',
             'end_date',
             'quantity',
+            'license_key',
             'notes',
             'comments',
             'tags',
@@ -1040,14 +1059,22 @@ class AssetLicenseForm(NetBoxModelForm):
 
 class AssetLicenseBulkAssignForm(forms.Form):
     """
-    Form used to bulk-assign a license SKU under a subscription to many assets at once.
-    The user picks the subscription, SKU, and term dates, then selects assets from a
-    filtered list.  One AssetLicense record is created per selected asset.
+    Form used to bulk-assign a license SKU (under a subscription or an order)
+    to many assets at once. The user picks the subscription/order, SKU, and
+    term dates, then selects assets from a filtered list. One AssetLicense
+    record is created per selected asset.
     """
     subscription = DynamicModelChoiceField(
         queryset=Subscription.objects.all(),
+        required=False,
         selector=True,
-        help_text=_('Subscription to assign the license under.'),
+        help_text=_('Subscription to assign the license under, if any.'),
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        help_text=_('Purchase order to assign the license under, for licenses with no subscription ID.'),
     )
     sku = DynamicModelChoiceField(
         queryset=LicenseSKU.objects.all(),
@@ -1069,6 +1096,12 @@ class AssetLicenseBulkAssignForm(forms.Form):
         initial=1,
         label=_('Quantity per asset'),
     )
+    license_key = forms.CharField(
+        max_length=128,
+        required=False,
+        label=_('License Key'),
+        help_text=_('Only meaningful when assigning to a single asset with a unique vendor key (e.g. Palo Alto).'),
+    )
     assets = DynamicModelChoiceField(
         queryset=Asset.objects.all(),
         selector=True,
@@ -1079,6 +1112,7 @@ class AssetLicenseBulkAssignForm(forms.Form):
     def clean(self):
         cleaned = super().clean()
         subscription = cleaned.get('subscription')
+        order = cleaned.get('order')
         sku = cleaned.get('sku')
         start_date = cleaned.get('start_date')
         end_date = cleaned.get('end_date')
@@ -1087,6 +1121,11 @@ class AssetLicenseBulkAssignForm(forms.Form):
             if subscription.manufacturer != sku.manufacturer:
                 raise forms.ValidationError(
                     _('Subscription manufacturer must match the license SKU manufacturer.')
+                )
+        if order and sku:
+            if order.manufacturer != sku.manufacturer:
+                raise forms.ValidationError(
+                    _('Order manufacturer must match the license SKU manufacturer.')
                 )
         if start_date and end_date and start_date > end_date:
             raise forms.ValidationError(_('End date must be on or after start date.'))
