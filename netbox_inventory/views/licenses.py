@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import redirect, render
+from django.template import Context
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 
@@ -25,6 +26,13 @@ __all__ = (
     'SubscriptionDeleteView',
     'SubscriptionBulkEditView',
     'SubscriptionBulkDeleteView',
+    # LicenseBundle
+    'LicenseBundleListView',
+    'LicenseBundleView',
+    'LicenseBundleEditView',
+    'LicenseBundleDeleteView',
+    'LicenseBundleBulkEditView',
+    'LicenseBundleBulkDeleteView',
     # AssetLicense
     'AssetLicenseListView',
     'AssetLicenseView',
@@ -131,13 +139,61 @@ class SubscriptionBulkDeleteView(generic.BulkDeleteView):
 
 
 # ---------------------------------------------------------------------------
+# LicenseBundle
+# ---------------------------------------------------------------------------
+
+@register_model_view(models.LicenseBundle, 'list', path='', detail=False)
+class LicenseBundleListView(generic.ObjectListView):
+    queryset = models.LicenseBundle.objects.select_related(
+        'asset', 'sku', 'sku__manufacturer', 'order',
+    ).annotate(
+        license_count=Count('asset_licenses', distinct=True)
+    )
+    filterset = filtersets.LicenseBundleFilterSet
+    filterset_form = forms.LicenseBundleFilterForm
+    table = tables.LicenseBundleTable
+
+
+@register_model_view(models.LicenseBundle)
+class LicenseBundleView(generic.ObjectView):
+    queryset = models.LicenseBundle.objects.select_related('asset', 'sku', 'sku__manufacturer', 'order')
+
+
+@register_model_view(models.LicenseBundle, 'add', detail=False)
+@register_model_view(models.LicenseBundle, 'edit')
+class LicenseBundleEditView(generic.ObjectEditView):
+    queryset = models.LicenseBundle.objects.all()
+    form = forms.LicenseBundleForm
+
+
+@register_model_view(models.LicenseBundle, 'delete')
+class LicenseBundleDeleteView(generic.ObjectDeleteView):
+    queryset = models.LicenseBundle.objects.all()
+
+
+@register_model_view(models.LicenseBundle, 'bulk_edit', detail=False)
+class LicenseBundleBulkEditView(generic.BulkEditView):
+    queryset = models.LicenseBundle.objects.all()
+    filterset = filtersets.LicenseBundleFilterSet
+    table = tables.LicenseBundleTable
+    form = forms.LicenseBundleBulkEditForm
+
+
+@register_model_view(models.LicenseBundle, 'bulk_delete', detail=False)
+class LicenseBundleBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.LicenseBundle.objects.all()
+    filterset = filtersets.LicenseBundleFilterSet
+    table = tables.LicenseBundleTable
+
+
+# ---------------------------------------------------------------------------
 # AssetLicense
 # ---------------------------------------------------------------------------
 
 @register_model_view(models.AssetLicense, 'list', path='', detail=False)
 class AssetLicenseListView(generic.ObjectListView):
     queryset = models.AssetLicense.objects.select_related(
-        'asset', 'subscription', 'order', 'sku', 'sku__manufacturer'
+        'asset', 'subscription', 'order', 'bundle', 'bundle__sku', 'sku', 'sku__manufacturer'
     )
     filterset = filtersets.AssetLicenseFilterSet
     filterset_form = forms.AssetLicenseFilterForm
@@ -153,7 +209,7 @@ class AssetLicenseListView(generic.ObjectListView):
 @register_model_view(models.AssetLicense)
 class AssetLicenseView(generic.ObjectView):
     queryset = models.AssetLicense.objects.select_related(
-        'asset', 'subscription', 'order', 'sku', 'sku__manufacturer'
+        'asset', 'subscription', 'order', 'bundle', 'bundle__sku', 'sku', 'sku__manufacturer'
     )
 
 
@@ -292,14 +348,27 @@ class AssetLicenseTabView(generic.ObjectView):
         qs = (
             models.AssetLicense.objects
             .filter(asset=instance)
-            .select_related('subscription', 'order', 'sku', 'sku__manufacturer')
+            .select_related('subscription', 'order', 'bundle', 'bundle__sku', 'sku', 'sku__manufacturer')
             .order_by('sku__sku', 'start_date')
         )
         license_table = tables.AssetLicenseForAssetTable(qs)
         license_table.configure(request)
+        # inc/table.html (unlike {% render_table %}) doesn't set table.context itself,
+        # and ActionsColumn needs table.context['request'] to resolve the current user's
+        # permissions — without it every row falls back to AnonymousUser and renders no
+        # edit/delete/changelog links at all. Must be a real Context (not a plain dict) —
+        # some column types call context.update(...) as a context manager.
+        license_table.context = Context({'request': request})
+        bundles = (
+            models.LicenseBundle.objects
+            .filter(asset=instance)
+            .select_related('sku', 'sku__manufacturer', 'order')
+            .order_by('sku__sku', 'start_date')
+        )
         return {
             'licenses_table': license_table,
             'license_count': qs.count(),
+            'bundles': bundles,
         }
 
 
@@ -368,16 +437,19 @@ class DeviceLicenseTabView(generic.ObjectView):
                 'licenses_table': None,
                 'license_count': 0,
                 'contracts': [],
+                'bundles': [],
             }
 
         qs = (
             models.AssetLicense.objects
             .filter(asset=asset)
-            .select_related('subscription', 'order', 'sku', 'sku__manufacturer')
+            .select_related('subscription', 'order', 'bundle', 'bundle__sku', 'sku', 'sku__manufacturer')
             .order_by('sku__sku', 'start_date')
         )
         license_table = tables.AssetLicenseForAssetTable(qs)
         license_table.configure(request)
+        # See AssetLicenseTabView.get_extra_context for why this is needed.
+        license_table.context = Context({'request': request})
 
         contracts = (
             asset.contracts
@@ -385,9 +457,17 @@ class DeviceLicenseTabView(generic.ObjectView):
             .order_by('contract__contract_id')
         )
 
+        bundles = (
+            models.LicenseBundle.objects
+            .filter(asset=asset)
+            .select_related('sku', 'sku__manufacturer', 'order')
+            .order_by('sku__sku', 'start_date')
+        )
+
         return {
             'asset': asset,
             'licenses_table': license_table,
             'license_count': qs.count(),
             'contracts': contracts,
+            'bundles': bundles,
         }

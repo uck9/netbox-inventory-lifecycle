@@ -12,11 +12,16 @@
           <tr><th>SKU</th><td>{{ object.sku }}</td></tr>
           <tr><th>Name</th><td>{{ object.name }}</td></tr>
           <tr><th>Kind</th><td>{{ object.get_license_kind_display }}</td></tr>
-          <tr><th>Description</th><td>{{ object.description }}</td></tr>
+          <tr><th>Description</th><td>{{ object.description|placeholder }}</td></tr>
+          <tr><th>Renewal Budget (per unit)</th><td>{% if object.renewal_budget_per_unit %}${{ object.renewal_budget_per_unit }}{% else %}{{ ''|placeholder }}{% endif %}</td></tr>
+          <tr><th>Enterprise-Wide</th><td>{% if object.is_enterprise_wide %}<i class="mdi mdi-check-bold text-success"></i> Yes{% else %}<i class="mdi mdi-close text-danger"></i> No{% endif %}</td></tr>
         </table>
       </div>
     </div>
     {% include 'inc/panels/tags.html' %}
+  </div>
+  <div class="col col-md-6">
+    {% include 'inc/panels/custom_fields.html' %}
   </div>
 </div>
 {% endblock %}

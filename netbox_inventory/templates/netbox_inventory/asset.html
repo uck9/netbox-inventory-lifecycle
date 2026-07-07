@@ -305,6 +305,20 @@
         </table>
       </div>
       {% endif %}
+      {% if object.planned_decommission_date %}
+      <div class="card">
+        <h5 class="card-header">Decommission Planning</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Planned Decommission Date</th>
+            <td>
+              <span class="badge text-bg-warning">{{ object.planned_decommission_date|isodate }}</span>
+              <span class="text-muted small ms-1">Excluded from renewal budget totals in netbox-insights</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+      {% endif %}
       {% include 'netbox_inventory/inc/contracts_panel.html' with asset=object contracts=contracts %}
       {% include 'netbox_inventory/inc/hardware_lifecycle_info.html' with lifecycle_info=lifecycle_info %}
       {% include 'inc/panels/image_attachments.html' %}

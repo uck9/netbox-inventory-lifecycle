@@ -120,6 +120,19 @@ licenses_items = (
         ],
     ),
     PluginMenuItem(
+        link="plugins:netbox_inventory:licensebundle_list",
+        link_text="License Bundles",
+        permissions=["netbox_inventory.view_licensebundle"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:netbox_inventory:licensebundle_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["netbox_inventory.add_licensebundle"],
+            ),
+        ],
+    ),
+    PluginMenuItem(
         link="plugins:netbox_inventory:assetlicense_list",
         link_text="Asset Licenses",
         permissions=["netbox_inventory.view_assetlicense"],

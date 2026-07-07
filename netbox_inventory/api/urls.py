@@ -42,6 +42,7 @@ router.register('audit-trails', views.AuditTrailViewSet)
 
 router.register("license-skus", views.LicenseSKUViewSet)
 router.register("subscriptions", views.SubscriptionViewSet)
+router.register("license-bundles", views.LicenseBundleViewSet)
 router.register("asset-licenses", views.AssetLicenseViewSet)
 
 urlpatterns = router.urls

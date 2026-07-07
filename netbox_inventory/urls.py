@@ -140,6 +140,10 @@ urlpatterns = [
     path("subscriptions/", include(get_model_urls('netbox_inventory', 'subscription', detail=False))),
     path("subscriptions/<int:pk>/", include(get_model_urls('netbox_inventory', 'subscription'))),
 
+    # License Bundles
+    path("license-bundles/", include(get_model_urls('netbox_inventory', 'licensebundle', detail=False))),
+    path("license-bundles/<int:pk>/", include(get_model_urls('netbox_inventory', 'licensebundle'))),
+
     # Asset Licenses
     path("asset-licenses/", include(get_model_urls('netbox_inventory', 'assetlicense', detail=False))),
     path("asset-licenses/<int:pk>/", include(get_model_urls('netbox_inventory', 'assetlicense'))),

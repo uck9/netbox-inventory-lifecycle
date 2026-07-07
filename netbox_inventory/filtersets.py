@@ -1199,7 +1199,7 @@ class LicenseSKUFilterSet(NetBoxModelFilterSet):
 
     class Meta:
         model = LicenseSKU
-        fields = ("manufacturer_id", "license_kind", "sku")
+        fields = ("manufacturer_id", "license_kind", "sku", "is_enterprise_wide")
 
     def filter_by_subscription(self, queryset, name, value):
         """Filter SKUs to the manufacturer of the given subscription."""
@@ -1270,6 +1270,40 @@ class SubscriptionFilterSet(NetBoxModelFilterSet):
         )
 
 
+class LicenseBundleFilterSet(NetBoxModelFilterSet):
+    asset_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='asset',
+        queryset=Asset.objects.all(),
+        label=_('Asset (ID)'),
+    )
+    sku_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='sku',
+        queryset=LicenseSKU.objects.all(),
+        label=_('Bundle SKU (ID)'),
+    )
+    order_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='order',
+        queryset=Order.objects.all(),
+        label=_('Order (ID)'),
+    )
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = LicenseBundle
+        fields = ('id', 'asset_id', 'sku_id', 'order_id', 'start_date', 'end_date')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(asset__name__icontains=value)
+            | Q(asset__serial__icontains=value)
+            | Q(sku__sku__icontains=value)
+            | Q(sku__name__icontains=value)
+            | Q(order__name__icontains=value)
+        )
+
+
 class AssetLicenseFilterSet(NetBoxModelFilterSet):
     asset_id = django_filters.ModelMultipleChoiceFilter(
         field_name='asset',
@@ -1286,6 +1320,11 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
         queryset=Order.objects.all(),
         label=_('Order (ID)'),
     )
+    bundle_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='bundle',
+        queryset=LicenseBundle.objects.all(),
+        label=_('Bundle (ID)'),
+    )
     sku_id = django_filters.ModelMultipleChoiceFilter(
         field_name='sku',
         queryset=LicenseSKU.objects.all(),
@@ -1300,7 +1339,7 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
 
     class Meta:
         model = AssetLicense
-        fields = ('id', 'asset_id', 'subscription_id', 'order_id', 'sku_id', 'manufacturer_id', 'start_date', 'end_date')
+        fields = ('id', 'asset_id', 'subscription_id', 'order_id', 'bundle_id', 'sku_id', 'manufacturer_id', 'start_date', 'end_date')
 
     def search(self, queryset, name, value):
         if not value.strip():

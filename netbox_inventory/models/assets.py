@@ -391,6 +391,20 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     )
 
     #
+    # Decommission Planning
+    #
+    planned_decommission_date = models.DateField(
+        help_text=(
+            'If set, this asset is planned for decommission. Renewal budget reports '
+            'exclude its license/subscription costs from the totals and list it in a '
+            'separate "planned for decommission" section instead.'
+        ),
+        blank=True,
+        null=True,
+        verbose_name='Planned Decommission Date',
+    )
+
+    #
     # Support Info
     #
     support_state = models.CharField(

@@ -29,7 +29,7 @@
             {% if contract.effective_end_date == None %}
               <td>No End Date</td>
             {% else %}
-              <td><span {{ contract.effective_end_date|date_badge_class }}>{{ contract.effective_end_date }}</span></td>
+              <td><span {{ contract.effective_end_date|date_badge_class }}>{{ contract.effective_end_date|isodate }}</span></td>
             {% endif %}
             <td>
               <a href="{% url 'plugins:netbox_inventory:contractassignment' contract.pk %}">

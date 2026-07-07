@@ -58,6 +58,7 @@ __all__ = (
     'PurchaseFilterForm',
     'LicenseSKUFilterForm',
     'SubscriptionFilterForm',
+    'LicenseBundleFilterForm',
     'AssetLicenseFilterForm',
 )
 
@@ -788,11 +789,38 @@ class SubscriptionFilterForm(NetBoxModelFilterSetForm):
     tag = TagFilterField(model)
 
 
+class LicenseBundleFilterForm(NetBoxModelFilterSetForm):
+    model = LicenseBundle
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('asset_id', 'sku_id', 'order_id', name='Bundle'),
+    )
+    asset_id = DynamicModelMultipleChoiceField(
+        queryset=Asset.objects.all(),
+        required=False,
+        selector=True,
+        label='Asset',
+    )
+    sku_id = DynamicModelMultipleChoiceField(
+        queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.BUNDLE),
+        required=False,
+        selector=True,
+        label='Bundle SKU',
+    )
+    order_id = DynamicModelMultipleChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        label='Order',
+    )
+    tag = TagFilterField(model)
+
+
 class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
     model = AssetLicense
     fieldsets = (
         FieldSet('q', 'filter_id', 'tag'),
-        FieldSet('manufacturer_id', 'subscription_id', 'order_id', 'sku_id', 'asset_id', name='License'),
+        FieldSet('manufacturer_id', 'subscription_id', 'order_id', 'bundle_id', 'sku_id', 'asset_id', name='License'),
         FieldSet('start_date__gte', 'end_date__lte', 'end_date__lt', name='Dates'),
     )
     manufacturer_id = DynamicModelMultipleChoiceField(
@@ -812,6 +840,12 @@ class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
         required=False,
         selector=True,
         label='Order',
+    )
+    bundle_id = DynamicModelMultipleChoiceField(
+        queryset=LicenseBundle.objects.all(),
+        required=False,
+        selector=True,
+        label='Bundle',
     )
     sku_id = DynamicModelMultipleChoiceField(
         queryset=LicenseSKU.objects.all(),

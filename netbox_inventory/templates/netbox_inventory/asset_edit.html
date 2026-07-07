@@ -126,6 +126,13 @@
         {% render_field form.disposal_reference %}
     </div>
 
+    <div class="field-group my-5">
+        <div class="row mb-2">
+          <h2 class="col-9 offset-3">Decommission Planning</h2>
+        </div>
+        {% render_field form.planned_decommission_date %}
+    </div>
+
     {% if form.custom_fields %}
         <div class="field-group my-5">
           <div class="row mb-2">

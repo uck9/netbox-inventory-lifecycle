@@ -46,6 +46,7 @@ __all__ = (
     'SupplierBulkEditForm',
     'InventoryItemTypeBulkEditForm',
     'SubscriptionBulkEditForm',
+    'LicenseBundleBulkEditForm',
     'AssetLicenseBulkEditForm',
 )
 
@@ -269,6 +270,11 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         label='Disposal Reference',
         required=False,
     )
+    planned_decommission_date = forms.DateField(
+        label='Planned Decommission Date',
+        required=False,
+        widget=DatePicker(),
+    )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -338,6 +344,10 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
             name='Disposal',
         ),
         FieldSet(
+            'planned_decommission_date',
+            name='Decommission Planning',
+        ),
+        FieldSet(
             'tenant',
             'contact_group',
             'contact',
@@ -374,6 +384,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         'disposal_date',
         'disposal_reason',
         'disposal_reference',
+        'planned_decommission_date',
     )
 
 
@@ -768,6 +779,43 @@ class SubscriptionBulkEditForm(NetBoxModelBulkEditForm):
     nullable_fields = ('order', 'description')
 
 
+class LicenseBundleBulkEditForm(NetBoxModelBulkEditForm):
+    sku = DynamicModelChoiceField(
+        queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.BUNDLE),
+        required=False,
+        selector=True,
+        label=_('Bundle SKU'),
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Order'),
+    )
+    start_date = forms.DateField(
+        required=False,
+        label=_('Start Date'),
+        widget=DatePicker(),
+    )
+    end_date = forms.DateField(
+        required=False,
+        label=_('End Date'),
+        widget=DatePicker(),
+    )
+    quantity = forms.IntegerField(
+        min_value=1,
+        required=False,
+        label=_('Quantity'),
+    )
+    comments = CommentField()
+
+    model = LicenseBundle
+    fieldsets = (
+        FieldSet('sku', 'order', 'start_date', 'end_date', 'quantity'),
+    )
+    nullable_fields = ('order', 'start_date', 'end_date')
+
+
 class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
     subscription = DynamicModelChoiceField(
         queryset=Subscription.objects.all(),
@@ -780,6 +828,12 @@ class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
         required=False,
         selector=True,
         label=_('Order'),
+    )
+    bundle = DynamicModelChoiceField(
+        queryset=LicenseBundle.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Bundle'),
     )
     sku = DynamicModelChoiceField(
         queryset=LicenseSKU.objects.all(),
@@ -806,6 +860,6 @@ class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
 
     model = AssetLicense
     fieldsets = (
-        FieldSet('subscription', 'order', 'sku', 'start_date', 'end_date', 'quantity'),
+        FieldSet('subscription', 'order', 'bundle', 'sku', 'start_date', 'end_date', 'quantity'),
     )
-    nullable_fields = ('subscription', 'order', 'start_date', 'end_date')
+    nullable_fields = ('subscription', 'order', 'bundle', 'start_date', 'end_date')

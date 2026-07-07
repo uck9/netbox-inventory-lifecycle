@@ -47,6 +47,7 @@ __all__ = (
     'HardwareLifecycleForm',
     'LicenseSKUForm',
     'SubscriptionForm',
+    'LicenseBundleForm',
     'AssetLicenseForm',
     'AssetLicenseBulkAssignForm',
 )
@@ -335,6 +336,10 @@ class AssetForm(PrimaryModelForm):
             'disposal_reference',
             name='Disposal',
         ),
+        FieldSet(
+            'planned_decommission_date',
+            name='Decommission Planning',
+        ),
         FieldSet('tenant', 'contact_group', 'contact', name='Assigned to'),
         FieldSet('storage_site', 'storage_location', name='Location'),
         FieldSet('installed_at', name='Vendor Location'),
@@ -380,6 +385,7 @@ class AssetForm(PrimaryModelForm):
             'disposal_date',
             'disposal_reason',
             'disposal_reference',
+            'planned_decommission_date',
         )
         widgets = {
             'vendor_ship_date': DatePicker(),
@@ -387,6 +393,7 @@ class AssetForm(PrimaryModelForm):
             'warranty_end': DatePicker(),
             'support_validated_at': DatePicker(),
             'disposal_date': DatePicker(),
+            'planned_decommission_date': DatePicker(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -938,6 +945,7 @@ class LicenseSKUForm(NetBoxModelForm):
             "license_kind",
             "description",
             "renewal_budget_per_unit",
+            "is_enterprise_wide",
             "tags",
         )
 
@@ -985,6 +993,55 @@ class SubscriptionForm(NetBoxModelForm):
         )
 
 
+class LicenseBundleForm(NetBoxModelForm):
+    asset = DynamicModelChoiceField(
+        queryset=Asset.objects.all(),
+        selector=True,
+        help_text=_('The device this bundle was purchased for.'),
+    )
+    sku = DynamicModelChoiceField(
+        queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.BUNDLE),
+        selector=True,
+        label=_('Bundle SKU'),
+        query_params={
+            'asset_id': '$asset',
+            'license_kind': 'bundle',
+        },
+        help_text=_('The commercial bundle SKU actually purchased (Bundle-type SKUs only).'),
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        help_text=_('Purchase order this bundle was bought under (optional).'),
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet('asset', 'sku', 'order', name=_('Bundle')),
+        FieldSet('start_date', 'end_date', name=_('Term')),
+        FieldSet('quantity', 'notes', 'tags', name=_('Details')),
+    )
+
+    class Meta:
+        model = LicenseBundle
+        fields = (
+            'asset',
+            'sku',
+            'order',
+            'start_date',
+            'end_date',
+            'quantity',
+            'notes',
+            'comments',
+            'tags',
+        )
+        widgets = {
+            'start_date': DatePicker(),
+            'end_date': DatePicker(),
+        }
+
+
 class AssetLicenseForm(NetBoxModelForm):
     # Pick a subscription (recurring/entitlement-ID licensing) or an order
     # (qty-based licensing bought under a PO, no entitlement ID) — whichever
@@ -1002,6 +1059,17 @@ class AssetLicenseForm(NetBoxModelForm):
         help_text=_(
             'Purchase order this license was bought under, for licenses with no '
             'subscription/entitlement ID (e.g. a quantity of Cisco licenses).'
+        ),
+    )
+    bundle = DynamicModelChoiceField(
+        queryset=LicenseBundle.objects.all(),
+        required=False,
+        selector=True,
+        query_params={'asset_id': '$asset'},
+        label=_('Bundle'),
+        help_text=_(
+            'If this feature license was part of a purchased bundle SKU, link the bundle '
+            'here so renewal budget is tracked on the bundle instead of this SKU.'
         ),
     )
     asset = DynamicModelChoiceField(
@@ -1031,7 +1099,7 @@ class AssetLicenseForm(NetBoxModelForm):
     comments = CommentField()
 
     fieldsets = (
-        FieldSet('subscription', 'order', 'asset', 'sku', name=_('License')),
+        FieldSet('subscription', 'order', 'bundle', 'asset', 'sku', name=_('License')),
         FieldSet('start_date', 'end_date', name=_('Term')),
         FieldSet('quantity', 'license_key', 'notes', 'tags', name=_('Details')),
     )
@@ -1042,6 +1110,7 @@ class AssetLicenseForm(NetBoxModelForm):
             'asset',
             'subscription',
             'order',
+            'bundle',
             'sku',
             'start_date',
             'end_date',
