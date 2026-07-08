@@ -125,7 +125,7 @@ class LicenseBundleSerializer(NetBoxModelSerializer):
             "asset", "sku", "order",
             "start_date", "end_date", "quantity",
             "status", "is_active", "is_expired", "days_until_expiry",
-            "license_count",
+            "license_count", "do_not_renew",
             "notes", "comments",
             "tags", "custom_fields", "created", "last_updated",
         )
@@ -201,7 +201,7 @@ class AssetLicenseSerializer(NetBoxModelSerializer):
             # computed
             "status", "is_active", "is_expired", "days_until_expiry",
             # misc
-            "notes", "comments",
+            "do_not_renew", "notes", "comments",
             "tags", "custom_fields", "created", "last_updated",
         )
         brief_fields = (

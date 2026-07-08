@@ -793,7 +793,8 @@ class LicenseBundleFilterForm(NetBoxModelFilterSetForm):
     model = LicenseBundle
     fieldsets = (
         FieldSet('q', 'filter_id', 'tag'),
-        FieldSet('asset_id', 'sku_id', 'order_id', name='Bundle'),
+        FieldSet('asset_id', 'sku_id', 'order_id', 'do_not_renew', name='Bundle'),
+        FieldSet('is_active', 'is_expired', 'is_pending', name='Status'),
     )
     asset_id = DynamicModelMultipleChoiceField(
         queryset=Asset.objects.all(),
@@ -813,6 +814,26 @@ class LicenseBundleFilterForm(NetBoxModelFilterSetForm):
         selector=True,
         label='Order',
     )
+    do_not_renew = forms.NullBooleanField(
+        required=False,
+        label='Do Not Renew',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_active = forms.NullBooleanField(
+        required=False,
+        label='Is currently active',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_expired = forms.NullBooleanField(
+        required=False,
+        label='Is expired',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_pending = forms.NullBooleanField(
+        required=False,
+        label='Is pending (not yet started)',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
     tag = TagFilterField(model)
 
 
@@ -820,8 +841,12 @@ class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
     model = AssetLicense
     fieldsets = (
         FieldSet('q', 'filter_id', 'tag'),
-        FieldSet('manufacturer_id', 'subscription_id', 'order_id', 'bundle_id', 'sku_id', 'asset_id', name='License'),
+        FieldSet(
+            'manufacturer_id', 'subscription_id', 'order_id', 'bundle_id', 'sku_id', 'asset_id',
+            'do_not_renew', name='License',
+        ),
         FieldSet('start_date__gte', 'end_date__lte', 'end_date__lt', name='Dates'),
+        FieldSet('is_active', 'is_expired', 'is_pending', name='Status'),
     )
     manufacturer_id = DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(),
@@ -873,5 +898,25 @@ class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label='Expiring before',
         widget=DatePicker,
+    )
+    do_not_renew = forms.NullBooleanField(
+        required=False,
+        label='Do Not Renew',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_active = forms.NullBooleanField(
+        required=False,
+        label='Is currently active',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_expired = forms.NullBooleanField(
+        required=False,
+        label='Is expired',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_pending = forms.NullBooleanField(
+        required=False,
+        label='Is pending (not yet started)',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
     )
     tag = TagFilterField(model)

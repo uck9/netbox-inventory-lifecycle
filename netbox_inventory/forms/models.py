@@ -1020,7 +1020,7 @@ class LicenseBundleForm(NetBoxModelForm):
     fieldsets = (
         FieldSet('asset', 'sku', 'order', name=_('Bundle')),
         FieldSet('start_date', 'end_date', name=_('Term')),
-        FieldSet('quantity', 'notes', 'tags', name=_('Details')),
+        FieldSet('quantity', 'do_not_renew', 'notes', 'tags', name=_('Details')),
     )
 
     class Meta:
@@ -1032,6 +1032,7 @@ class LicenseBundleForm(NetBoxModelForm):
             'start_date',
             'end_date',
             'quantity',
+            'do_not_renew',
             'notes',
             'comments',
             'tags',
@@ -1101,7 +1102,7 @@ class AssetLicenseForm(NetBoxModelForm):
     fieldsets = (
         FieldSet('subscription', 'order', 'bundle', 'asset', 'sku', name=_('License')),
         FieldSet('start_date', 'end_date', name=_('Term')),
-        FieldSet('quantity', 'license_key', 'notes', 'tags', name=_('Details')),
+        FieldSet('quantity', 'license_key', 'do_not_renew', 'notes', 'tags', name=_('Details')),
     )
 
     class Meta:
@@ -1116,6 +1117,7 @@ class AssetLicenseForm(NetBoxModelForm):
             'end_date',
             'quantity',
             'license_key',
+            'do_not_renew',
             'notes',
             'comments',
             'tags',

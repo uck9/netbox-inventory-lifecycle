@@ -51,6 +51,16 @@
             <td>{{ object.status_label|title }}</td>
           </tr>
           <tr>
+            <th scope="row">Do Not Renew</th>
+            <td>
+              {% if object.do_not_renew %}
+                <span class="badge bg-dark"><i class="mdi mdi-cancel"></i> Do Not Renew</span>
+              {% else %}
+                <i class="mdi mdi-close text-danger"></i> No
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
             <th scope="row">Notes</th>
             <td>{{ object.notes|placeholder }}</td>
           </tr>

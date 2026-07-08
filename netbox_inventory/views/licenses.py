@@ -100,7 +100,9 @@ class SubscriptionView(generic.ObjectView):
         licenses = (
             models.AssetLicense.objects
             .filter(subscription=instance)
-            .select_related('asset', 'sku')
+            .select_related(
+                'asset', 'asset__device', 'asset__module__device', 'asset__inventoryitem__device', 'sku',
+            )
             .order_by('asset__name', 'sku__sku', 'start_date')
         )
         licenses_table = tables.AssetLicenseTable(licenses)
@@ -193,7 +195,8 @@ class LicenseBundleBulkDeleteView(generic.BulkDeleteView):
 @register_model_view(models.AssetLicense, 'list', path='', detail=False)
 class AssetLicenseListView(generic.ObjectListView):
     queryset = models.AssetLicense.objects.select_related(
-        'asset', 'subscription', 'order', 'bundle', 'bundle__sku', 'sku', 'sku__manufacturer'
+        'asset', 'asset__device', 'asset__module__device', 'asset__inventoryitem__device',
+        'subscription', 'order', 'bundle', 'bundle__sku', 'sku', 'sku__manufacturer',
     )
     filterset = filtersets.AssetLicenseFilterSet
     filterset_form = forms.AssetLicenseFilterForm

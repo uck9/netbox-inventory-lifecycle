@@ -19,15 +19,29 @@ __all__ = (
 
 class LicenseSKUColumn(tables.Column):
     """
-    Renders a LicenseSKU FK as just the short SKU code (linked), with the
-    SKU's full name as a hover tooltip rather than appended in brackets —
-    keeps SKU columns compact when names run long.
+    Renders a LicenseSKU FK as just the short SKU code (linked). By default
+    the SKU's full name is shown as a hover tooltip rather than appended in
+    brackets — keeps SKU columns compact when names run long. Pass
+    show_name_tooltip=False for tables that already show the name as its
+    own column, to avoid the redundant title attribute.
     """
+    def __init__(self, *args, show_name_tooltip=True, **kwargs):
+        self.show_name_tooltip = show_name_tooltip
+        super().__init__(*args, **kwargs)
+
     def render(self, value):
+        if self.show_name_tooltip:
+            return format_html(
+                '<a href="{}" title="{}">{}</a>',
+                value.get_absolute_url(), value.name, value.sku,
+            )
         return format_html(
-            '<a href="{}" title="{}">{}</a>',
-            value.get_absolute_url(), value.name, value.sku,
+            '<a href="{}">{}</a>',
+            value.get_absolute_url(), value.sku,
         )
+
+    def value(self, value):
+        return value.sku
 
 
 class SubscriptionColumn(tables.Column):
@@ -40,6 +54,9 @@ class SubscriptionColumn(tables.Column):
             '<a href="{}" title="{}">{}</a>',
             value.get_absolute_url(), value.manufacturer, value.subscription_id,
         )
+
+    def value(self, value):
+        return value.subscription_id
 
 
 class LicenseSKUTable(NetBoxTable):
@@ -79,6 +96,9 @@ class BundleColumn(tables.Column):
             '<a href="{}" title="{}">{}</a>',
             value.get_absolute_url(), value, value.sku.sku,
         )
+
+    def value(self, value):
+        return value.sku.sku
 
 
 class SubscriptionTable(NetBoxTable):
@@ -122,6 +142,9 @@ class LicenseBundleTable(NetBoxTable):
         verbose_name=_('Feature Licenses'),
         orderable=False,
     )
+    do_not_renew = columns.BooleanColumn(
+        verbose_name=_('Do Not Renew'),
+    )
     tags = columns.TagColumn()
     actions = columns.ActionsColumn(actions=('edit', 'delete'))
 
@@ -129,20 +152,31 @@ class LicenseBundleTable(NetBoxTable):
         model = LicenseBundle
         fields = (
             'pk', 'id', 'asset', 'manufacturer', 'sku', 'order', 'start_date', 'end_date',
-            'quantity', 'status', 'license_count', 'notes', 'tags', 'actions',
+            'quantity', 'status', 'license_count', 'do_not_renew', 'notes', 'tags', 'actions',
         )
         default_columns = (
             'asset', 'manufacturer', 'sku', 'order',
-            'start_date', 'end_date', 'quantity', 'status', 'license_count',
+            'start_date', 'end_date', 'quantity', 'status', 'license_count', 'do_not_renew',
         )
 
 
 class AssetLicenseTable(NetBoxTable):
     asset = tables.Column(linkify=True)
+    device = tables.Column(
+        accessor='asset__installed_device',
+        linkify=True,
+        verbose_name=_('Device'),
+        orderable=False,
+    )
     subscription = SubscriptionColumn()
     order = tables.Column(linkify=True)
     bundle = BundleColumn()
-    sku = LicenseSKUColumn(verbose_name=_('License SKU'))
+    sku = LicenseSKUColumn(verbose_name=_('License SKU'), show_name_tooltip=False)
+    license_name = tables.Column(
+        accessor='sku__name',
+        verbose_name=_('License Name'),
+        orderable=True,
+    )
     manufacturer = tables.Column(
         accessor='sku__manufacturer',
         linkify=True,
@@ -157,25 +191,33 @@ class AssetLicenseTable(NetBoxTable):
         verbose_name=_('Status'),
         orderable=False,
     )
+    do_not_renew = columns.BooleanColumn(
+        verbose_name=_('Do Not Renew'),
+    )
     tags = columns.TagColumn()
     actions = columns.ActionsColumn(actions=('edit', 'delete'))
 
     class Meta(NetBoxTable.Meta):
         model = AssetLicense
         fields = (
-            'pk', 'id', 'asset', 'manufacturer', 'subscription', 'order', 'bundle', 'sku',
-            'start_date', 'end_date', 'quantity', 'license_key', 'status', 'notes', 'tags', 'actions',
+            'pk', 'id', 'asset', 'device', 'manufacturer', 'subscription', 'order', 'bundle', 'sku', 'license_name',
+            'start_date', 'end_date', 'quantity', 'license_key', 'status', 'do_not_renew', 'notes', 'tags', 'actions',
         )
         default_columns = (
-            'asset', 'manufacturer', 'subscription', 'order', 'sku',
-            'start_date', 'end_date', 'quantity', 'status',
+            'asset', 'device', 'manufacturer', 'subscription', 'order', 'sku', 'license_name',
+            'start_date', 'end_date', 'quantity', 'status', 'do_not_renew',
         )
 
 
 class AssetLicenseForAssetTable(NetBoxTable):
     """Compact table used on the Asset detail Licenses tab (and the Device
     'Inventory Info' tab, which reads through to the linked Asset)."""
-    sku = LicenseSKUColumn(verbose_name=_('License SKU'))
+    sku = LicenseSKUColumn(verbose_name=_('License SKU'), show_name_tooltip=False)
+    license_name = tables.Column(
+        accessor='sku__name',
+        verbose_name=_('License Name'),
+        orderable=True,
+    )
     bundle = BundleColumn()
     subscription = SubscriptionColumn()
     order = tables.Column(linkify=True)
@@ -187,12 +229,18 @@ class AssetLicenseForAssetTable(NetBoxTable):
         verbose_name=_('Status'),
         orderable=False,
     )
+    do_not_renew = columns.BooleanColumn(
+        verbose_name=_('Do Not Renew'),
+    )
     actions = columns.ActionsColumn(actions=('edit', 'delete'))
 
     class Meta(NetBoxTable.Meta):
         model = AssetLicense
         fields = (
-            'pk', 'id', 'sku', 'bundle', 'subscription', 'order', 'start_date', 'end_date',
-            'quantity', 'license_key', 'status', 'notes', 'actions',
+            'pk', 'id', 'sku', 'license_name', 'bundle', 'subscription', 'order', 'start_date', 'end_date',
+            'quantity', 'license_key', 'status', 'do_not_renew', 'notes', 'actions',
         )
-        default_columns = ('sku', 'bundle', 'subscription', 'order', 'start_date', 'end_date', 'quantity', 'status')
+        default_columns = (
+            'sku', 'license_name', 'bundle', 'subscription', 'order',
+            'start_date', 'end_date', 'quantity', 'status', 'do_not_renew',
+        )

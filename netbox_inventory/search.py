@@ -2,11 +2,18 @@ from netbox.search import SearchIndex
 
 from .models import (
     Asset,
+    AssetLicense,
     AuditTrailSource,
+    Contract,
+    ContractSKU,
+    ContractVendor,
     InventoryItemGroup,
     InventoryItemType,
+    LicenseBundle,
+    LicenseSKU,
     Order,
     Purchase,
+    Subscription,
     Supplier,
 )
 
@@ -82,6 +89,79 @@ class OrderIndex(SearchIndex):
 
 
 #
+# Licenses
+#
+
+
+class LicenseSKUIndex(SearchIndex):
+    model = LicenseSKU
+    fields = (
+        ('sku', 100),
+        ('name', 100),
+        ('description', 500),
+    )
+
+
+class SubscriptionIndex(SearchIndex):
+    model = Subscription
+    fields = (
+        ('subscription_id', 100),
+        ('description', 500),
+        ('comments', 5000),
+    )
+
+
+class LicenseBundleIndex(SearchIndex):
+    model = LicenseBundle
+    fields = (
+        ('notes', 200),
+        ('comments', 5000),
+    )
+
+
+class AssetLicenseIndex(SearchIndex):
+    model = AssetLicense
+    fields = (
+        ('license_key', 100),
+        ('notes', 200),
+        ('comments', 5000),
+    )
+
+
+#
+# Contracts
+#
+
+
+class ContractVendorIndex(SearchIndex):
+    model = ContractVendor
+    fields = (
+        ('name', 100),
+    )
+
+
+class ContractSKUIndex(SearchIndex):
+    model = ContractSKU
+    fields = (
+        ('sku', 100),
+        ('contract_type', 200),
+        ('service_level', 200),
+        ('description', 500),
+        ('notes', 5000),
+    )
+
+
+class ContractIndex(SearchIndex):
+    model = Contract
+    fields = (
+        ('contract_id', 100),
+        ('contract_type', 200),
+        ('description', 500),
+        ('notes', 5000),
+    )
+
+
+#
 # Audit
 #
 
@@ -103,5 +183,12 @@ indexes = [
     SupplierIndex,
     PurchaseIndex,
     OrderIndex,
+    LicenseSKUIndex,
+    SubscriptionIndex,
+    LicenseBundleIndex,
+    AssetLicenseIndex,
+    ContractVendorIndex,
+    ContractSKUIndex,
+    ContractIndex,
     AuditTrailSourceIndex,
 ]

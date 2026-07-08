@@ -807,11 +807,16 @@ class LicenseBundleBulkEditForm(NetBoxModelBulkEditForm):
         required=False,
         label=_('Quantity'),
     )
+    do_not_renew = forms.NullBooleanField(
+        required=False,
+        label=_('Do Not Renew'),
+        widget=BulkEditNullBooleanSelect(),
+    )
     comments = CommentField()
 
     model = LicenseBundle
     fieldsets = (
-        FieldSet('sku', 'order', 'start_date', 'end_date', 'quantity'),
+        FieldSet('sku', 'order', 'start_date', 'end_date', 'quantity', 'do_not_renew'),
     )
     nullable_fields = ('order', 'start_date', 'end_date')
 
@@ -856,10 +861,17 @@ class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
         required=False,
         label=_('Quantity'),
     )
+    do_not_renew = forms.NullBooleanField(
+        required=False,
+        label=_('Do Not Renew'),
+        widget=BulkEditNullBooleanSelect(),
+    )
     comments = CommentField()
 
     model = AssetLicense
     fieldsets = (
-        FieldSet('subscription', 'order', 'bundle', 'sku', 'start_date', 'end_date', 'quantity'),
+        FieldSet(
+            'subscription', 'order', 'bundle', 'sku', 'start_date', 'end_date', 'quantity', 'do_not_renew',
+        ),
     )
     nullable_fields = ('subscription', 'order', 'bundle', 'start_date', 'end_date')

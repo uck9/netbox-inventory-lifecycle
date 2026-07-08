@@ -1270,6 +1270,18 @@ class SubscriptionFilterSet(NetBoxModelFilterSet):
         )
 
 
+def _license_active_q(today):
+    """
+    Q covering AssetLicense/LicenseBundle rows considered 'active' as of
+    today — mirrors the is_active property shared by both models (an unset
+    start_date counts as already started; an unset end_date as open-ended).
+    """
+    return (
+        (Q(start_date__isnull=True) | Q(start_date__lte=today))
+        & (Q(end_date__isnull=True) | Q(end_date__gte=today))
+    )
+
+
 class LicenseBundleFilterSet(NetBoxModelFilterSet):
     asset_id = django_filters.ModelMultipleChoiceFilter(
         field_name='asset',
@@ -1286,11 +1298,23 @@ class LicenseBundleFilterSet(NetBoxModelFilterSet):
         queryset=Order.objects.all(),
         label=_('Order (ID)'),
     )
+    is_active = django_filters.BooleanFilter(
+        method='filter_is_active',
+        label=_('Is currently active'),
+    )
+    is_expired = django_filters.BooleanFilter(
+        method='filter_is_expired',
+        label=_('Is expired'),
+    )
+    is_pending = django_filters.BooleanFilter(
+        method='filter_is_pending',
+        label=_('Is pending (not yet started)'),
+    )
     q = django_filters.CharFilter(method='search', label=_('Search'))
 
     class Meta:
         model = LicenseBundle
-        fields = ('id', 'asset_id', 'sku_id', 'order_id', 'start_date', 'end_date')
+        fields = ('id', 'asset_id', 'sku_id', 'order_id', 'start_date', 'end_date', 'do_not_renew')
 
     def search(self, queryset, name, value):
         if not value.strip():
@@ -1302,6 +1326,21 @@ class LicenseBundleFilterSet(NetBoxModelFilterSet):
             | Q(sku__name__icontains=value)
             | Q(order__name__icontains=value)
         )
+
+    def filter_is_active(self, queryset, name, value):
+        from datetime import date
+        active_q = _license_active_q(date.today())
+        return queryset.filter(active_q) if value else queryset.exclude(active_q)
+
+    def filter_is_expired(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        return queryset.filter(end_date__lt=today) if value else queryset.exclude(end_date__lt=today)
+
+    def filter_is_pending(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        return queryset.filter(start_date__gt=today) if value else queryset.exclude(start_date__gt=today)
 
 
 class AssetLicenseFilterSet(NetBoxModelFilterSet):
@@ -1335,11 +1374,26 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
         queryset=Manufacturer.objects.all(),
         label=_('Manufacturer (ID)'),
     )
+    is_active = django_filters.BooleanFilter(
+        method='filter_is_active',
+        label=_('Is currently active'),
+    )
+    is_expired = django_filters.BooleanFilter(
+        method='filter_is_expired',
+        label=_('Is expired'),
+    )
+    is_pending = django_filters.BooleanFilter(
+        method='filter_is_pending',
+        label=_('Is pending (not yet started)'),
+    )
     q = django_filters.CharFilter(method='search', label=_('Search'))
 
     class Meta:
         model = AssetLicense
-        fields = ('id', 'asset_id', 'subscription_id', 'order_id', 'bundle_id', 'sku_id', 'manufacturer_id', 'start_date', 'end_date')
+        fields = (
+            'id', 'asset_id', 'subscription_id', 'order_id', 'bundle_id', 'sku_id', 'manufacturer_id',
+            'start_date', 'end_date', 'do_not_renew',
+        )
 
     def search(self, queryset, name, value):
         if not value.strip():
@@ -1353,3 +1407,18 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
             | Q(sku__name__icontains=value)
             | Q(license_key__icontains=value)
         )
+
+    def filter_is_active(self, queryset, name, value):
+        from datetime import date
+        active_q = _license_active_q(date.today())
+        return queryset.filter(active_q) if value else queryset.exclude(active_q)
+
+    def filter_is_expired(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        return queryset.filter(end_date__lt=today) if value else queryset.exclude(end_date__lt=today)
+
+    def filter_is_pending(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        return queryset.filter(start_date__gt=today) if value else queryset.exclude(start_date__gt=today)

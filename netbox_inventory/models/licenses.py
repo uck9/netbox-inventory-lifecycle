@@ -204,6 +204,15 @@ class LicenseBundle(NetBoxModel):
         verbose_name=_('Quantity'),
         help_text=_('Number of bundle units purchased (usually 1 per device).'),
     )
+    do_not_renew = models.BooleanField(
+        default=False,
+        verbose_name=_('Do Not Renew'),
+        help_text=_(
+            'Mark this bundle as not to be renewed. Excluded from renewal budget reporting. '
+            'Safe to set even if this bundle is kept in sync by an automated script — sync '
+            'scripts only ever touch dates/keys, never this flag.'
+        ),
+    )
     notes = models.CharField(
         max_length=255,
         blank=True,
@@ -419,6 +428,15 @@ class AssetLicense(NetBoxModel):
         help_text=_(
             'Vendor-issued unique activation/license key, where one exists (e.g. Palo Alto). '
             'Leave blank for quantity-based licensing with no per-asset key (e.g. Cisco).'
+        ),
+    )
+    do_not_renew = models.BooleanField(
+        default=False,
+        verbose_name=_('Do Not Renew'),
+        help_text=_(
+            'Mark this license as not to be renewed. Excluded from renewal budget reporting. '
+            'Safe to set even if this license is kept in sync by an automated script — sync '
+            'scripts only ever touch dates/keys, never this flag.'
         ),
     )
     notes = models.CharField(
