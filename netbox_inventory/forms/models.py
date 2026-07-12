@@ -864,7 +864,7 @@ class HardwareLifecycleForm(NetBoxModelForm):
             'support_basis',
             name=_('Dates'),
         ),
-        FieldSet('notice_url', 'description', name=_('Information')),
+        FieldSet('notice_url', 'estimated_replacement_cost', 'description', name=_('Information')),
         FieldSet('tags', name=_('Tags')),
     )
 
@@ -880,6 +880,7 @@ class HardwareLifecycleForm(NetBoxModelForm):
             'end_of_support',
             'notice_url',
             'support_basis',
+            'estimated_replacement_cost',
             'description',
             'comments',
             'tags',
