@@ -249,6 +249,9 @@ class AssetTable(PrimaryModelTable):
         linkify=True,
         verbose_name='Installed Site Override',
     )
+    planned_decommission_date = columns.DateColumn(
+        verbose_name='Planned Decommission Date',
+    )
     tags = columns.TagColumn()
     actions = columns.ActionsColumn(
         extra_buttons="""
