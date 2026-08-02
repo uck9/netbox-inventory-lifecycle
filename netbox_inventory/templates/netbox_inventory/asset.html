@@ -245,7 +245,7 @@
           </tr>
           <tr>
             <th scope="row">Warranty Type</th>
-            <td>{{ object.get_warranty_type_display|placeholder }}</td>
+            <td>{{ object.warranty_type|linkify:'sku'|placeholder }}</td>
           </tr>
           <tr>
             <th scope="row">Warranty Start</th>

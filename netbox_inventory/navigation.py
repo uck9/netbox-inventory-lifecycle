@@ -54,6 +54,15 @@ asset_buttons = [
     ),
 ]
 
+warrantytype_buttons = [
+    PluginMenuButton(
+        link='plugins:netbox_inventory:warrantytype_add',
+        title='Add',
+        icon_class='mdi mdi-plus-thick',
+        permissions=['netbox_inventory.add_warrantytype'],
+    ),
+]
+
 installed_at_location_buttons = [
     PluginMenuButton(
         link='plugins:netbox_inventory:installedatlocation_add',
@@ -81,6 +90,12 @@ assets_items = (
         link_text='Installed-At Locations',
         permissions=['netbox_inventory.view_installedatlocation'],
         buttons=installed_at_location_buttons,
+    ),
+    PluginMenuItem(
+        link='plugins:netbox_inventory:warrantytype_list',
+        link_text='Warranty Types',
+        permissions=['netbox_inventory.view_warrantytype'],
+        buttons=warrantytype_buttons,
     ),
     #PluginMenuItem(
     #    link='plugins:netbox_inventory:inventoryitemtype_list',

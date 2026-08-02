@@ -59,6 +59,7 @@ __all__ = (
     'OrderFilterSet',
     'PurchaseFilterSet',
     'SupplierFilterSet',
+    'WarrantyTypeFilterSet',
     'LicenseSKUFilterSet',
     'SubscriptionFilterSet',
     'AssetLicenseFilterSet',
@@ -1156,25 +1157,67 @@ class HardwareLifecycleFilterSet(NetBoxModelFilterSet):
     def search(self, queryset, name, value):
         if not value.strip():
             return queryset
-        qs_filter = Q(
-            Q(device_type__model__icontains=value)
-            | Q(module_type__model__icontains=value)
+
+        # HardwareLifecycle has no direct device_type/module_type fields — it's linked via
+        # the assigned_object generic FK, so matching device/module types has to be resolved
+        # to concrete pks first, then filtered against assigned_object_type/assigned_object_id.
+        device_type_ct = ContentType.objects.get_for_model(DeviceType)
+        module_type_ct = ContentType.objects.get_for_model(ModuleType)
+        matching_device_type_ids = DeviceType.objects.filter(
+            model__icontains=value
+        ).values_list('pk', flat=True)
+        matching_module_type_ids = ModuleType.objects.filter(
+            model__icontains=value
+        ).values_list('pk', flat=True)
+
+        qs_filter = (
+            Q(assigned_object_type=device_type_ct, assigned_object_id__in=matching_device_type_ids)
+            | Q(assigned_object_type=module_type_ct, assigned_object_id__in=matching_module_type_ids)
+            | Q(description__icontains=value)
+            | Q(comments__icontains=value)
         )
         return queryset.filter(qs_filter).distinct()
 
     def filter_types(self, queryset, name, value):
-        if '__' in name:
-            name, leftover = name.split('__', 1)  # noqa F841
-
-        if type(value) is list:
-            name = f'{name}__in'
-
         if not value:
             return queryset
-        try:
-            return queryset.filter(**{f'{name}': value})
-        except ValueError:
-            return queryset.none()
+
+        # Same underlying issue as search() above: HardwareLifecycle has no direct
+        # device_type/module_type fields, only the assigned_object generic FK. `name` here
+        # is the filter's field_name ('device_type', 'device_type__model', 'module_type', or
+        # 'module_type__model' depending on which of the four filters triggered this), and
+        # `value` is always a queryset/list of resolved DeviceType or ModuleType instances.
+        if name.startswith('device_type'):
+            content_type = ContentType.objects.get_for_model(DeviceType)
+        else:
+            content_type = ContentType.objects.get_for_model(ModuleType)
+
+        return queryset.filter(
+            assigned_object_type=content_type,
+            assigned_object_id__in=[obj.pk for obj in value],
+        )
+
+
+class WarrantyTypeFilterSet(NetBoxModelFilterSet):
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="manufacturer",
+        queryset=Manufacturer.objects.all(),
+        label="Manufacturer (ID)",
+    )
+    q = django_filters.CharFilter(method="search", label="Search")
+
+    class Meta:
+        model = WarrantyType
+        fields = ("manufacturer_id", "sku")
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(sku__icontains=value)
+            | Q(name__icontains=value)
+            | Q(description__icontains=value)
+        )
 
 
 class LicenseSKUFilterSet(NetBoxModelFilterSet):

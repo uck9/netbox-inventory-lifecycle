@@ -40,6 +40,7 @@ router.register('audit-flowpage-assignments', views.AuditFlowPageAssignmentViewS
 router.register('audit-trail-sources', views.AuditTrailSourceViewSet)
 router.register('audit-trails', views.AuditTrailViewSet)
 
+router.register("warranty-types", views.WarrantyTypeViewSet)
 router.register("license-skus", views.LicenseSKUViewSet)
 router.register("subscriptions", views.SubscriptionViewSet)
 router.register("license-bundles", views.LicenseBundleViewSet)

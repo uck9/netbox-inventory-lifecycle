@@ -15,6 +15,7 @@ from .models import (
     Purchase,
     Subscription,
     Supplier,
+    WarrantyType,
 )
 
 #
@@ -91,6 +92,15 @@ class OrderIndex(SearchIndex):
 #
 # Licenses
 #
+
+
+class WarrantyTypeIndex(SearchIndex):
+    model = WarrantyType
+    fields = (
+        ('sku', 100),
+        ('name', 100),
+        ('description', 500),
+    )
 
 
 class LicenseSKUIndex(SearchIndex):
@@ -183,6 +193,7 @@ indexes = [
     SupplierIndex,
     PurchaseIndex,
     OrderIndex,
+    WarrantyTypeIndex,
     LicenseSKUIndex,
     SubscriptionIndex,
     LicenseBundleIndex,

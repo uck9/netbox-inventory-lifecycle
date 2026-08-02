@@ -3,12 +3,14 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from netbox.tables import NetBoxTable, columns
 
-from ..models import AssetLicense, LicenseBundle, LicenseSKU, Subscription
+from ..models import AssetLicense, LicenseBundle, LicenseSKU, Subscription, WarrantyType
 
 __all__ = (
     'LicenseSKUColumn',
     'SubscriptionColumn',
     'BundleColumn',
+    'WarrantyTypeColumn',
+    'WarrantyTypeTable',
     'LicenseSKUTable',
     'SubscriptionTable',
     'LicenseBundleTable',
@@ -84,6 +86,39 @@ class LicenseSKUTable(NetBoxTable):
             "renewal_budget_per_unit", "is_enterprise_wide", "tags", "actions",
         )
         default_columns = ("manufacturer", "sku", "name", "license_kind", "renewal_budget_per_unit")
+
+
+class WarrantyTypeColumn(tables.Column):
+    """
+    Renders a WarrantyType FK as just the SKU code (linked), with the
+    warranty type's name as a hover tooltip.
+    """
+    def render(self, value):
+        return format_html(
+            '<a href="{}" title="{}">{}</a>',
+            value.get_absolute_url(), value.name, value.sku,
+        )
+
+    def value(self, value):
+        return value.sku
+
+
+class WarrantyTypeTable(NetBoxTable):
+    sku = tables.Column(linkify=True)
+    manufacturer = tables.Column(linkify=True)
+    name = tables.Column()
+    description = tables.Column()
+    url = tables.URLColumn()
+    tags = columns.TagColumn()
+
+    actions = columns.ActionsColumn(actions=("edit", "delete"))
+
+    class Meta(NetBoxTable.Meta):
+        model = WarrantyType
+        fields = (
+            "pk", "id", "manufacturer", "sku", "name", "description", "url", "tags", "actions",
+        )
+        default_columns = ("manufacturer", "sku", "name", "description")
 
 
 class BundleColumn(tables.Column):

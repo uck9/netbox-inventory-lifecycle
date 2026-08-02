@@ -14,7 +14,7 @@ from utilities.tables import register_table_column
 
 from ..models import *
 from ..template_content import WARRANTY_PROGRESSBAR
-from .licenses import LicenseSKUColumn
+from .licenses import LicenseSKUColumn, WarrantyTypeColumn
 
 __all__ = (
     'AssetTable',
@@ -230,7 +230,7 @@ class AssetTable(PrimaryModelTable):
     warranty_end = columns.DateColumn(
         verbose_name='Warranty End',
     )
-    warranty_type = columns.ChoiceFieldColumn(
+    warranty_type = WarrantyTypeColumn(
         verbose_name='Warranty Type',
     )
     vendor_instance_id = tables.Column(

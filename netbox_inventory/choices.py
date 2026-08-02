@@ -187,22 +187,3 @@ class AssetSupportReasonChoices(ChoiceSet):
         (SPARE, _("Spare"), "blue"),
         (DECOMMISSION_PLANNED, _("Decommission planned"), "blue"),
     ]
-
-
-#
-# Asset Warranty Type
-#
-class AssetWarrantyTypeChoices(ChoiceSet):
-    key = 'Asset.warranty_type'
-
-    WARR_1YR_LTD_HW = 'WARR-1YR-LTD-HW'
-    WARR_ELTD_LIFE_HW = 'WARR-ELTD-LIFE-HW'
-    WARR_LTD_LIFE_HW = 'WARR-LTD-LIFE-HW'
-    OTHER = 'other'
-
-    CHOICES = [
-        (WARR_1YR_LTD_HW, 'Cisco - WARR-1YR-LTD-HW', 'blue'),
-        (WARR_ELTD_LIFE_HW, 'Cisco - WARR-ELTD-LIFE-HW', 'green'),
-        (WARR_LTD_LIFE_HW, 'Cisco - WARR-LTD-LIFE-HW', 'cyan'),
-        (OTHER, 'Other', 'gray'),
-    ]

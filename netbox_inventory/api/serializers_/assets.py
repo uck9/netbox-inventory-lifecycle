@@ -12,13 +12,13 @@ from dcim.api.serializers import (
     RackTypeSerializer,
     SiteSerializer,
 )
-from netbox.api.serializers import NestedGroupModelSerializer, PrimaryModelSerializer
+from netbox.api.serializers import NestedGroupModelSerializer, NetBoxModelSerializer, PrimaryModelSerializer
 from tenancy.api.serializers import ContactSerializer, TenantSerializer
 
 from .licenses import *
 from .nested import *
 from .purchases import *
-from netbox_inventory.models import Asset, InventoryItemGroup, InventoryItemType
+from netbox_inventory.models import Asset, InventoryItemGroup, InventoryItemType, WarrantyType
 
 
 class InventoryItemGroupSerializer(NestedGroupModelSerializer):
@@ -84,6 +84,31 @@ class InventoryItemTypeSerializer(PrimaryModelSerializer):
             'slug',
             'description',
         )
+
+
+class WarrantyTypeSerializer(NetBoxModelSerializer):
+    manufacturer = ManufacturerSerializer(nested=True)
+    # the model's own 'url' field (vendor documentation link) is renamed here to avoid
+    # colliding with NetBoxModelSerializer's 'url' (this object's own API self-link)
+    warranty_url = serializers.URLField(source='url', required=False, allow_blank=True)
+
+    class Meta:
+        model = WarrantyType
+        fields = (
+            'id',
+            'url',
+            'display',
+            'manufacturer',
+            'sku',
+            'name',
+            'description',
+            'warranty_url',
+            'tags',
+            'custom_fields',
+            'created',
+            'last_updated',
+        )
+        brief_fields = ('id', 'url', 'display', 'manufacturer', 'sku', 'name')
 
 
 class AssetSerializer(PrimaryModelSerializer):
@@ -154,6 +179,12 @@ class AssetSerializer(PrimaryModelSerializer):
         default=None,
     )
     base_license_sku = LicenseSKUSerializer(
+        nested=True,
+        required=False,
+        allow_null=True,
+        default=None,
+    )
+    warranty_type = WarrantyTypeSerializer(
         nested=True,
         required=False,
         allow_null=True,
@@ -231,6 +262,7 @@ class AssetSerializer(PrimaryModelSerializer):
             'vendor_ship_date',
             'warranty_start',
             'warranty_end',
+            'warranty_type',
             'support_state',
             'support_reason',
             'support_source',

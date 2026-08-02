@@ -4,7 +4,7 @@ from django.db import models
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from netbox.models import NestedGroupModel
+from netbox.models import NestedGroupModel, NetBoxModel
 from netbox.models.features import ImageAttachmentsMixin
 
 from ..choices import (
@@ -14,7 +14,6 @@ from ..choices import (
     AssetSupportReasonChoices,
     AssetSupportSourceChoices,
     AssetSupportStateChoices,
-    AssetWarrantyTypeChoices,
     HardwareKindChoices,
 )
 from ..managers import AssetManager
@@ -109,6 +108,50 @@ class InventoryItemType(NamedModel, ImageAttachmentsMixin):
 
     def __str__(self):
         return self.model
+
+
+class WarrantyType(NetBoxModel):
+    """
+    Canonical catalog of warranty types (vendor SKUs) that can be assigned to an Asset.
+    """
+
+    manufacturer = models.ForeignKey(
+        to='dcim.Manufacturer',
+        on_delete=models.PROTECT,
+        related_name='warranty_types',
+    )
+    sku = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name=_('SKU'),
+        help_text=_('Vendor SKU or product code (unique).'),
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name=_('Name'),
+    )
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name=_('Description'),
+    )
+    url = models.URLField(
+        blank=True,
+        verbose_name=_('URL'),
+        help_text=_('Link to vendor documentation for this warranty type.'),
+    )
+
+    clone_fields = [
+        'manufacturer',
+    ]
+
+    class Meta:
+        ordering = ('manufacturer', 'sku')
+        verbose_name = _('Warranty Type')
+        verbose_name_plural = _('Warranty Types')
+
+    def __str__(self):
+        return f'{self.sku} ({self.name})'
 
 
 class Asset(NamedModel, ImageAttachmentsMixin):
@@ -339,9 +382,10 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         null=True,
         verbose_name='Warranty End',
     )
-    warranty_type = models.CharField(
-        max_length=30,
-        choices=AssetWarrantyTypeChoices,
+    warranty_type = models.ForeignKey(
+        to='netbox_inventory.WarrantyType',
+        on_delete=models.SET_NULL,
+        related_name='assets',
         help_text='Warranty type for this asset',
         verbose_name='Warranty Type',
         blank=True,

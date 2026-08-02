@@ -28,6 +28,7 @@ __all__ = (
     'ModuleAssetViewSet',
     'PurchaseViewSet',
     'SupplierViewSet',
+    'WarrantyTypeViewSet',
     'LicenseSKUViewSet',
     'SubscriptionViewSet',
     'AssetLicenseViewSet',
@@ -215,6 +216,12 @@ class AuditTrailSourceViewSet(NetBoxModelViewSet):
 class AuditTrailViewSet(NetBoxModelViewSet):
     queryset = models.AuditTrail.objects.prefetch_related('object')
     serializer_class = AuditTrailSerializer
+
+
+class WarrantyTypeViewSet(NetBoxModelViewSet):
+    queryset = models.WarrantyType.objects.all()
+    serializer_class = WarrantyTypeSerializer
+    filterset_class = filtersets.WarrantyTypeFilterSet
 
 
 class LicenseSKUViewSet(NetBoxModelViewSet):

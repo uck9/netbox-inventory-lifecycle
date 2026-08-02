@@ -56,6 +56,7 @@ __all__ = (
     'InventoryItemTypeFilterForm',
     'SupplierFilterForm',
     'PurchaseFilterForm',
+    'WarrantyTypeFilterForm',
     'LicenseSKUFilterForm',
     'SubscriptionFilterForm',
     'LicenseBundleFilterForm',
@@ -750,6 +751,16 @@ class HardwareLifecycleFilterForm(NetBoxModelFilterSetForm):
         widget=DatePicker,
     )
     tag = TagFilterField(model)
+
+
+class WarrantyTypeFilterForm(NetBoxModelFilterSetForm):
+    model = WarrantyType
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        label="Manufacturer",
+    )
+    fields = (FieldSet("q", "manufacturer_id"))
 
 
 class LicenseSKUFilterForm(NetBoxModelFilterSetForm):

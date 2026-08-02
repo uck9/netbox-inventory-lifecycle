@@ -14,6 +14,11 @@ from utilities.views import ViewTab, register_model_view
 from .. import filtersets, forms, models, tables
 
 __all__ = (
+    # WarrantyType
+    'WarrantyTypeListView',
+    'WarrantyTypeView',
+    'WarrantyTypeEditView',
+    'WarrantyTypeDeleteView',
     # LicenseSKU
     'LicenseSKUListView',
     'LicenseSKUView',
@@ -46,6 +51,30 @@ __all__ = (
     # Device tab
     'DeviceLicenseTabView',
 )
+
+
+# ---------------------------------------------------------------------------
+# WarrantyType
+# ---------------------------------------------------------------------------
+
+class WarrantyTypeListView(generic.ObjectListView):
+    queryset = models.WarrantyType.objects.all()
+    filterset = filtersets.WarrantyTypeFilterSet
+    filterset_form = forms.WarrantyTypeFilterForm
+    table = tables.WarrantyTypeTable
+
+
+class WarrantyTypeView(generic.ObjectView):
+    queryset = models.WarrantyType.objects.all()
+
+
+class WarrantyTypeEditView(generic.ObjectEditView):
+    queryset = models.WarrantyType.objects.all()
+    form = forms.WarrantyTypeForm
+
+
+class WarrantyTypeDeleteView(generic.ObjectDeleteView):
+    queryset = models.WarrantyType.objects.all()
 
 
 # ---------------------------------------------------------------------------

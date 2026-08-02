@@ -45,6 +45,7 @@ __all__ = (
     'PurchaseForm',
     'SupplierForm',
     'HardwareLifecycleForm',
+    'WarrantyTypeForm',
     'LicenseSKUForm',
     'SubscriptionForm',
     'LicenseBundleForm',
@@ -279,6 +280,13 @@ class AssetForm(PrimaryModelForm):
         query_params={
             # Filter by manufacturer field on the Asset form if you have it:
             "manufacturer_id": "$manufacturer",
+        },
+    )
+    warranty_type = DynamicModelChoiceField(
+        queryset=WarrantyType.objects.all(),
+        required=False,
+        query_params={
+            'manufacturer_id': '$manufacturer',
         },
     )
     installed_at = DynamicModelChoiceField(
@@ -930,6 +938,23 @@ class HardwareLifecycleForm(NetBoxModelForm):
             self.instance.assigned_object = self.cleaned_data[selected_objects[0]]
         else:
             self.instance.assigned_object = None
+
+
+class WarrantyTypeForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all()
+    )
+
+    class Meta:
+        model = WarrantyType
+        fields = (
+            "manufacturer",
+            "sku",
+            "name",
+            "description",
+            "url",
+            "tags",
+        )
 
 
 class LicenseSKUForm(NetBoxModelForm):
