@@ -180,6 +180,11 @@ class AssetTable(PrimaryModelTable):
     purchase = tables.Column(
         linkify=True,
     )
+    purchase_name = tables.Column(
+        accessor='purchase.name',
+        linkify=lambda record: record.purchase.get_absolute_url(),
+        verbose_name='PO ID',
+    )
     order = tables.Column(
         accessor='order.name',
         linkify=lambda record: record.order.get_absolute_url(),
@@ -420,6 +425,7 @@ class AssetTable(PrimaryModelTable):
             'owning_tenant',
             'supplier',
             'purchase',
+            'purchase_name',
             'order',
             'contract',
             'purchase_date',

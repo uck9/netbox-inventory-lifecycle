@@ -488,6 +488,7 @@ class AssetFilterSet(PrimaryModelFilterSet):
             | Q(tenant__name__icontains=value)
             | Q(owning_tenant__name__icontains=value)
             | Q(contract__contract_id__icontains=value)
+            | Q(disposal_reference__icontains=value)
         )
         custom_field_filters = get_asset_custom_fields_search_filters()
         for custom_field_filter in custom_field_filters:
