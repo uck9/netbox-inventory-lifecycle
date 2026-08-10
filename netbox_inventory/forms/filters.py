@@ -30,6 +30,7 @@ from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import APISelectMultiple, DatePicker, DateTimePicker
 
 from ..choices import (
+    AssetAllocationStatusChoices,
     AssetStatusChoices,
     HardwareKindChoices,
     PurchaseStatusChoices,
@@ -119,7 +120,7 @@ class InventoryItemTypeFilterForm(PrimaryModelFilterSetForm):
 class AssetFilterForm(PrimaryModelFilterSetForm):
     model = Asset
     fieldsets = (
-        FieldSet('q', 'filter_id', 'tag', 'owner_id','status'),
+        FieldSet('q', 'filter_id', 'tag', 'owner_id', 'status', 'allocation_status'),
         FieldSet(
             'kind',
             'manufacturer_id',
@@ -169,6 +170,10 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
 
     status = forms.MultipleChoiceField(
         choices=AssetStatusChoices,
+        required=False,
+    )
+    allocation_status = forms.MultipleChoiceField(
+        choices=AssetAllocationStatusChoices,
         required=False,
     )
     kind = forms.MultipleChoiceField(
