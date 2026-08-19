@@ -166,6 +166,11 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
             'installed_at_mismatch',
             name='Vendor Location',
         ),
+        FieldSet(
+            'planned_decommission_date_after',
+            'planned_decommission_date_before',
+            name='Decommission',
+        ),
     )
 
     status = forms.MultipleChoiceField(
@@ -415,6 +420,16 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
         label='Vendor location mismatch',
         help_text='Show only assets where vendor installed-at site differs from current site',
         widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    planned_decommission_date_after = forms.DateField(
+        required=False,
+        label='Planned decommission on or after',
+        widget=DatePicker,
+    )
+    planned_decommission_date_before = forms.DateField(
+        required=False,
+        label='Planned decommission on or before',
+        widget=DatePicker,
     )
     tag = TagFilterField(model)
 

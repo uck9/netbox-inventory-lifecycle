@@ -151,6 +151,7 @@ class AssetFilterSet(PrimaryModelFilterSet):
         lookup_expr='icontains',
         label='Disposal Reference',
     )
+    planned_decommission_date = django_filters.DateFromToRangeFilter()
     kind = filters.MultiValueCharFilter(
         method='filter_kind',
         label='Type of hardware',
