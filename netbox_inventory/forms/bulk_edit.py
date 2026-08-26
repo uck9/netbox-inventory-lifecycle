@@ -60,14 +60,15 @@ class InstalledAtLocationBulkEditForm(PrimaryModelBulkEditForm):
         queryset=Manufacturer.objects.all(),
         required=False,
     )
+    customer_name = forms.CharField(required=False, max_length=200, label='Customer Name')
     country = forms.CharField(required=False, max_length=100)
     state = forms.CharField(required=False, max_length=100)
 
     model = InstalledAtLocation
-    nullable_fields = ('state', 'postcode')
+    nullable_fields = ('customer_name', 'state', 'postcode')
 
     fieldsets = (
-        FieldSet('manufacturer', 'country', 'state', name='Installed-At Location'),
+        FieldSet('manufacturer', 'customer_name', 'country', 'state', name='Installed-At Location'),
     )
 
 
@@ -202,6 +203,11 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         required=False,
         widget=DatePicker(),
     )
+    warranty_type = DynamicModelChoiceField(
+        queryset=WarrantyType.objects.all(),
+        required=False,
+        label='Warranty Type',
+    )
     vendor_instance_id = forms.CharField(
         label='Vendor Instance ID',
         required=False,
@@ -329,6 +335,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
             'vendor_ship_date',
             'warranty_start',
             'warranty_end',
+            'warranty_type',
             name='Purchase',
         ),
         FieldSet(
@@ -375,6 +382,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         'contact',
         'warranty_start',
         'warranty_end',
+        'warranty_type',
         'vendor_instance_id',
         'storage_location',
         'installed_site_override',

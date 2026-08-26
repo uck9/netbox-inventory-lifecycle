@@ -29,6 +29,10 @@
             <td class="font-monospace">{{ object.vendor_site_id }}</td>
           </tr>
           <tr>
+            <th scope="row">Customer Name</th>
+            <td>{{ object.customer_name|placeholder }}</td>
+          </tr>
+          <tr>
             <th scope="row">NetBox Sites</th>
             <td>
               {% with sites=object.sites.all %}

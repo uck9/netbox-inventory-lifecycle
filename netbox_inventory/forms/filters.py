@@ -443,7 +443,7 @@ class InstalledAtLocationFilterForm(PrimaryModelFilterSetForm):
     model = InstalledAtLocation
     fieldsets = (
         FieldSet('q', 'filter_id', 'tag'),
-        FieldSet('manufacturer_id', 'site_id', name='Location'),
+        FieldSet('manufacturer_id', 'site_id', 'customer_name', name='Location'),
         FieldSet('country', 'city', 'state', name='Address'),
     )
     manufacturer_id = DynamicModelMultipleChoiceField(
@@ -456,6 +456,7 @@ class InstalledAtLocationFilterForm(PrimaryModelFilterSetForm):
         required=False,
         label='NetBox Sites',
     )
+    customer_name = forms.CharField(required=False, label='Customer Name')
     country = forms.CharField(required=False, label='Country')
     city = forms.CharField(required=False, label='City')
     state = forms.CharField(required=False, label='State / Region')

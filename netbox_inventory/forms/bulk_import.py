@@ -623,6 +623,7 @@ class InstalledAtLocationImportForm(PrimaryModelImportForm):
         fields = (
             'manufacturer',
             'vendor_site_id',
+            'customer_name',
             'address',
             'city',
             'state',

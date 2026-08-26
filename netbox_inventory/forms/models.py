@@ -76,6 +76,7 @@ class InstalledAtLocationForm(PrimaryModelForm):
         FieldSet(
             'manufacturer',
             'vendor_site_id',
+            'customer_name',
             'sites',
             'description',
             'tags',
@@ -96,6 +97,7 @@ class InstalledAtLocationForm(PrimaryModelForm):
         fields = (
             'manufacturer',
             'vendor_site_id',
+            'customer_name',
             'address',
             'city',
             'state',

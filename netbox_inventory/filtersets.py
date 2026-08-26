@@ -635,17 +635,19 @@ class InstalledAtLocationFilterSet(PrimaryModelFilterSet):
         queryset=Site.objects.all(),
         label='NetBox Site (ID)',
     )
+    customer_name = django_filters.CharFilter(lookup_expr='icontains', label='Customer Name')
     country = django_filters.CharFilter(lookup_expr='icontains', label='Country')
     city = django_filters.CharFilter(lookup_expr='icontains', label='City')
     state = django_filters.CharFilter(lookup_expr='icontains', label='State / Region')
 
     class Meta:
         model = InstalledAtLocation
-        fields = ('id', 'vendor_site_id', 'address', 'city', 'state', 'country', 'postcode')
+        fields = ('id', 'vendor_site_id', 'customer_name', 'address', 'city', 'state', 'country', 'postcode')
 
     def search(self, queryset, name, value):
         return queryset.filter(
             Q(vendor_site_id__icontains=value)
+            | Q(customer_name__icontains=value)
             | Q(address__icontains=value)
             | Q(city__icontains=value)
             | Q(country__icontains=value)
