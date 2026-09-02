@@ -413,6 +413,16 @@ class AssetForm(PrimaryModelForm):
         if 'owner' in self.fields:
             self.fields['owner'].help_text = 'Operational Owner of this asset (can differ from Tenant and Owning Tenant)'
 
+        # Installed-At Location is maintained externally by the vendor (Cisco) sync,
+        # which writes the model directly. It must never be editable through NetBox:
+        # an edit here would be silently discarded and is never pushed back to the vendor.
+        if 'installed_at' in self.fields:
+            self.fields['installed_at'].disabled = True
+            self.fields['installed_at'].help_text = (
+                'Synced from the manufacturer (e.g. Cisco) and shown read-only. '
+                'Editing it in NetBox has no effect and is never sent back to the vendor.'
+            )
+
         # Only apply the cf_ filter if the custom field exists on dcim.Location
         has_storage_cf = CustomField.objects.filter(
             name="asset_storage_location",

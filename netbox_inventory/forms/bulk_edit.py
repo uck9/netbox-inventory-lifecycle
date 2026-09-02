@@ -242,11 +242,8 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         help_text=Asset._meta.get_field('installed_site_override').help_text,
         required=False,
     )
-    installed_at = DynamicModelChoiceField(
-        queryset=InstalledAtLocation.objects.all(),
-        required=False,
-        label='Installed-At Location',
-    )
+    # installed_at (vendor location) is deliberately omitted: it is maintained by the
+    # Cisco sync and must not be mass-editable through NetBox.
     support_state = forms.ChoiceField(
         choices=add_blank_choice(AssetSupportStateChoices),
         required=False,
@@ -365,7 +362,6 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
             'installed_site_override',
             name='Location',
         ),
-        FieldSet('installed_at', name='Vendor Location'),
     )
     nullable_fields = (
         'name',
@@ -386,7 +382,6 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         'vendor_instance_id',
         'storage_location',
         'installed_site_override',
-        'installed_at',
         'support_reason',
         'support_validated_at',
         'disposal_date',
