@@ -169,16 +169,26 @@
         <h5 class="card-header">
           Vendor Installed-At Location
           {% if object.installed_at_mismatch %}
-            <span class="badge bg-warning text-dark ms-2" title="Vendor location site ({{ object.installed_at.site }}) does not match the asset's current site ({{ object.current_site }})">
-              <i class="mdi mdi-alert-outline"></i> Address Mismatch
-            </span>
-          {% elif object.installed_at.sites.exists %}
+            {% if object.installed_at.sites.exists %}
+              <span class="badge bg-warning text-dark ms-2" title="The NetBox sites linked to this vendor location do not include the asset's current site ({{ object.current_site }})">
+                <i class="mdi mdi-alert-outline"></i> Address Mismatch
+              </span>
+            {% else %}
+              <span class="badge bg-warning text-dark ms-2" title="This vendor location has no NetBox sites linked, so it cannot account for the asset's current site ({{ object.current_site }})">
+                <i class="mdi mdi-alert-outline"></i> Site Not Linked
+              </span>
+            {% endif %}
+          {% elif object.current_site and object.installed_at.sites.exists %}
             <span class="badge bg-success ms-2">
               <i class="mdi mdi-check-circle-outline"></i> Matches Site
             </span>
-          {% else %}
-            <span class="badge bg-secondary ms-2" title="No NetBox sites linked to this vendor location — mismatch detection unavailable">
+          {% elif not object.installed_at.sites.exists %}
+            <span class="badge bg-secondary ms-2" title="No NetBox sites linked to this vendor location, and the asset has no resolvable current site to compare against">
               <i class="mdi mdi-help-circle-outline"></i> Sites Unlinked
+            </span>
+          {% else %}
+            <span class="badge bg-secondary ms-2" title="The asset has no resolvable current site to compare against this vendor location">
+              <i class="mdi mdi-help-circle-outline"></i> No Current Site
             </span>
           {% endif %}
         </h5>
@@ -187,23 +197,28 @@
             <th scope="row">Vendor Location</th>
             <td>{{ object.installed_at|linkify }}</td>
           </tr>
-          {% with sites=object.installed_at.sites.all %}
-          {% if sites %}
+          {% if object.installed_at_mismatch %}
           <tr>
-            <th scope="row">Linked NetBox Sites</th>
+            <th scope="row">Current Site</th>
             <td>
-              {% for site in sites %}
-                {{ site|linkify }}{% if not forloop.last %}, {% endif %}
+              <span class="text-warning" title="The asset's current site is not covered by this vendor location">
+                <i class="mdi mdi-alert-outline"></i> {{ object.current_site|linkify }}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Correct IA Location</th>
+            <td>
+              {% for loc in object.installed_at_suggested_locations %}
+                <a href="{{ loc.get_absolute_url }}" class="text-success">
+                  <i class="mdi mdi-arrow-right-bold-circle-outline"></i> {{ loc }}
+                </a>{% if not forloop.last %}<br>{% endif %}
+              {% empty %}
+                <span class="text-muted">— no IA location has this site mapped —</span>
               {% endfor %}
-              {% if object.installed_at_mismatch %}
-                <br><span class="text-warning" title="Asset's current site is not among the linked sites">
-                  <i class="mdi mdi-arrow-right-bold"></i> Current site: {{ object.current_site|linkify }}
-                </span>
-              {% endif %}
             </td>
           </tr>
           {% endif %}
-          {% endwith %}
         </table>
       </div>
       {% endif %}

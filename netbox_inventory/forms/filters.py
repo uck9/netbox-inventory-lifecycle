@@ -418,7 +418,7 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
     installed_at_mismatch = forms.NullBooleanField(
         required=False,
         label='Vendor location mismatch',
-        help_text='Show only assets where vendor installed-at site differs from current site',
+        help_text="Show only assets whose current site is not among the vendor installed-at location's linked sites (including locations with no linked sites)",
         widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
     )
     planned_decommission_date_after = forms.DateField(

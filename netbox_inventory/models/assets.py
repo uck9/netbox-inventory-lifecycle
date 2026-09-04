@@ -600,18 +600,48 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     @property
     def installed_at_mismatch(self):
         """
-        True when none of the vendor's installed_at sites match the asset's
-        current rollup site. False when there is no installed_at, no sites are
-        linked on it, or the current site is among the linked sites.
+        True when the asset has a resolvable current rollup site that the
+        vendor's installed_at location does not account for. This covers both:
+
+        - the installed_at location has linked sites, none of which is the
+          asset's current site, and
+        - the installed_at location has no linked sites at all, so it cannot
+          account for the asset's current site.
+
+        False when there is no installed_at, the current site cannot be
+        resolved (nothing to compare against), or the current site is among
+        the linked sites.
         """
         if not self.installed_at_id:
-            return False
-        if not self.installed_at.sites.exists():
             return False
         current = self.current_site
         if not current:
             return False
         return not self.installed_at.sites.filter(pk=current.pk).exists()
+
+    @property
+    def installed_at_suggested_locations(self):
+        """
+        Other installed-at locations for the same vendor that already have this
+        asset's current site mapped -- i.e. where the vendor record should be
+        pointing when installed_at_mismatch is True.
+
+        Returns an empty queryset when there is no installed_at, no resolvable
+        current site, or no such location exists. More than one row means the
+        data has several vendor locations tagged for the same NetBox site.
+        """
+        from .locations import InstalledAtLocation
+
+        if not self.installed_at_id:
+            return InstalledAtLocation.objects.none()
+        current = self.current_site
+        if not current:
+            return InstalledAtLocation.objects.none()
+        return (
+            InstalledAtLocation.objects
+            .filter(manufacturer_id=self.installed_at.manufacturer_id, sites=current)
+            .exclude(pk=self.installed_at_id)
+        )
 
     @property
     def warranty_remaining(self):

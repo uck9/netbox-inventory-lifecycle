@@ -592,31 +592,38 @@ class AssetFilterSet(PrimaryModelFilterSet):
 
     def filter_installed_at_mismatch(self, queryset, name, value):
         """
-        Filter assets where none of the vendor's installed_at sites match the
-        asset's current_site rollup (device.site > installed_site_override > rack.site).
-        Only considers assets whose installed_at has at least one linked site.
+        Filter assets whose resolvable current site is not accounted for by
+        their vendor installed_at location. Mirrors Asset.installed_at_mismatch:
+
+        - the effective current site follows the current_site rollup
+          (device.site > installed_site_override > rack.site > storage_location.site);
+        - a mismatch is any asset with an installed_at and a resolvable current
+          site where that site is not among the installed_at location's linked
+          sites -- including installed_at locations that have no linked sites at
+          all.
         """
         from django.db.models import Exists, OuterRef
+        from django.db.models.functions import Coalesce
+
         through = InstalledAtLocation.sites.through
-        # Subqueries: does the vendor location's sites include this asset's current-site source?
-        device_match = through.objects.filter(
-            installedatlocation_id=OuterRef('installed_at_id'),
-            site_id=OuterRef('device__site_id'),
+        annotated = queryset.annotate(
+            _effective_site_id=Coalesce(
+                'device__site_id',
+                'installed_site_override_id',
+                'rack__site_id',
+                'storage_location__site_id',
+            )
         )
-        override_match = through.objects.filter(
+        site_linked = through.objects.filter(
             installedatlocation_id=OuterRef('installed_at_id'),
-            site_id=OuterRef('installed_site_override_id'),
+            site_id=OuterRef('_effective_site_id'),
         )
-        rack_match = through.objects.filter(
-            installedatlocation_id=OuterRef('installed_at_id'),
-            site_id=OuterRef('rack__site_id'),
+        mismatched_pks = (
+            annotated
+            .filter(installed_at__isnull=False, _effective_site_id__isnull=False)
+            .exclude(Exists(site_linked))
+            .values_list('pk', flat=True)
         )
-        # Assets where installed_at has at least one site
-        candidates = queryset.filter(installed_at__sites__isnull=False).distinct()
-        matched_pks = candidates.filter(
-            Q(Exists(device_match)) | Q(Exists(override_match)) | Q(Exists(rack_match))
-        ).values_list('pk', flat=True)
-        mismatched_pks = candidates.exclude(pk__in=matched_pks).values_list('pk', flat=True)
 
         if value:
             return queryset.filter(pk__in=mismatched_pks)
