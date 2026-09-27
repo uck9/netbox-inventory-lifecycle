@@ -133,7 +133,6 @@ class ObjectAuditTrailView(ConditionalLoginRequiredMixin, View):
         # Prepare table for listing all audit trails of this object.
         table = tables.AuditTrailTable(
             data=self.get_audit_trails(obj).prefetch_related('object_changes__user'),
-            user=request.user,
         )
         table.configure(request)
 

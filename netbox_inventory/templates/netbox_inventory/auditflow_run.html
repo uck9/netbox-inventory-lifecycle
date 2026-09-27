@@ -30,7 +30,7 @@
   <ul class="nav nav-tabs" role="tablist">
     {% for page in flow_pages %}
       <li class="nav-item" role="presentation">
-        <a class="nav-link{% if tab == page.pk %} active{% endif %}" href="{% querystring request tab=page.pk page=None per_page=None %}">{{ page.page.name }}</a>
+        <a class="nav-link{% if tab == page.pk %} active{% endif %}" href="{% querystring tab=page.pk page=None per_page=None %}">{{ page.page.name }}</a>
       </li>
     {% endfor %}
   </ul>
