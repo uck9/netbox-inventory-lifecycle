@@ -246,7 +246,6 @@ class AuditFlowRunView(generic.ObjectChildrenView):
         ]
         table: NetBoxTable = self.table(
             data,
-            user=request.user,
             extra_columns=extra_columns,
         )
 

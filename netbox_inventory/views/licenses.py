@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views import View
 
 from dcim.models import Device
+from netbox.object_actions import AddObject, BulkDelete, BulkEdit, BulkExport
 from netbox.views import generic
 from utilities.views import ViewTab, register_model_view
 
@@ -113,12 +114,12 @@ class SubscriptionListView(generic.ObjectListView):
     filterset = filtersets.SubscriptionFilterSet
     filterset_form = forms.SubscriptionFilterForm
     table = tables.SubscriptionTable
-    actions = {
-        'add': {'add'},
-        'export': {'view'},
-        'bulk_edit': {'change'},
-        'bulk_delete': {'delete'},
-    }
+    actions = (
+        AddObject,
+        BulkExport,
+        BulkEdit,
+        BulkDelete,
+    )
 
 
 @register_model_view(models.Subscription)
@@ -230,12 +231,12 @@ class AssetLicenseListView(generic.ObjectListView):
     filterset = filtersets.AssetLicenseFilterSet
     filterset_form = forms.AssetLicenseFilterForm
     table = tables.AssetLicenseTable
-    actions = {
-        'add': {'add'},
-        'export': {'view'},
-        'bulk_edit': {'change'},
-        'bulk_delete': {'delete'},
-    }
+    actions = (
+        AddObject,
+        BulkExport,
+        BulkEdit,
+        BulkDelete,
+    )
 
 
 @register_model_view(models.AssetLicense)

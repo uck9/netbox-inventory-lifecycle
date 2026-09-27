@@ -1,5 +1,13 @@
 from django.db.models import Count
 
+from netbox.object_actions import (
+    AddObject,
+    BulkDelete,
+    BulkEdit,
+    BulkExport,
+    DeleteObject,
+    EditObject,
+)
 from netbox.views.generic import (
     BulkDeleteView,
     BulkEditView,
@@ -172,14 +180,14 @@ class ContractListView(ObjectListView):
     table = tables.ContractTable
     filterset = filtersets.ContractFilterSet
     filterset_form = forms.ContractFilterForm
-    actions = {
-        'add': {'add'},
-        'export': {'view'},
-        'edit': {'change'},
-        'delete': {'delete'},
-        'bulk_edit': {'change'},
-        'bulk_delete': {'delete'},
-    }
+    actions = (
+        AddObject,
+        BulkExport,
+        EditObject,
+        DeleteObject,
+        BulkEdit,
+        BulkDelete,
+    )
 
 
 @register_model_view(models.Contract)
@@ -194,14 +202,14 @@ class ContractAssignmentsView(ObjectChildrenView):
     child_model = models.ContractAssignment
     table = tables.ContractAssignmentTable
     filterset = filtersets.ContractAssignmentFilterSet
-    actions = {
-        'add': {'add'},
-        'edit': {'change'},
-        'delete': {'delete'},
-        'bulk_edit': {'change'},
-        'bulk_delete': {'delete'},
-        'export': {'view'},
-    }
+    actions = (
+        AddObject,
+        EditObject,
+        DeleteObject,
+        BulkEdit,
+        BulkDelete,
+        BulkExport,
+    )
     tab = ViewTab(
         label='Assignments',
         badge=lambda obj: models.ContractAssignment.objects.filter(contract=obj).count(),
@@ -248,14 +256,14 @@ class ContractAssignmentListView(ObjectListView):
     table = tables.ContractAssignmentTable
     filterset = filtersets.ContractAssignmentFilterSet
     filterset_form = forms.ContractAssignmentFilterForm
-    actions = {
-        'add': {'add'},
-        'export': {'view'},
-        'edit': {'change'},
-        'delete': {'delete'},
-        'bulk_edit': {'change'},
-        'bulk_delete': {'delete'},
-    }
+    actions = (
+        AddObject,
+        BulkExport,
+        EditObject,
+        DeleteObject,
+        BulkEdit,
+        BulkDelete,
+    )
 
 
 @register_model_view(models.ContractAssignment)
