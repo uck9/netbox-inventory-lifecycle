@@ -268,28 +268,24 @@ support older netbox version as per table below:
 
 Review [official Netbox plugin documentation](https://docs.netbox.dev/en/stable/plugins/#installing-plugins) for installation instructions.
 
-You install the plugin from pypi with pip. Make sure you activate Netbox's virtual
-environment first:
+This fork is not published to PyPI (`pip install netbox-inventory` installs the
+unrelated upstream plugin). Install it from GitHub, pinned to a release tag that
+matches your NetBox version (see Compatibility above). Make sure you activate
+Netbox's virtual environment first:
 
 ```bash
 $ source /opt/netbox/venv/bin/activate
-(venv) $ pip install netbox-inventory
+(venv) $ pip install git+https://github.com/uck9/netbox-inventory-lifecycle.git@v2.6.0
+```
+
+or add the same line to your `local_requirements.txt` so `upgrade.sh` reinstalls it:
+
+```bash
+git+https://github.com/uck9/netbox-inventory-lifecycle.git@v2.6.0
 ```
 
 For adding to a NetBox Docker setup see
 [the general instructions for using netbox-docker with plugins](https://github.com/netbox-community/netbox-docker/wiki/Using-Netbox-Plugins).
-
-You can install a development version directly from GitHub:
-
-```bash
-pip install https://github.com/ArnesSI/netbox-inventory/archive/master.tar.gz
-```
-
-or by adding to your `local_requirements.txt` or `plugin_requirements.txt` (netbox-docker):
-
-```bash
-https://github.com/ArnesSI/netbox-inventory/archive/master.tar.gz
-```
 
 After installation, enable the plugin in `/opt/netbox/netbox/netbox/configuration.py`,
  or if you use netbox-docker, your `/configuration/plugins.py` file :
