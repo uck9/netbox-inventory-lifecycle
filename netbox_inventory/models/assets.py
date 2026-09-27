@@ -171,6 +171,11 @@ class Asset(NamedModel, ImageAttachmentsMixin):
 
     objects = AssetManager()
 
+    # Location FKs that audit flows must not filter on or pre-fill.
+    # installed_site_override records where a deployed asset lives, not where it
+    # is stored for auditing.
+    audit_flow_exclude_fields = ('installed_site_override',)
+
     #
     # fields that identify asset
     #

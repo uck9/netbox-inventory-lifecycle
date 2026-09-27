@@ -291,8 +291,11 @@ class AuditFlowRunView(generic.ObjectChildrenView):
 
         # Map the available values to the actual form fields using the appropriate model
         # object types (depending on the actual model).
+        excluded = getattr(self.child_model, 'audit_flow_exclude_fields', ())
         result = {}
         for name, field in view.form().fields.items():
+            if name in excluded:
+                continue
             if isinstance(field, ModelChoiceField):
                 related_model = field.queryset.model
                 if related_model in data:

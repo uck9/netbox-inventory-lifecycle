@@ -278,13 +278,16 @@ class AuditFlowPageAssignment(
         related_models = {model for model, _ in lookup_paths}
 
         # Get all applicable ForeignKey fields of the page object type that map directly
-        # or indirectly to the flow object type.
+        # or indirectly to the flow object type. Models can opt fields out via
+        # `audit_flow_exclude_fields`.
+        excluded = getattr(page_model, 'audit_flow_exclude_fields', ())
         related_fields = {
             field.related_model: field.name
             for field in page_model._meta.fields
             if (
                 isinstance(field, models.ForeignKey)
                 and field.related_model in related_models
+                and field.name not in excluded
             )
         }
 
