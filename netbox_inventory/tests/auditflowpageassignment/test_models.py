@@ -164,3 +164,46 @@ class TestAuditFlowPageAssignmentModel(TestCase):
         self.assertEqual(objects.count(), 2)
         self.assertEqual(objects[0].storage_location, parent_location)
         self.assertEqual(objects[1].storage_location, child_location)
+
+    def test_get_objects_site_uses_storage_location(self) -> None:
+        # installed_site_override is a direct Site FK but must not win over
+        # storage_location__site when a flow starts from a Site.
+        site = self.locations[0].site
+        other_site = Site.objects.create(name='Site 2', slug='site-2')
+        manufacturer = Manufacturer.objects.create(
+            name='Manufacturer 1',
+            slug='manufacturer-1',
+        )
+        device_type = DeviceType.objects.create(
+            manufacturer=manufacturer,
+            model='Device Type 1',
+            slug='device-type-1',
+        )
+        stored = Asset.objects.create(
+            asset_tag='asset1',
+            serial='asset1',
+            status='stored',
+            device_type=device_type,
+            storage_location=self.locations[0],
+        )
+        Asset.objects.create(
+            asset_tag='asset2',
+            serial='asset2',
+            status='used',
+            device_type=device_type,
+            installed_site_override=site,
+            storage_location=Location.objects.create(
+                site=other_site,
+                name='Location 3',
+                slug='location-3',
+                status='active',
+            ),
+        )
+
+        site_flow = AuditFlow.objects.create(
+            name='Site Flow',
+            object_type=ObjectType.objects.get_for_model(Site),
+        )
+        obj = AuditFlowPageAssignment(flow=site_flow, page=self.audit_flow_pages[0])
+        self.assertEqual(obj._get_filter_lookup(), 'storage_location__site')
+        self.assertEqual(list(obj.get_objects(site)), [stored])
