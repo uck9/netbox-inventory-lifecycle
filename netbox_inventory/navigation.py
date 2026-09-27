@@ -54,6 +54,15 @@ asset_buttons = [
     ),
 ]
 
+warrantytype_buttons = [
+    PluginMenuButton(
+        link='plugins:netbox_inventory:warrantytype_add',
+        title='Add',
+        icon_class='mdi mdi-plus-thick',
+        permissions=['netbox_inventory.add_warrantytype'],
+    ),
+]
+
 installed_at_location_buttons = [
     PluginMenuButton(
         link='plugins:netbox_inventory:installedatlocation_add',
@@ -83,29 +92,11 @@ assets_items = (
         buttons=installed_at_location_buttons,
     ),
     PluginMenuItem(
-        link="plugins:netbox_inventory:licensesku_list",
-        link_text="License SKUs",
-        permissions=["netbox_inventory.view_licensesku"],
+        link='plugins:netbox_inventory:warrantytype_list',
+        link_text='Warranty Types',
+        permissions=['netbox_inventory.view_warrantytype'],
+        buttons=warrantytype_buttons,
     ),
-    #PluginMenuItem(
-    #    link="plugins:netbox_inventory:assetlicense_list",
-    #    link_text="Asset Licenses",
-    #    permissions=["netbox_inventory.view_assetlicense"],
-    #    buttons=[
-    #        PluginMenuButton(
-    #            link="plugins:netbox_inventory:assetlicense_add",
-    #            title="Add",
-    #            icon_class="mdi mdi-plus-thick",
-    #            permissions=["netbox_inventory.add_assetlicense"],
-    #        ),
-    #        PluginMenuButton(
-    #            link="plugins:netbox_inventory:assetlicense_bulk_assign",
-    #            title="Bulk Assign",
-    #            icon_class="mdi mdi-playlist-plus",
-    #            permissions=["netbox_inventory.add_assetlicense"],
-    #        ),
-    #    ],
-    #),
     #PluginMenuItem(
     #    link='plugins:netbox_inventory:inventoryitemtype_list',
     #    link_text='Inventory Item Types',
@@ -118,6 +109,63 @@ assets_items = (
     #    permissions=['netbox_inventory.view_inventoryitemgroup'],
     #    buttons=inventoryitemgroup_buttons,
     #),
+)
+
+#
+# Licenses
+#
+
+licenses_items = (
+    PluginMenuItem(
+        link="plugins:netbox_inventory:licensesku_list",
+        link_text="License SKUs",
+        permissions=["netbox_inventory.view_licensesku"],
+    ),
+    PluginMenuItem(
+        link="plugins:netbox_inventory:subscription_list",
+        link_text="Subscriptions",
+        permissions=["netbox_inventory.view_subscription"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:netbox_inventory:subscription_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["netbox_inventory.add_subscription"],
+            ),
+        ],
+    ),
+    PluginMenuItem(
+        link="plugins:netbox_inventory:licensebundle_list",
+        link_text="License Bundles",
+        permissions=["netbox_inventory.view_licensebundle"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:netbox_inventory:licensebundle_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["netbox_inventory.add_licensebundle"],
+            ),
+        ],
+    ),
+    PluginMenuItem(
+        link="plugins:netbox_inventory:assetlicense_list",
+        link_text="Asset Licenses",
+        permissions=["netbox_inventory.view_assetlicense"],
+        buttons=[
+            PluginMenuButton(
+                link="plugins:netbox_inventory:assetlicense_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                permissions=["netbox_inventory.add_assetlicense"],
+            ),
+            PluginMenuButton(
+                link="plugins:netbox_inventory:assetlicense_bulk_assign",
+                title="Bulk Assign",
+                icon_class="mdi mdi-playlist-plus",
+                permissions=["netbox_inventory.add_assetlicense"],
+            ),
+        ],
+    ),
 )
 
 #
@@ -362,6 +410,7 @@ if get_plugin_config('netbox_inventory', 'top_level_menu'):
         label='Inventory Management',
         groups=(
             ('Assets', assets_items),
+            ('Licenses', licenses_items),
             ('Contracts', contracts_items),
             ('Lifecycle', lifecycle_items),
             ('Purchases', purchases_items),
@@ -371,4 +420,4 @@ if get_plugin_config('netbox_inventory', 'top_level_menu'):
     )
 else:
     # display under plugins
-    menu_items = assets_items + contracts_items + purchases_items + audit_admin_items
+    menu_items = assets_items + licenses_items + contracts_items + lifecycle_items + purchases_items + audit_admin_items

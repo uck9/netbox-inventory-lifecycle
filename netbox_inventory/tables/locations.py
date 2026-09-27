@@ -31,6 +31,7 @@ class InstalledAtLocationTable(PrimaryModelTable):
             'id',
             'manufacturer',
             'vendor_site_id',
+            'customer_name',
             'address',
             'city',
             'state',
@@ -48,6 +49,7 @@ class InstalledAtLocationTable(PrimaryModelTable):
         default_columns = (
             'manufacturer',
             'vendor_site_id',
+            'customer_name',
             'city',
             'country',
             'sites',

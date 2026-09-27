@@ -45,8 +45,10 @@ __all__ = (
     'PurchaseForm',
     'SupplierForm',
     'HardwareLifecycleForm',
+    'WarrantyTypeForm',
     'LicenseSKUForm',
     'SubscriptionForm',
+    'LicenseBundleForm',
     'AssetLicenseForm',
     'AssetLicenseBulkAssignForm',
 )
@@ -74,6 +76,7 @@ class InstalledAtLocationForm(PrimaryModelForm):
         FieldSet(
             'manufacturer',
             'vendor_site_id',
+            'customer_name',
             'sites',
             'description',
             'tags',
@@ -94,6 +97,7 @@ class InstalledAtLocationForm(PrimaryModelForm):
         fields = (
             'manufacturer',
             'vendor_site_id',
+            'customer_name',
             'address',
             'city',
             'state',
@@ -280,6 +284,13 @@ class AssetForm(PrimaryModelForm):
             "manufacturer_id": "$manufacturer",
         },
     )
+    warranty_type = DynamicModelChoiceField(
+        queryset=WarrantyType.objects.all(),
+        required=False,
+        query_params={
+            'manufacturer_id': '$manufacturer',
+        },
+    )
     installed_at = DynamicModelChoiceField(
         queryset=InstalledAtLocation.objects.all(),
         required=False,
@@ -335,6 +346,10 @@ class AssetForm(PrimaryModelForm):
             'disposal_reference',
             name='Disposal',
         ),
+        FieldSet(
+            'planned_decommission_date',
+            name='Decommission Planning',
+        ),
         FieldSet('tenant', 'contact_group', 'contact', name='Assigned to'),
         FieldSet('storage_site', 'storage_location', name='Location'),
         FieldSet('installed_at', name='Vendor Location'),
@@ -380,6 +395,7 @@ class AssetForm(PrimaryModelForm):
             'disposal_date',
             'disposal_reason',
             'disposal_reference',
+            'planned_decommission_date',
         )
         widgets = {
             'vendor_ship_date': DatePicker(),
@@ -387,6 +403,7 @@ class AssetForm(PrimaryModelForm):
             'warranty_end': DatePicker(),
             'support_validated_at': DatePicker(),
             'disposal_date': DatePicker(),
+            'planned_decommission_date': DatePicker(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -395,6 +412,16 @@ class AssetForm(PrimaryModelForm):
         # Add/modify help text on core NetBox field
         if 'owner' in self.fields:
             self.fields['owner'].help_text = 'Operational Owner of this asset (can differ from Tenant and Owning Tenant)'
+
+        # Installed-At Location is maintained externally by the vendor (Cisco) sync,
+        # which writes the model directly. It must never be editable through NetBox:
+        # an edit here would be silently discarded and is never pushed back to the vendor.
+        if 'installed_at' in self.fields:
+            self.fields['installed_at'].disabled = True
+            self.fields['installed_at'].help_text = (
+                'Synced from the manufacturer (e.g. Cisco) and shown read-only. '
+                'Editing it in NetBox has no effect and is never sent back to the vendor.'
+            )
 
         # Only apply the cf_ filter if the custom field exists on dcim.Location
         has_storage_cf = CustomField.objects.filter(
@@ -857,7 +884,7 @@ class HardwareLifecycleForm(NetBoxModelForm):
             'support_basis',
             name=_('Dates'),
         ),
-        FieldSet('notice_url', 'description', name=_('Information')),
+        FieldSet('notice_url', 'estimated_replacement_cost', 'description', name=_('Information')),
         FieldSet('tags', name=_('Tags')),
     )
 
@@ -873,6 +900,7 @@ class HardwareLifecycleForm(NetBoxModelForm):
             'end_of_support',
             'notice_url',
             'support_basis',
+            'estimated_replacement_cost',
             'description',
             'comments',
             'tags',
@@ -924,6 +952,23 @@ class HardwareLifecycleForm(NetBoxModelForm):
             self.instance.assigned_object = None
 
 
+class WarrantyTypeForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(
+        queryset=Manufacturer.objects.all()
+    )
+
+    class Meta:
+        model = WarrantyType
+        fields = (
+            "manufacturer",
+            "sku",
+            "name",
+            "description",
+            "url",
+            "tags",
+        )
+
+
 class LicenseSKUForm(NetBoxModelForm):
     manufacturer = DynamicModelChoiceField(
         queryset=Manufacturer.objects.all()
@@ -937,6 +982,8 @@ class LicenseSKUForm(NetBoxModelForm):
             "name",
             "license_kind",
             "description",
+            "renewal_budget_per_unit",
+            "is_enterprise_wide",
             "tags",
         )
 
@@ -984,22 +1031,94 @@ class SubscriptionForm(NetBoxModelForm):
         )
 
 
+class LicenseBundleForm(NetBoxModelForm):
+    asset = DynamicModelChoiceField(
+        queryset=Asset.objects.all(),
+        selector=True,
+        help_text=_('The device this bundle was purchased for.'),
+    )
+    sku = DynamicModelChoiceField(
+        queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.BUNDLE),
+        selector=True,
+        label=_('Bundle SKU'),
+        query_params={
+            'asset_id': '$asset',
+            'license_kind': 'bundle',
+        },
+        help_text=_('The commercial bundle SKU actually purchased (Bundle-type SKUs only).'),
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        help_text=_('Purchase order this bundle was bought under (optional).'),
+    )
+    comments = CommentField()
+
+    fieldsets = (
+        FieldSet('asset', 'sku', 'order', name=_('Bundle')),
+        FieldSet('start_date', 'end_date', name=_('Term')),
+        FieldSet('quantity', 'do_not_renew', 'notes', 'tags', name=_('Details')),
+    )
+
+    class Meta:
+        model = LicenseBundle
+        fields = (
+            'asset',
+            'sku',
+            'order',
+            'start_date',
+            'end_date',
+            'quantity',
+            'do_not_renew',
+            'notes',
+            'comments',
+            'tags',
+        )
+        widgets = {
+            'start_date': DatePicker(),
+            'end_date': DatePicker(),
+        }
+
+
 class AssetLicenseForm(NetBoxModelForm):
-    # Pick subscription first — it drives both the asset and SKU dropdowns
-    # via server-side subscription_id filters on each API endpoint.
+    # Pick a subscription (recurring/entitlement-ID licensing) or an order
+    # (qty-based licensing bought under a PO, no entitlement ID) — whichever
+    # is set drives the asset and SKU dropdowns via server-side filters.
     subscription = DynamicModelChoiceField(
         queryset=Subscription.objects.all(),
+        required=False,
         selector=True,
-        help_text=_('Subscription this license is enrolled under.'),
+        help_text=_('Subscription/entitlement this license is enrolled under, if any.'),
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        help_text=_(
+            'Purchase order this license was bought under, for licenses with no '
+            'subscription/entitlement ID (e.g. a quantity of Cisco licenses).'
+        ),
+    )
+    bundle = DynamicModelChoiceField(
+        queryset=LicenseBundle.objects.all(),
+        required=False,
+        selector=True,
+        query_params={'asset_id': '$asset'},
+        label=_('Bundle'),
+        help_text=_(
+            'If this feature license was part of a purchased bundle SKU, link the bundle '
+            'here so renewal budget is tracked on the bundle instead of this SKU.'
+        ),
     )
     asset = DynamicModelChoiceField(
         queryset=Asset.objects.all(),
         selector=True,
-        query_params={'subscription_id': '$subscription'},
-        help_text=_(
-            'Filtered to the subscription\'s manufacturer. '
-            'If the subscription is linked to an order, only assets on that order are shown.'
-        ),
+        query_params={
+            'subscription_id': '$subscription',
+            'order_id': '$order',
+        },
+        help_text=_('Filtered to the selected subscription\'s or order\'s manufacturer/assets, when set.'),
     )
     sku = DynamicModelChoiceField(
         queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.SUBSCRIPTION),
@@ -1007,16 +1126,21 @@ class AssetLicenseForm(NetBoxModelForm):
         label=_('License SKU'),
         query_params={
             'subscription_id': '$subscription',
+            'order_id': '$order',
+            'asset_id': '$asset',
             'license_kind': 'subscription',
         },
-        help_text=_('Subscription-type SKUs only, filtered to the subscription\'s manufacturer.'),
+        help_text=_(
+            'Subscription-type SKUs only, filtered to the selected subscription\'s or order\'s '
+            'manufacturer, or the asset\'s manufacturer if neither is set.'
+        ),
     )
     comments = CommentField()
 
     fieldsets = (
-        FieldSet('subscription', 'asset', 'sku', name=_('License')),
+        FieldSet('subscription', 'order', 'bundle', 'asset', 'sku', name=_('License')),
         FieldSet('start_date', 'end_date', name=_('Term')),
-        FieldSet('quantity', 'notes', 'tags', name=_('Details')),
+        FieldSet('quantity', 'license_key', 'do_not_renew', 'notes', 'tags', name=_('Details')),
     )
 
     class Meta:
@@ -1024,10 +1148,14 @@ class AssetLicenseForm(NetBoxModelForm):
         fields = (
             'asset',
             'subscription',
+            'order',
+            'bundle',
             'sku',
             'start_date',
             'end_date',
             'quantity',
+            'license_key',
+            'do_not_renew',
             'notes',
             'comments',
             'tags',
@@ -1040,14 +1168,22 @@ class AssetLicenseForm(NetBoxModelForm):
 
 class AssetLicenseBulkAssignForm(forms.Form):
     """
-    Form used to bulk-assign a license SKU under a subscription to many assets at once.
-    The user picks the subscription, SKU, and term dates, then selects assets from a
-    filtered list.  One AssetLicense record is created per selected asset.
+    Form used to bulk-assign a license SKU (under a subscription or an order)
+    to many assets at once. The user picks the subscription/order, SKU, and
+    term dates, then selects assets from a filtered list. One AssetLicense
+    record is created per selected asset.
     """
     subscription = DynamicModelChoiceField(
         queryset=Subscription.objects.all(),
+        required=False,
         selector=True,
-        help_text=_('Subscription to assign the license under.'),
+        help_text=_('Subscription to assign the license under, if any.'),
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        help_text=_('Purchase order to assign the license under, for licenses with no subscription ID.'),
     )
     sku = DynamicModelChoiceField(
         queryset=LicenseSKU.objects.all(),
@@ -1069,6 +1205,12 @@ class AssetLicenseBulkAssignForm(forms.Form):
         initial=1,
         label=_('Quantity per asset'),
     )
+    license_key = forms.CharField(
+        max_length=128,
+        required=False,
+        label=_('License Key'),
+        help_text=_('Only meaningful when assigning to a single asset with a unique vendor key (e.g. Palo Alto).'),
+    )
     assets = DynamicModelChoiceField(
         queryset=Asset.objects.all(),
         selector=True,
@@ -1079,6 +1221,7 @@ class AssetLicenseBulkAssignForm(forms.Form):
     def clean(self):
         cleaned = super().clean()
         subscription = cleaned.get('subscription')
+        order = cleaned.get('order')
         sku = cleaned.get('sku')
         start_date = cleaned.get('start_date')
         end_date = cleaned.get('end_date')
@@ -1087,6 +1230,11 @@ class AssetLicenseBulkAssignForm(forms.Form):
             if subscription.manufacturer != sku.manufacturer:
                 raise forms.ValidationError(
                     _('Subscription manufacturer must match the license SKU manufacturer.')
+                )
+        if order and sku:
+            if order.manufacturer != sku.manufacturer:
+                raise forms.ValidationError(
+                    _('Order manufacturer must match the license SKU manufacturer.')
                 )
         if start_date and end_date and start_date > end_date:
             raise forms.ValidationError(_('End date must be on or after start date.'))

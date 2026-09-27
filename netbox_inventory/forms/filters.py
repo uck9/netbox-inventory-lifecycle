@@ -30,6 +30,7 @@ from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import APISelectMultiple, DatePicker, DateTimePicker
 
 from ..choices import (
+    AssetAllocationStatusChoices,
     AssetStatusChoices,
     HardwareKindChoices,
     PurchaseStatusChoices,
@@ -56,8 +57,10 @@ __all__ = (
     'InventoryItemTypeFilterForm',
     'SupplierFilterForm',
     'PurchaseFilterForm',
+    'WarrantyTypeFilterForm',
     'LicenseSKUFilterForm',
     'SubscriptionFilterForm',
+    'LicenseBundleFilterForm',
     'AssetLicenseFilterForm',
 )
 
@@ -117,7 +120,7 @@ class InventoryItemTypeFilterForm(PrimaryModelFilterSetForm):
 class AssetFilterForm(PrimaryModelFilterSetForm):
     model = Asset
     fieldsets = (
-        FieldSet('q', 'filter_id', 'tag', 'owner_id','status'),
+        FieldSet('q', 'filter_id', 'tag', 'owner_id', 'status', 'allocation_status'),
         FieldSet(
             'kind',
             'manufacturer_id',
@@ -163,10 +166,19 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
             'installed_at_mismatch',
             name='Vendor Location',
         ),
+        FieldSet(
+            'planned_decommission_date_after',
+            'planned_decommission_date_before',
+            name='Decommission',
+        ),
     )
 
     status = forms.MultipleChoiceField(
         choices=AssetStatusChoices,
+        required=False,
+    )
+    allocation_status = forms.MultipleChoiceField(
+        choices=AssetAllocationStatusChoices,
         required=False,
     )
     kind = forms.MultipleChoiceField(
@@ -406,8 +418,18 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
     installed_at_mismatch = forms.NullBooleanField(
         required=False,
         label='Vendor location mismatch',
-        help_text='Show only assets where vendor installed-at site differs from current site',
+        help_text="Show only assets whose current site is not among the vendor installed-at location's linked sites (including locations with no linked sites)",
         widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    planned_decommission_date_after = forms.DateField(
+        required=False,
+        label='Planned decommission on or after',
+        widget=DatePicker,
+    )
+    planned_decommission_date_before = forms.DateField(
+        required=False,
+        label='Planned decommission on or before',
+        widget=DatePicker,
     )
     tag = TagFilterField(model)
 
@@ -421,7 +443,7 @@ class InstalledAtLocationFilterForm(PrimaryModelFilterSetForm):
     model = InstalledAtLocation
     fieldsets = (
         FieldSet('q', 'filter_id', 'tag'),
-        FieldSet('manufacturer_id', 'site_id', name='Location'),
+        FieldSet('manufacturer_id', 'site_id', 'customer_name', name='Location'),
         FieldSet('country', 'city', 'state', name='Address'),
     )
     manufacturer_id = DynamicModelMultipleChoiceField(
@@ -434,6 +456,7 @@ class InstalledAtLocationFilterForm(PrimaryModelFilterSetForm):
         required=False,
         label='NetBox Sites',
     )
+    customer_name = forms.CharField(required=False, label='Customer Name')
     country = forms.CharField(required=False, label='Country')
     city = forms.CharField(required=False, label='City')
     state = forms.CharField(required=False, label='State / Region')
@@ -751,6 +774,16 @@ class HardwareLifecycleFilterForm(NetBoxModelFilterSetForm):
     tag = TagFilterField(model)
 
 
+class WarrantyTypeFilterForm(NetBoxModelFilterSetForm):
+    model = WarrantyType
+    manufacturer_id = DynamicModelMultipleChoiceField(
+        queryset=Manufacturer.objects.all(),
+        required=False,
+        label="Manufacturer",
+    )
+    fields = (FieldSet("q", "manufacturer_id"))
+
+
 class LicenseSKUFilterForm(NetBoxModelFilterSetForm):
     model = LicenseSKU
     manufacturer_id = DynamicModelMultipleChoiceField(
@@ -788,12 +821,64 @@ class SubscriptionFilterForm(NetBoxModelFilterSetForm):
     tag = TagFilterField(model)
 
 
+class LicenseBundleFilterForm(NetBoxModelFilterSetForm):
+    model = LicenseBundle
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('asset_id', 'sku_id', 'order_id', 'do_not_renew', name='Bundle'),
+        FieldSet('is_active', 'is_expired', 'is_pending', name='Status'),
+    )
+    asset_id = DynamicModelMultipleChoiceField(
+        queryset=Asset.objects.all(),
+        required=False,
+        selector=True,
+        label='Asset',
+    )
+    sku_id = DynamicModelMultipleChoiceField(
+        queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.BUNDLE),
+        required=False,
+        selector=True,
+        label='Bundle SKU',
+    )
+    order_id = DynamicModelMultipleChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        label='Order',
+    )
+    do_not_renew = forms.NullBooleanField(
+        required=False,
+        label='Do Not Renew',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_active = forms.NullBooleanField(
+        required=False,
+        label='Is currently active',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_expired = forms.NullBooleanField(
+        required=False,
+        label='Is expired',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_pending = forms.NullBooleanField(
+        required=False,
+        label='Is pending (not yet started)',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    tag = TagFilterField(model)
+
+
 class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
     model = AssetLicense
     fieldsets = (
         FieldSet('q', 'filter_id', 'tag'),
-        FieldSet('manufacturer_id', 'subscription_id', 'sku_id', 'asset_id', name='License'),
+        FieldSet(
+            'manufacturer_id', 'subscription_id', 'order_id', 'bundle_id', 'sku_id', 'asset_id',
+            'do_not_renew', name='License',
+        ),
         FieldSet('start_date__gte', 'end_date__lte', 'end_date__lt', name='Dates'),
+        FieldSet('is_active', 'is_expired', 'is_pending', name='Status'),
     )
     manufacturer_id = DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(),
@@ -806,6 +891,18 @@ class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
         required=False,
         selector=True,
         label='Subscription',
+    )
+    order_id = DynamicModelMultipleChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        label='Order',
+    )
+    bundle_id = DynamicModelMultipleChoiceField(
+        queryset=LicenseBundle.objects.all(),
+        required=False,
+        selector=True,
+        label='Bundle',
     )
     sku_id = DynamicModelMultipleChoiceField(
         queryset=LicenseSKU.objects.all(),
@@ -833,5 +930,25 @@ class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label='Expiring before',
         widget=DatePicker,
+    )
+    do_not_renew = forms.NullBooleanField(
+        required=False,
+        label='Do Not Renew',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_active = forms.NullBooleanField(
+        required=False,
+        label='Is currently active',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_expired = forms.NullBooleanField(
+        required=False,
+        label='Is expired',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    is_pending = forms.NullBooleanField(
+        required=False,
+        label='Is pending (not yet started)',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
     )
     tag = TagFilterField(model)

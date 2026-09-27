@@ -7,6 +7,7 @@ from tenancy.api.serializers import ContactSerializer  # type: ignore  # noqa: F
 
 from netbox_inventory.api.serializers_.assets import AssetSerializer
 from netbox_inventory.choices import ContractTypeChoices
+from netbox_inventory.models.assets import Asset
 from netbox_inventory.models.contracts import *
 
 __all__ = (
@@ -80,9 +81,35 @@ class ContractSerializer(NetBoxModelSerializer):
 
 class ContractAssignmentSerializer(NetBoxModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='plugins-api:netbox_inventory-api:contractassignment-detail')
-    contract = ContractSerializer(nested=True)
-    sku = ContractSKUSerializer(nested=True, required=False, allow_null=True)
-    asset = AssetSerializer(nested=True, required=False, allow_null=False)
+    # Read-only nested representations. These are read_only (rather than also
+    # accepting writes) so they don't collide with the dedicated _id fields
+    # below, which are the only supported way to set these relations. Writing
+    # through the nested `asset` field crashes (AssetSerializer.to_internal_value
+    # assumes it always receives a dict, which isn't true when nested=True short-
+    # circuits to return the resolved model instance directly).
+    contract = ContractSerializer(nested=True, read_only=True)
+    sku = ContractSKUSerializer(nested=True, read_only=True, allow_null=True)
+    asset = AssetSerializer(nested=True, read_only=True)
+    # Write: accept PKs directly (use _id suffix — DRF resolves source automatically)
+    contract_id = serializers.PrimaryKeyRelatedField(
+        source='contract',
+        queryset=Contract.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
+    sku_id = serializers.PrimaryKeyRelatedField(
+        source='sku',
+        queryset=ContractSKU.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
+    asset_id = serializers.PrimaryKeyRelatedField(
+        source='asset',
+        queryset=Asset.objects.all(),
+        write_only=True,
+    )
     start_date = serializers.DateField(required=False)
     end_date = serializers.DateField(required=False)
     renewal_date = serializers.DateField(required=False)
@@ -90,7 +117,10 @@ class ContractAssignmentSerializer(NetBoxModelSerializer):
     class Meta:
         model = ContractAssignment
         fields = (
-            'url', 'id', 'display', 'contract', 'sku', 'asset', 'start_date', 'end_date',
+            'url', 'id', 'display',
+            'contract_id', 'sku_id', 'asset_id',
+            'contract', 'sku', 'asset',
+            'start_date', 'end_date',
             'renewal_date', 'tags', 'description', 'comments', 'custom_fields',
         )
 

@@ -43,6 +43,7 @@ class HardwareLifecycleSerializer(PrimaryModelSerializer):
             'end_of_support',
             'support_basis',
             'notice_url',
+            'estimated_replacement_cost',
             'description',
             'comments',
             'tags',

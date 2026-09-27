@@ -59,6 +59,7 @@ __all__ = (
     'OrderFilterSet',
     'PurchaseFilterSet',
     'SupplierFilterSet',
+    'WarrantyTypeFilterSet',
     'LicenseSKUFilterSet',
     'SubscriptionFilterSet',
     'AssetLicenseFilterSet',
@@ -150,6 +151,7 @@ class AssetFilterSet(PrimaryModelFilterSet):
         lookup_expr='icontains',
         label='Disposal Reference',
     )
+    planned_decommission_date = django_filters.DateFromToRangeFilter()
     kind = filters.MultiValueCharFilter(
         method='filter_kind',
         label='Type of hardware',
@@ -487,6 +489,7 @@ class AssetFilterSet(PrimaryModelFilterSet):
             | Q(tenant__name__icontains=value)
             | Q(owning_tenant__name__icontains=value)
             | Q(contract__contract_id__icontains=value)
+            | Q(disposal_reference__icontains=value)
         )
         custom_field_filters = get_asset_custom_fields_search_filters()
         for custom_field_filter in custom_field_filters:
@@ -589,31 +592,38 @@ class AssetFilterSet(PrimaryModelFilterSet):
 
     def filter_installed_at_mismatch(self, queryset, name, value):
         """
-        Filter assets where none of the vendor's installed_at sites match the
-        asset's current_site rollup (device.site > installed_site_override > rack.site).
-        Only considers assets whose installed_at has at least one linked site.
+        Filter assets whose resolvable current site is not accounted for by
+        their vendor installed_at location. Mirrors Asset.installed_at_mismatch:
+
+        - the effective current site follows the current_site rollup
+          (device.site > installed_site_override > rack.site > storage_location.site);
+        - a mismatch is any asset with an installed_at and a resolvable current
+          site where that site is not among the installed_at location's linked
+          sites -- including installed_at locations that have no linked sites at
+          all.
         """
         from django.db.models import Exists, OuterRef
+        from django.db.models.functions import Coalesce
+
         through = InstalledAtLocation.sites.through
-        # Subqueries: does the vendor location's sites include this asset's current-site source?
-        device_match = through.objects.filter(
-            installedatlocation_id=OuterRef('installed_at_id'),
-            site_id=OuterRef('device__site_id'),
+        annotated = queryset.annotate(
+            _effective_site_id=Coalesce(
+                'device__site_id',
+                'installed_site_override_id',
+                'rack__site_id',
+                'storage_location__site_id',
+            )
         )
-        override_match = through.objects.filter(
+        site_linked = through.objects.filter(
             installedatlocation_id=OuterRef('installed_at_id'),
-            site_id=OuterRef('installed_site_override_id'),
+            site_id=OuterRef('_effective_site_id'),
         )
-        rack_match = through.objects.filter(
-            installedatlocation_id=OuterRef('installed_at_id'),
-            site_id=OuterRef('rack__site_id'),
+        mismatched_pks = (
+            annotated
+            .filter(installed_at__isnull=False, _effective_site_id__isnull=False)
+            .exclude(Exists(site_linked))
+            .values_list('pk', flat=True)
         )
-        # Assets where installed_at has at least one site
-        candidates = queryset.filter(installed_at__sites__isnull=False).distinct()
-        matched_pks = candidates.filter(
-            Q(Exists(device_match)) | Q(Exists(override_match)) | Q(Exists(rack_match))
-        ).values_list('pk', flat=True)
-        mismatched_pks = candidates.exclude(pk__in=matched_pks).values_list('pk', flat=True)
 
         if value:
             return queryset.filter(pk__in=mismatched_pks)
@@ -632,17 +642,19 @@ class InstalledAtLocationFilterSet(PrimaryModelFilterSet):
         queryset=Site.objects.all(),
         label='NetBox Site (ID)',
     )
+    customer_name = django_filters.CharFilter(lookup_expr='icontains', label='Customer Name')
     country = django_filters.CharFilter(lookup_expr='icontains', label='Country')
     city = django_filters.CharFilter(lookup_expr='icontains', label='City')
     state = django_filters.CharFilter(lookup_expr='icontains', label='State / Region')
 
     class Meta:
         model = InstalledAtLocation
-        fields = ('id', 'vendor_site_id', 'address', 'city', 'state', 'country', 'postcode')
+        fields = ('id', 'vendor_site_id', 'customer_name', 'address', 'city', 'state', 'country', 'postcode')
 
     def search(self, queryset, name, value):
         return queryset.filter(
             Q(vendor_site_id__icontains=value)
+            | Q(customer_name__icontains=value)
             | Q(address__icontains=value)
             | Q(city__icontains=value)
             | Q(country__icontains=value)
@@ -1156,25 +1168,67 @@ class HardwareLifecycleFilterSet(NetBoxModelFilterSet):
     def search(self, queryset, name, value):
         if not value.strip():
             return queryset
-        qs_filter = Q(
-            Q(device_type__model__icontains=value)
-            | Q(module_type__model__icontains=value)
+
+        # HardwareLifecycle has no direct device_type/module_type fields — it's linked via
+        # the assigned_object generic FK, so matching device/module types has to be resolved
+        # to concrete pks first, then filtered against assigned_object_type/assigned_object_id.
+        device_type_ct = ContentType.objects.get_for_model(DeviceType)
+        module_type_ct = ContentType.objects.get_for_model(ModuleType)
+        matching_device_type_ids = DeviceType.objects.filter(
+            model__icontains=value
+        ).values_list('pk', flat=True)
+        matching_module_type_ids = ModuleType.objects.filter(
+            model__icontains=value
+        ).values_list('pk', flat=True)
+
+        qs_filter = (
+            Q(assigned_object_type=device_type_ct, assigned_object_id__in=matching_device_type_ids)
+            | Q(assigned_object_type=module_type_ct, assigned_object_id__in=matching_module_type_ids)
+            | Q(description__icontains=value)
+            | Q(comments__icontains=value)
         )
         return queryset.filter(qs_filter).distinct()
 
     def filter_types(self, queryset, name, value):
-        if '__' in name:
-            name, leftover = name.split('__', 1)  # noqa F841
-
-        if type(value) is list:
-            name = f'{name}__in'
-
         if not value:
             return queryset
-        try:
-            return queryset.filter(**{f'{name}': value})
-        except ValueError:
-            return queryset.none()
+
+        # Same underlying issue as search() above: HardwareLifecycle has no direct
+        # device_type/module_type fields, only the assigned_object generic FK. `name` here
+        # is the filter's field_name ('device_type', 'device_type__model', 'module_type', or
+        # 'module_type__model' depending on which of the four filters triggered this), and
+        # `value` is always a queryset/list of resolved DeviceType or ModuleType instances.
+        if name.startswith('device_type'):
+            content_type = ContentType.objects.get_for_model(DeviceType)
+        else:
+            content_type = ContentType.objects.get_for_model(ModuleType)
+
+        return queryset.filter(
+            assigned_object_type=content_type,
+            assigned_object_id__in=[obj.pk for obj in value],
+        )
+
+
+class WarrantyTypeFilterSet(NetBoxModelFilterSet):
+    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="manufacturer",
+        queryset=Manufacturer.objects.all(),
+        label="Manufacturer (ID)",
+    )
+    q = django_filters.CharFilter(method="search", label="Search")
+
+    class Meta:
+        model = WarrantyType
+        fields = ("manufacturer_id", "sku")
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(sku__icontains=value)
+            | Q(name__icontains=value)
+            | Q(description__icontains=value)
+        )
 
 
 class LicenseSKUFilterSet(NetBoxModelFilterSet):
@@ -1187,11 +1241,19 @@ class LicenseSKUFilterSet(NetBoxModelFilterSet):
         method='filter_by_subscription',
         label='Subscription (ID)',
     )
+    order_id = django_filters.NumberFilter(
+        method='filter_by_order',
+        label='Order (ID)',
+    )
+    asset_id = django_filters.NumberFilter(
+        method='filter_by_asset',
+        label='Asset (ID)',
+    )
     q = django_filters.CharFilter(method="search", label="Search")
 
     class Meta:
         model = LicenseSKU
-        fields = ("manufacturer_id", "license_kind", "sku")
+        fields = ("manufacturer_id", "license_kind", "sku", "is_enterprise_wide")
 
     def filter_by_subscription(self, queryset, name, value):
         """Filter SKUs to the manufacturer of the given subscription."""
@@ -1200,6 +1262,32 @@ class LicenseSKUFilterSet(NetBoxModelFilterSet):
         except Subscription.DoesNotExist:
             return queryset.none()
         return queryset.filter(manufacturer=sub.manufacturer)
+
+    def filter_by_order(self, queryset, name, value):
+        """Filter SKUs to the manufacturer of the given order."""
+        try:
+            order = Order.objects.select_related('manufacturer').get(pk=value)
+        except Order.DoesNotExist:
+            return queryset.none()
+        return queryset.filter(manufacturer=order.manufacturer)
+
+    def filter_by_asset(self, queryset, name, value):
+        """
+        Filter SKUs to the manufacturer of the given asset's hardware type
+        (device/module/inventory item/rack type). Covers the case where a
+        license is being assigned straight to an asset with no subscription
+        or order selected.
+        """
+        from .models import Asset
+        asset = Asset.objects.filter(pk=value).select_related(
+            'device_type__manufacturer',
+            'module_type__manufacturer',
+            'inventoryitem_type__manufacturer',
+            'rack_type__manufacturer',
+        ).first()
+        if not asset or not asset.hardware_type:
+            return queryset.none()
+        return queryset.filter(manufacturer=asset.hardware_type.manufacturer)
 
     def search(self, queryset, name, value):
         if not value:
@@ -1236,6 +1324,79 @@ class SubscriptionFilterSet(NetBoxModelFilterSet):
         )
 
 
+def _license_active_q(today):
+    """
+    Q covering AssetLicense/LicenseBundle rows considered 'active' as of
+    today — mirrors the is_active property shared by both models (an unset
+    start_date counts as already started; an unset end_date as open-ended).
+    """
+    return (
+        (Q(start_date__isnull=True) | Q(start_date__lte=today))
+        & (Q(end_date__isnull=True) | Q(end_date__gte=today))
+    )
+
+
+class LicenseBundleFilterSet(NetBoxModelFilterSet):
+    asset_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='asset',
+        queryset=Asset.objects.all(),
+        label=_('Asset (ID)'),
+    )
+    sku_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='sku',
+        queryset=LicenseSKU.objects.all(),
+        label=_('Bundle SKU (ID)'),
+    )
+    order_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='order',
+        queryset=Order.objects.all(),
+        label=_('Order (ID)'),
+    )
+    is_active = django_filters.BooleanFilter(
+        method='filter_is_active',
+        label=_('Is currently active'),
+    )
+    is_expired = django_filters.BooleanFilter(
+        method='filter_is_expired',
+        label=_('Is expired'),
+    )
+    is_pending = django_filters.BooleanFilter(
+        method='filter_is_pending',
+        label=_('Is pending (not yet started)'),
+    )
+    q = django_filters.CharFilter(method='search', label=_('Search'))
+
+    class Meta:
+        model = LicenseBundle
+        fields = ('id', 'asset_id', 'sku_id', 'order_id', 'start_date', 'end_date', 'do_not_renew')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(asset__name__icontains=value)
+            | Q(asset__serial__icontains=value)
+            | Q(sku__sku__icontains=value)
+            | Q(sku__name__icontains=value)
+            | Q(order__name__icontains=value)
+        )
+
+    def filter_is_active(self, queryset, name, value):
+        from datetime import date
+        active_q = _license_active_q(date.today())
+        return queryset.filter(active_q) if value else queryset.exclude(active_q)
+
+    def filter_is_expired(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        return queryset.filter(end_date__lt=today) if value else queryset.exclude(end_date__lt=today)
+
+    def filter_is_pending(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        return queryset.filter(start_date__gt=today) if value else queryset.exclude(start_date__gt=today)
+
+
 class AssetLicenseFilterSet(NetBoxModelFilterSet):
     asset_id = django_filters.ModelMultipleChoiceFilter(
         field_name='asset',
@@ -1247,6 +1408,16 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
         queryset=Subscription.objects.all(),
         label=_('Subscription (ID)'),
     )
+    order_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='order',
+        queryset=Order.objects.all(),
+        label=_('Order (ID)'),
+    )
+    bundle_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='bundle',
+        queryset=LicenseBundle.objects.all(),
+        label=_('Bundle (ID)'),
+    )
     sku_id = django_filters.ModelMultipleChoiceFilter(
         field_name='sku',
         queryset=LicenseSKU.objects.all(),
@@ -1257,11 +1428,26 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
         queryset=Manufacturer.objects.all(),
         label=_('Manufacturer (ID)'),
     )
+    is_active = django_filters.BooleanFilter(
+        method='filter_is_active',
+        label=_('Is currently active'),
+    )
+    is_expired = django_filters.BooleanFilter(
+        method='filter_is_expired',
+        label=_('Is expired'),
+    )
+    is_pending = django_filters.BooleanFilter(
+        method='filter_is_pending',
+        label=_('Is pending (not yet started)'),
+    )
     q = django_filters.CharFilter(method='search', label=_('Search'))
 
     class Meta:
         model = AssetLicense
-        fields = ('id', 'asset_id', 'subscription_id', 'sku_id', 'manufacturer_id', 'start_date', 'end_date')
+        fields = (
+            'id', 'asset_id', 'subscription_id', 'order_id', 'bundle_id', 'sku_id', 'manufacturer_id',
+            'start_date', 'end_date', 'do_not_renew',
+        )
 
     def search(self, queryset, name, value):
         if not value.strip():
@@ -1270,6 +1456,23 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
             Q(asset__name__icontains=value)
             | Q(asset__serial__icontains=value)
             | Q(subscription__subscription_id__icontains=value)
+            | Q(order__name__icontains=value)
             | Q(sku__sku__icontains=value)
             | Q(sku__name__icontains=value)
+            | Q(license_key__icontains=value)
         )
+
+    def filter_is_active(self, queryset, name, value):
+        from datetime import date
+        active_q = _license_active_q(date.today())
+        return queryset.filter(active_q) if value else queryset.exclude(active_q)
+
+    def filter_is_expired(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        return queryset.filter(end_date__lt=today) if value else queryset.exclude(end_date__lt=today)
+
+    def filter_is_pending(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        return queryset.filter(start_date__gt=today) if value else queryset.exclude(start_date__gt=today)

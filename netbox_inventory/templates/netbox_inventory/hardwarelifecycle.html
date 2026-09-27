@@ -76,6 +76,13 @@
               </span>
               </td>
             </tr>
+            <tr>
+              <th scope="row">Estimated Replacement Cost</th>
+              <td>
+                {% if object.estimated_replacement_cost is not None %}${{ object.estimated_replacement_cost|floatformat:2 }}
+                {% else %}<span class="text-muted">&mdash;</span>{% endif %}
+              </td>
+            </tr>
           </table>
         </div>
       </div>

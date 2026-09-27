@@ -35,6 +35,9 @@ class HardwareLifecycleTable(NetBoxTable):
         verbose_name=_('Assigned Object Count'),
         orderable=False,
     )
+    estimated_replacement_cost = tables.Column(
+        verbose_name=_('Est. Replacement Cost'),
+    )
 
     class Meta(NetBoxTable.Meta):
         model = HardwareLifecycle
@@ -48,6 +51,7 @@ class HardwareLifecycleTable(NetBoxTable):
             'end_of_support',
             'last_contract_attach',
             'last_contract_renewal',
+            'estimated_replacement_cost',
             'description',
             'comments',
         )

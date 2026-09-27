@@ -1,0 +1,34 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load plugins %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col col-md-6">
+    <div class="card">
+      <h5 class="card-header">Warranty Type</h5>
+      <div class="card-body">
+        <table class="table table-hover attr-table">
+          <tr><th scope="row">Manufacturer</th><td>{{ object.manufacturer|linkify }}</td></tr>
+          <tr><th scope="row">SKU</th><td>{{ object.sku }}</td></tr>
+          <tr><th scope="row">Name</th><td>{{ object.name }}</td></tr>
+          <tr><th scope="row">Description</th><td>{{ object.description|placeholder }}</td></tr>
+          <tr><th scope="row">URL</th><td>{{ object.url|urlize|placeholder }}</td></tr>
+        </table>
+      </div>
+    </div>
+    {% include 'inc/panels/custom_fields.html' %}
+    {% plugin_left_page object %}
+  </div>
+  <div class="col col-md-6">
+    {% include 'inc/panels/tags.html' %}
+    {% include 'inc/panels/comments.html' %}
+    {% plugin_right_page object %}
+  </div>
+</div>
+<div class="row mb-3">
+  <div class="col col-md-12">
+    {% plugin_full_width_page object %}
+  </div>
+</div>
+{% endblock %}

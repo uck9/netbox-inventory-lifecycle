@@ -4,7 +4,7 @@ from django.db import models
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from netbox.models import NestedGroupModel
+from netbox.models import NestedGroupModel, NetBoxModel
 from netbox.models.features import ImageAttachmentsMixin
 
 from ..choices import (
@@ -14,7 +14,6 @@ from ..choices import (
     AssetSupportReasonChoices,
     AssetSupportSourceChoices,
     AssetSupportStateChoices,
-    AssetWarrantyTypeChoices,
     HardwareKindChoices,
 )
 from ..managers import AssetManager
@@ -109,6 +108,50 @@ class InventoryItemType(NamedModel, ImageAttachmentsMixin):
 
     def __str__(self):
         return self.model
+
+
+class WarrantyType(NetBoxModel):
+    """
+    Canonical catalog of warranty types (vendor SKUs) that can be assigned to an Asset.
+    """
+
+    manufacturer = models.ForeignKey(
+        to='dcim.Manufacturer',
+        on_delete=models.PROTECT,
+        related_name='warranty_types',
+    )
+    sku = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name=_('SKU'),
+        help_text=_('Vendor SKU or product code (unique).'),
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name=_('Name'),
+    )
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name=_('Description'),
+    )
+    url = models.URLField(
+        blank=True,
+        verbose_name=_('URL'),
+        help_text=_('Link to vendor documentation for this warranty type.'),
+    )
+
+    clone_fields = [
+        'manufacturer',
+    ]
+
+    class Meta:
+        ordering = ('manufacturer', 'sku')
+        verbose_name = _('Warranty Type')
+        verbose_name_plural = _('Warranty Types')
+
+    def __str__(self):
+        return f'{self.sku} ({self.name})'
 
 
 class Asset(NamedModel, ImageAttachmentsMixin):
@@ -339,9 +382,10 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         null=True,
         verbose_name='Warranty End',
     )
-    warranty_type = models.CharField(
-        max_length=30,
-        choices=AssetWarrantyTypeChoices,
+    warranty_type = models.ForeignKey(
+        to='netbox_inventory.WarrantyType',
+        on_delete=models.SET_NULL,
+        related_name='assets',
         help_text='Warranty type for this asset',
         verbose_name='Warranty Type',
         blank=True,
@@ -388,6 +432,20 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         blank=True,
         null=True,
         default=None,
+    )
+
+    #
+    # Decommission Planning
+    #
+    planned_decommission_date = models.DateField(
+        help_text=(
+            'If set, this asset is planned for decommission. Renewal budget reports '
+            'exclude its license/subscription costs from the totals and list it in a '
+            'separate "planned for decommission" section instead.'
+        ),
+        blank=True,
+        null=True,
+        verbose_name='Planned Decommission Date',
     )
 
     #
@@ -542,18 +600,48 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     @property
     def installed_at_mismatch(self):
         """
-        True when none of the vendor's installed_at sites match the asset's
-        current rollup site. False when there is no installed_at, no sites are
-        linked on it, or the current site is among the linked sites.
+        True when the asset has a resolvable current rollup site that the
+        vendor's installed_at location does not account for. This covers both:
+
+        - the installed_at location has linked sites, none of which is the
+          asset's current site, and
+        - the installed_at location has no linked sites at all, so it cannot
+          account for the asset's current site.
+
+        False when there is no installed_at, the current site cannot be
+        resolved (nothing to compare against), or the current site is among
+        the linked sites.
         """
         if not self.installed_at_id:
-            return False
-        if not self.installed_at.sites.exists():
             return False
         current = self.current_site
         if not current:
             return False
         return not self.installed_at.sites.filter(pk=current.pk).exists()
+
+    @property
+    def installed_at_suggested_locations(self):
+        """
+        Other installed-at locations for the same vendor that already have this
+        asset's current site mapped -- i.e. where the vendor record should be
+        pointing when installed_at_mismatch is True.
+
+        Returns an empty queryset when there is no installed_at, no resolvable
+        current site, or no such location exists. More than one row means the
+        data has several vendor locations tagged for the same NetBox site.
+        """
+        from .locations import InstalledAtLocation
+
+        if not self.installed_at_id:
+            return InstalledAtLocation.objects.none()
+        current = self.current_site
+        if not current:
+            return InstalledAtLocation.objects.none()
+        return (
+            InstalledAtLocation.objects
+            .filter(manufacturer_id=self.installed_at.manufacturer_id, sites=current)
+            .exclude(pk=self.installed_at_id)
+        )
 
     @property
     def warranty_remaining(self):

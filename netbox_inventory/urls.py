@@ -129,6 +129,13 @@ urlpatterns = [
     path('audit-trails/', include(get_model_urls('netbox_inventory', 'audittrail', detail=False))),
     path('audit-trails/<int:pk>/', include(get_model_urls('netbox_inventory', 'audittrail'))),
 
+    # Warranty Types
+    path("warranty-types/", views.WarrantyTypeListView.as_view(), name="warrantytype_list"),
+    path("warranty-types/add/", views.WarrantyTypeEditView.as_view(), name="warrantytype_add"),
+    path("warranty-types/<int:pk>/", views.WarrantyTypeView.as_view(), name="warrantytype"),
+    path("warranty-types/<int:pk>/edit/", views.WarrantyTypeEditView.as_view(), name="warrantytype_edit"),
+    path("warranty-types/<int:pk>/delete/", views.WarrantyTypeDeleteView.as_view(), name="warrantytype_delete"),
+
     # License SKUs
     path("license-skus/", views.LicenseSKUListView.as_view(), name="licensesku_list"),
     path("license-skus/add/", views.LicenseSKUEditView.as_view(), name="licensesku_add"),
@@ -139,6 +146,10 @@ urlpatterns = [
     # Subscriptions
     path("subscriptions/", include(get_model_urls('netbox_inventory', 'subscription', detail=False))),
     path("subscriptions/<int:pk>/", include(get_model_urls('netbox_inventory', 'subscription'))),
+
+    # License Bundles
+    path("license-bundles/", include(get_model_urls('netbox_inventory', 'licensebundle', detail=False))),
+    path("license-bundles/<int:pk>/", include(get_model_urls('netbox_inventory', 'licensebundle'))),
 
     # Asset Licenses
     path("asset-licenses/", include(get_model_urls('netbox_inventory', 'assetlicense', detail=False))),

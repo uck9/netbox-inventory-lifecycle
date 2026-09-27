@@ -62,6 +62,14 @@ class HardwareLifecycle(PrimaryModel):
         choices=SupportBasisChoices,
         default=SupportBasisChoices.DEFAULT_KEY,
     )
+    estimated_replacement_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Estimated Replacement Cost',
+        help_text='Estimated per-unit hardware replacement cost, used for budget reporting.',
+    )
 
     class Meta:
         ordering = ['assigned_object_type']

@@ -14,6 +14,7 @@ from utilities.tables import register_table_column
 
 from ..models import *
 from ..template_content import WARRANTY_PROGRESSBAR
+from .licenses import LicenseSKUColumn, WarrantyTypeColumn
 
 __all__ = (
     'AssetTable',
@@ -179,6 +180,11 @@ class AssetTable(PrimaryModelTable):
     purchase = tables.Column(
         linkify=True,
     )
+    purchase_name = tables.Column(
+        accessor='purchase.name',
+        linkify=lambda record: record.purchase.get_absolute_url(),
+        verbose_name='PO ID',
+    )
     order = tables.Column(
         accessor='order.name',
         linkify=lambda record: record.order.get_absolute_url(),
@@ -229,7 +235,7 @@ class AssetTable(PrimaryModelTable):
     warranty_end = columns.DateColumn(
         verbose_name='Warranty End',
     )
-    warranty_type = columns.ChoiceFieldColumn(
+    warranty_type = WarrantyTypeColumn(
         verbose_name='Warranty Type',
     )
     vendor_instance_id = tables.Column(
@@ -241,13 +247,15 @@ class AssetTable(PrimaryModelTable):
     support_reason = columns.ChoiceFieldColumn()
     support_source = columns.ChoiceFieldColumn()
     support_validated_at = columns.DateColumn(verbose_name='Support Validated At')
-    base_license_sku = tables.Column(
-        linkify=True,
+    base_license_sku = LicenseSKUColumn(
         verbose_name='Base License SKU',
     )
     installed_site_override = tables.Column(
         linkify=True,
         verbose_name='Installed Site Override',
+    )
+    planned_decommission_date = columns.DateColumn(
+        verbose_name='Planned Decommission Date',
     )
     tags = columns.TagColumn()
     actions = columns.ActionsColumn(
@@ -417,6 +425,7 @@ class AssetTable(PrimaryModelTable):
             'owning_tenant',
             'supplier',
             'purchase',
+            'purchase_name',
             'order',
             'contract',
             'purchase_date',

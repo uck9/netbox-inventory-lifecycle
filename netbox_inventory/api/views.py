@@ -28,6 +28,7 @@ __all__ = (
     'ModuleAssetViewSet',
     'PurchaseViewSet',
     'SupplierViewSet',
+    'WarrantyTypeViewSet',
     'LicenseSKUViewSet',
     'SubscriptionViewSet',
     'AssetLicenseViewSet',
@@ -217,6 +218,12 @@ class AuditTrailViewSet(NetBoxModelViewSet):
     serializer_class = AuditTrailSerializer
 
 
+class WarrantyTypeViewSet(NetBoxModelViewSet):
+    queryset = models.WarrantyType.objects.all()
+    serializer_class = WarrantyTypeSerializer
+    filterset_class = filtersets.WarrantyTypeFilterSet
+
+
 class LicenseSKUViewSet(NetBoxModelViewSet):
     queryset = models.LicenseSKU.objects.all()
     serializer_class = LicenseSKUSerializer
@@ -238,11 +245,24 @@ class SubscriptionViewSet(NetBoxModelViewSet):
     filterset_class = filtersets.SubscriptionFilterSet
 
 
+class LicenseBundleViewSet(NetBoxModelViewSet):
+    queryset = models.LicenseBundle.objects.select_related(
+        'asset', 'sku', 'sku__manufacturer', 'order',
+    ).prefetch_related('tags').annotate(
+        license_count=count_related(models.AssetLicense, 'bundle')
+    )
+    serializer_class = LicenseBundleSerializer
+    filterset_class = filtersets.LicenseBundleFilterSet
+
+
 class AssetLicenseViewSet(NetBoxModelViewSet):
     queryset = models.AssetLicense.objects.select_related(
         'asset',
         'subscription',
         'subscription__manufacturer',
+        'order',
+        'bundle',
+        'bundle__sku',
         'sku',
         'sku__manufacturer',
     ).prefetch_related('tags')

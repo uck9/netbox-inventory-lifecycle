@@ -114,8 +114,6 @@ class ContractSKU(PrimaryModel):
         verbose_name_plural = _('Contract SKUs')
 
     def __str__(self):
-        if self.description:
-            return f'{self.sku} ({self.description})'
         return self.sku
 
     def get_absolute_url(self):

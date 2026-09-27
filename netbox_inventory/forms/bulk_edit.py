@@ -46,6 +46,7 @@ __all__ = (
     'SupplierBulkEditForm',
     'InventoryItemTypeBulkEditForm',
     'SubscriptionBulkEditForm',
+    'LicenseBundleBulkEditForm',
     'AssetLicenseBulkEditForm',
 )
 
@@ -59,14 +60,15 @@ class InstalledAtLocationBulkEditForm(PrimaryModelBulkEditForm):
         queryset=Manufacturer.objects.all(),
         required=False,
     )
+    customer_name = forms.CharField(required=False, max_length=200, label='Customer Name')
     country = forms.CharField(required=False, max_length=100)
     state = forms.CharField(required=False, max_length=100)
 
     model = InstalledAtLocation
-    nullable_fields = ('state', 'postcode')
+    nullable_fields = ('customer_name', 'state', 'postcode')
 
     fieldsets = (
-        FieldSet('manufacturer', 'country', 'state', name='Installed-At Location'),
+        FieldSet('manufacturer', 'customer_name', 'country', 'state', name='Installed-At Location'),
     )
 
 
@@ -201,6 +203,11 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         required=False,
         widget=DatePicker(),
     )
+    warranty_type = DynamicModelChoiceField(
+        queryset=WarrantyType.objects.all(),
+        required=False,
+        label='Warranty Type',
+    )
     vendor_instance_id = forms.CharField(
         label='Vendor Instance ID',
         required=False,
@@ -235,11 +242,8 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         help_text=Asset._meta.get_field('installed_site_override').help_text,
         required=False,
     )
-    installed_at = DynamicModelChoiceField(
-        queryset=InstalledAtLocation.objects.all(),
-        required=False,
-        label='Installed-At Location',
-    )
+    # installed_at (vendor location) is deliberately omitted: it is maintained by the
+    # Cisco sync and must not be mass-editable through NetBox.
     support_state = forms.ChoiceField(
         choices=add_blank_choice(AssetSupportStateChoices),
         required=False,
@@ -268,6 +272,11 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
     disposal_reference = forms.CharField(
         label='Disposal Reference',
         required=False,
+    )
+    planned_decommission_date = forms.DateField(
+        label='Planned Decommission Date',
+        required=False,
+        widget=DatePicker(),
     )
 
     def clean(self):
@@ -323,6 +332,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
             'vendor_ship_date',
             'warranty_start',
             'warranty_end',
+            'warranty_type',
             name='Purchase',
         ),
         FieldSet(
@@ -338,6 +348,10 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
             name='Disposal',
         ),
         FieldSet(
+            'planned_decommission_date',
+            name='Decommission Planning',
+        ),
+        FieldSet(
             'tenant',
             'contact_group',
             'contact',
@@ -348,7 +362,6 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
             'installed_site_override',
             name='Location',
         ),
-        FieldSet('installed_at', name='Vendor Location'),
     )
     nullable_fields = (
         'name',
@@ -365,15 +378,16 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         'contact',
         'warranty_start',
         'warranty_end',
+        'warranty_type',
         'vendor_instance_id',
         'storage_location',
         'installed_site_override',
-        'installed_at',
         'support_reason',
         'support_validated_at',
         'disposal_date',
         'disposal_reason',
         'disposal_reference',
+        'planned_decommission_date',
     )
 
 
@@ -768,12 +782,66 @@ class SubscriptionBulkEditForm(NetBoxModelBulkEditForm):
     nullable_fields = ('order', 'description')
 
 
+class LicenseBundleBulkEditForm(NetBoxModelBulkEditForm):
+    sku = DynamicModelChoiceField(
+        queryset=LicenseSKU.objects.filter(license_kind=LicenseKindChoices.BUNDLE),
+        required=False,
+        selector=True,
+        label=_('Bundle SKU'),
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Order'),
+    )
+    start_date = forms.DateField(
+        required=False,
+        label=_('Start Date'),
+        widget=DatePicker(),
+    )
+    end_date = forms.DateField(
+        required=False,
+        label=_('End Date'),
+        widget=DatePicker(),
+    )
+    quantity = forms.IntegerField(
+        min_value=1,
+        required=False,
+        label=_('Quantity'),
+    )
+    do_not_renew = forms.NullBooleanField(
+        required=False,
+        label=_('Do Not Renew'),
+        widget=BulkEditNullBooleanSelect(),
+    )
+    comments = CommentField()
+
+    model = LicenseBundle
+    fieldsets = (
+        FieldSet('sku', 'order', 'start_date', 'end_date', 'quantity', 'do_not_renew'),
+    )
+    nullable_fields = ('order', 'start_date', 'end_date')
+
+
 class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
     subscription = DynamicModelChoiceField(
         queryset=Subscription.objects.all(),
         required=False,
         selector=True,
         label=_('Subscription'),
+    )
+    order = DynamicModelChoiceField(
+        queryset=Order.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Order'),
+    )
+    bundle = DynamicModelChoiceField(
+        queryset=LicenseBundle.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Bundle'),
     )
     sku = DynamicModelChoiceField(
         queryset=LicenseSKU.objects.all(),
@@ -796,10 +864,17 @@ class AssetLicenseBulkEditForm(NetBoxModelBulkEditForm):
         required=False,
         label=_('Quantity'),
     )
+    do_not_renew = forms.NullBooleanField(
+        required=False,
+        label=_('Do Not Renew'),
+        widget=BulkEditNullBooleanSelect(),
+    )
     comments = CommentField()
 
     model = AssetLicense
     fieldsets = (
-        FieldSet('subscription', 'sku', 'start_date', 'end_date', 'quantity'),
+        FieldSet(
+            'subscription', 'order', 'bundle', 'sku', 'start_date', 'end_date', 'quantity', 'do_not_renew',
+        ),
     )
-    nullable_fields = ('end_date',)
+    nullable_fields = ('subscription', 'order', 'bundle', 'start_date', 'end_date')

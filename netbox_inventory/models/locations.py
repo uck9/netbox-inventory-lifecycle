@@ -25,6 +25,12 @@ class InstalledAtLocation(PrimaryModel):
         verbose_name='Vendor Site ID',
         help_text='The vendor\'s own identifier for this installed location',
     )
+    customer_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Customer Name',
+        help_text='The customer/account name the vendor has on file for this location',
+    )
     address = models.CharField(
         max_length=200,
         verbose_name='Street Address',
