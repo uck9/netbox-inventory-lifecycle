@@ -50,6 +50,7 @@ class PurchaseStatusChoices(ChoiceSet):
     key = 'Purchase.status'
 
     CHOICES = [
+        ('planned', 'Planned', 'gray'),
         ('open', 'Open', 'cyan'),
         ('partial', 'Partial', 'blue'),
         ('closed', 'Closed', 'green'),
