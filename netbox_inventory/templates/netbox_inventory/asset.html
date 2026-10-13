@@ -320,15 +320,30 @@
         </table>
       </div>
       {% endif %}
-      {% if object.planned_decommission_date %}
+      {% if object.planned_decommission_date or object.exclude_from_lifecycle_planning %}
       <div class="card">
         <h5 class="card-header">Decommission Planning</h5>
         <table class="table table-hover attr-table">
           <tr>
             <th scope="row">Planned Decommission Date</th>
             <td>
+              {% if object.planned_decommission_date %}
               <span class="badge text-bg-warning">{{ object.planned_decommission_date|isodate }}</span>
               <span class="text-muted small ms-1">Excluded from renewal budget totals in netbox-insights</span>
+              {% else %}
+              {{ ''|placeholder }}
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Exclude from Lifecycle Planning</th>
+            <td>
+              {% if object.exclude_from_lifecycle_planning %}
+              <span class="badge text-bg-secondary">Excluded</span>
+              <span class="text-muted small ms-1">Excluded from budget planning totals in netbox-insights</span>
+              {% else %}
+              {% checkmark False %}
+              {% endif %}
             </td>
           </tr>
         </table>

@@ -131,6 +131,7 @@
           <h2 class="col-9 offset-3">Decommission Planning</h2>
         </div>
         {% render_field form.planned_decommission_date %}
+        {% render_field form.exclude_from_lifecycle_planning %}
     </div>
 
     {% if form.custom_fields %}

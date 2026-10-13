@@ -278,6 +278,11 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         required=False,
         widget=DatePicker(),
     )
+    exclude_from_lifecycle_planning = forms.NullBooleanField(
+        label='Exclude from lifecycle planning',
+        required=False,
+        widget=BulkEditNullBooleanSelect(),
+    )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -349,6 +354,7 @@ class AssetBulkEditForm(PrimaryModelBulkEditForm):
         ),
         FieldSet(
             'planned_decommission_date',
+            'exclude_from_lifecycle_planning',
             name='Decommission Planning',
         ),
         FieldSet(
@@ -713,6 +719,13 @@ class HardwareLifecycleBulkEditForm(NetBoxModelBulkEditForm):
         label=_('Notice URL'),
         required=False,
     )
+    estimated_replacement_cost = forms.DecimalField(
+        label=_('Estimated Replacement Cost'),
+        max_digits=10,
+        decimal_places=2,
+        min_value=0,
+        required=False,
+    )
     description = forms.CharField(
         label=_('Description'), max_length=200, required=False
     )
@@ -733,6 +746,7 @@ class HardwareLifecycleBulkEditForm(NetBoxModelBulkEditForm):
         ),
         FieldSet(
             'notice_url',
+            'estimated_replacement_cost',
             'description',
             name=_('Information'),
         ),
@@ -746,7 +760,9 @@ class HardwareLifecycleBulkEditForm(NetBoxModelBulkEditForm):
         'last_contract_renewal',
         'end_of_support',
         'notice_url',
+        'estimated_replacement_cost',
         'description',
+        'comments',
     )
 
 

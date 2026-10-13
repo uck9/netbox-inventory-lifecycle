@@ -152,6 +152,7 @@ class AssetFilterSet(PrimaryModelFilterSet):
         label='Disposal Reference',
     )
     planned_decommission_date = django_filters.DateFromToRangeFilter()
+    exclude_from_lifecycle_planning = django_filters.BooleanFilter()
     kind = filters.MultiValueCharFilter(
         method='filter_kind',
         label='Type of hardware',

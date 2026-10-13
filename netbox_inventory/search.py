@@ -50,6 +50,7 @@ class AssetIndex(SearchIndex):
         ('serial', 60),
         ('vendor_instance_id', 60),
         ('description', 500),
+        ('disposal_reference', 500),
         ('comments', 5000),
     )
     display_attrs = ('name', 'asset_tag', 'status')

@@ -452,6 +452,15 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         null=True,
         verbose_name='Planned Decommission Date',
     )
+    exclude_from_lifecycle_planning = models.BooleanField(
+        default=False,
+        help_text=(
+            'If checked, this asset is excluded from lifecycle planning. Budget reports '
+            'treat it the same as an asset with a planned decommission date: its costs '
+            'are left out of the totals and it is listed in a separate excluded section.'
+        ),
+        verbose_name='Exclude from lifecycle planning',
+    )
 
     #
     # Support Info

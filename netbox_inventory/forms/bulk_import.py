@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -21,6 +22,7 @@ from ..choices import (
 )
 from ..constants import AUDITFLOW_OBJECT_TYPE_CHOICES
 from ..models import *
+from ..models.hardware import SupportBasisChoices
 from ..utils import get_plugin_setting
 
 __all__ = (
@@ -30,6 +32,7 @@ __all__ = (
     'AuditTrailImportForm',
     'AuditTrailSourceImportForm',
     'ContractImportForm',
+    'HardwareLifecycleImportForm',
     'InstalledAtLocationImportForm',
     'OrderImportForm',
     'InventoryItemGroupImportForm',
@@ -634,3 +637,107 @@ class InstalledAtLocationImportForm(PrimaryModelImportForm):
             'comments',
             'tags',
         )
+
+
+#
+# Hardware Lifecycles
+#
+
+
+def resolve_lifecycle_object(manufacturer, device_type=None, module_type=None):
+    """
+    Resolve the DeviceType/ModuleType a HardwareLifecycle CSV row refers to.
+
+    Types are matched on model name within the manufacturer, falling back to part
+    number. Returns (object, error) — exactly one of the two is None.
+    """
+    if bool(device_type) == bool(module_type):
+        return None, _('Specify exactly one of device_type or module_type.')
+    if not manufacturer:
+        return None, _('Manufacturer is required to look up the device or module type.')
+
+    model, value = (DeviceType, device_type) if device_type else (ModuleType, module_type)
+    qs = model.objects.filter(manufacturer__name=manufacturer)
+    for lookup in ('model', 'part_number'):
+        matches = list(qs.filter(**{lookup: value})[:2])
+        if len(matches) == 1:
+            return matches[0], None
+        if len(matches) > 1:
+            return None, _('Multiple {model} objects match "{value}".').format(
+                model=model._meta.verbose_name, value=value,
+            )
+    return None, _('{model} "{value}" not found for manufacturer "{manufacturer}".').format(
+        model=model._meta.verbose_name.capitalize(), value=value, manufacturer=manufacturer,
+    )
+
+
+class HardwareLifecycleImportForm(NetBoxModelImportForm):
+    manufacturer = forms.CharField(
+        required=False,
+        help_text='Manufacturer name of the device or module type',
+    )
+    device_type = forms.CharField(
+        required=False,
+        help_text='Device type model name or part number',
+    )
+    module_type = forms.CharField(
+        required=False,
+        help_text='Module type model name or part number',
+    )
+    support_basis = CSVChoiceField(
+        choices=SupportBasisChoices,
+        required=False,
+        help_text='Lifecycle date used for support calculations (support or security)',
+    )
+
+    class Meta:
+        model = HardwareLifecycle
+        fields = (
+            'manufacturer',
+            'device_type',
+            'module_type',
+            'announcement_date',
+            'end_of_sale',
+            'end_of_maintenance',
+            'end_of_security',
+            'last_contract_attach',
+            'last_contract_renewal',
+            'end_of_support',
+            'support_basis',
+            'notice_url',
+            'estimated_replacement_cost',
+            'description',
+            'comments',
+            'tags',
+        )
+
+    def clean(self):
+        super().clean()
+
+        device_type = self.cleaned_data.get('device_type')
+        module_type = self.cleaned_data.get('module_type')
+
+        # Updates (by id) that don't name a type keep their current assignment
+        if self.instance.pk and not (device_type or module_type):
+            return self.cleaned_data
+
+        obj, error = resolve_lifecycle_object(
+            self.cleaned_data.get('manufacturer'), device_type, module_type,
+        )
+        if error:
+            raise forms.ValidationError(error)
+        duplicate = HardwareLifecycle.objects.filter(
+            assigned_object_type=ContentType.objects.get_for_model(obj),
+            assigned_object_id=obj.pk,
+        ).exclude(pk=self.instance.pk)
+        if duplicate.exists():
+            raise forms.ValidationError(
+                _('A lifecycle record already exists for {obj} (listed more than once in this import?).').format(obj=obj)
+            )
+        self.instance.assigned_object = obj
+
+        if 'support_basis' in self.fields and not self.cleaned_data.get('support_basis'):
+            self.cleaned_data['support_basis'] = (
+                self.instance.support_basis or SupportBasisChoices.DEFAULT_KEY
+            )
+        return self.cleaned_data

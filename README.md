@@ -262,7 +262,7 @@ support older netbox version as per table below:
 |       4.3      |      2.4.0     |
 |       4.4      |    >=2.4.1     |
 |    4.5, 4.6    |      2.5.0     |
-|       4.7      |      2.6.0     |
+|       4.7      |  2.6.0, 2.7.0  |
 
 ## Installing
 
@@ -275,13 +275,13 @@ Netbox's virtual environment first:
 
 ```bash
 $ source /opt/netbox/venv/bin/activate
-(venv) $ pip install git+https://github.com/uck9/netbox-inventory-lifecycle.git@v2.6.0
+(venv) $ pip install git+https://github.com/uck9/netbox-inventory-lifecycle.git@v2.7.0
 ```
 
 or add the same line to your `local_requirements.txt` so `upgrade.sh` reinstalls it:
 
 ```bash
-git+https://github.com/uck9/netbox-inventory-lifecycle.git@v2.6.0
+git+https://github.com/uck9/netbox-inventory-lifecycle.git@v2.7.0
 ```
 
 For adding to a NetBox Docker setup see

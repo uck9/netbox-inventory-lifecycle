@@ -348,6 +348,7 @@ class AssetForm(PrimaryModelForm):
         ),
         FieldSet(
             'planned_decommission_date',
+            'exclude_from_lifecycle_planning',
             name='Decommission Planning',
         ),
         FieldSet('tenant', 'contact_group', 'contact', name='Assigned to'),
@@ -396,6 +397,7 @@ class AssetForm(PrimaryModelForm):
             'disposal_reason',
             'disposal_reference',
             'planned_decommission_date',
+            'exclude_from_lifecycle_planning',
         )
         widgets = {
             'vendor_ship_date': DatePicker(),

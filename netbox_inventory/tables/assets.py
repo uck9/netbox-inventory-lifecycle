@@ -257,6 +257,9 @@ class AssetTable(PrimaryModelTable):
     planned_decommission_date = columns.DateColumn(
         verbose_name='Planned Decommission Date',
     )
+    exclude_from_lifecycle_planning = columns.BooleanColumn(
+        verbose_name='Excluded from Lifecycle Planning',
+    )
     tags = columns.TagColumn()
     actions = columns.ActionsColumn(
         extra_buttons="""
@@ -438,6 +441,8 @@ class AssetTable(PrimaryModelTable):
             'disposal_date',
             'disposal_reason',
             'disposal_reference',
+            'planned_decommission_date',
+            'exclude_from_lifecycle_planning',
             'vendor_instance_id',
             'support_state',
             'support_reason',

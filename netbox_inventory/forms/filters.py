@@ -167,8 +167,13 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
             name='Vendor Location',
         ),
         FieldSet(
+            'disposal_reference',
+            name='Disposal',
+        ),
+        FieldSet(
             'planned_decommission_date_after',
             'planned_decommission_date_before',
+            'exclude_from_lifecycle_planning',
             name='Decommission',
         ),
     )
@@ -430,6 +435,15 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
         required=False,
         label='Planned decommission on or before',
         widget=DatePicker,
+    )
+    exclude_from_lifecycle_planning = forms.NullBooleanField(
+        required=False,
+        label='Excluded from lifecycle planning',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    disposal_reference = forms.CharField(
+        required=False,
+        label='Disposal reference contains',
     )
     tag = TagFilterField(model)
 

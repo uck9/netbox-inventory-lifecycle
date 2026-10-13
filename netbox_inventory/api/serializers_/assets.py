@@ -272,6 +272,8 @@ class AssetSerializer(PrimaryModelSerializer):
             'disposal_date',
             'disposal_reason',
             'disposal_reference',
+            'planned_decommission_date',
+            'exclude_from_lifecycle_planning',
             'owner',
             'comments',
             'tags',
