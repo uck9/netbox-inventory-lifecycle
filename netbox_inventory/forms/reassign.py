@@ -20,7 +20,7 @@ from utilities.forms.widgets import APISelect
 
 from ..choices import AssetStatusChoices
 from ..models import Asset, InventoryItemGroup, InventoryItemType
-from ..utils import get_status_for
+from ..utils import get_status_for, user_can_change
 
 __all__ = (
     'AssetDeviceReassignForm',
@@ -103,6 +103,10 @@ class AssetReassignMixin(forms.Form):
             raise ValidationError(
                 'Cannot reasign the same asset as is already assigned'
             )
+        # The view only checks the hardware; both assets are written too
+        for asset in (self.old_asset, self.new_asset):
+            if not user_can_change(asset):
+                raise ValidationError(f'You do not have permission to change asset {asset}')
         # set device/module for asset and clean/validate
         if self.old_asset:
             self._clean_asset(self.old_asset, None)

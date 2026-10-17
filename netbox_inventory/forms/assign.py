@@ -8,6 +8,7 @@ from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import APISelect
 
 from ..models import Asset
+from ..utils import user_can_change
 
 __all__ = (
     'AssetDeviceAssignForm',
@@ -42,12 +43,24 @@ class AssetAssignMixin(forms.Form):
             raise forms.ValidationError(f'You are not allowed to change {kind}_type')
         return hardware_type
 
+    def _check_hardware_permission(self, kind, hardware):
+        """
+        The view only checks the asset; the old and new hardware are written too (serial and asset tag sync).
+        """
+        old_hardware = getattr(self.instance, kind)
+        if old_hardware == hardware:
+            return
+        for hw in (old_hardware, hardware):
+            if not user_can_change(hw):
+                raise forms.ValidationError(f'You do not have permission to change {kind} {hw}')
+
     def _clean_hardware(self, kind):
         """
         Args:
             kind (str): one of device, module, inventoryitem, rack
         """
         hardware = self.cleaned_data[kind]
+        self._check_hardware_permission(kind, hardware)
         if hardware:
             instance_hardware = getattr(self.instance, kind)
             if instance_hardware == hardware:
@@ -245,6 +258,7 @@ class AssetInventoryItemAssignForm(AssetAssignMixin, NetBoxModelForm):
 
     def clean_inventoryitem(self):
         inventoryitem = self.cleaned_data['inventoryitem']
+        self._check_hardware_permission('inventoryitem', inventoryitem)
         if inventoryitem:
             if self.instance.inventoryitem == inventoryitem:
                 # field was not changed

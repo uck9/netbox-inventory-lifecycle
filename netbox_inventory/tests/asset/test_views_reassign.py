@@ -8,6 +8,7 @@ from dcim.models import (
     DeviceRole,
     DeviceType,
     InventoryItem,
+    Location,
     Manufacturer,
     Module,
     ModuleBay,
@@ -38,6 +39,8 @@ class AssetReassignBase:
             slug='site1',
             status='active',
         )
+        # an asset unassigned as 'stored' must have a storage location
+        self.location1 = Location.objects.create(site=self.site1, name='location1', slug='location1')
         self.manufacturer1 = Manufacturer.objects.create(
             name='manufacturer1',
             slug='manufacturer1',
@@ -99,6 +102,7 @@ class AssetReassignBase:
             asset_tag='asset_device',
             serial='asset_device',
             status='used',
+            storage_location=self.location1,
             device_type=self.device_type1,
             device=self.device1,
         )
@@ -106,6 +110,7 @@ class AssetReassignBase:
             asset_tag='asset_module',
             serial='asset_module',
             status='used',
+            storage_location=self.location1,
             module_type=self.module_type1,
             module=self.module1,
         )
@@ -113,6 +118,7 @@ class AssetReassignBase:
             asset_tag='asset_inventoryitem',
             serial='asset_inventoryitem',
             status='used',
+            storage_location=self.location1,
             inventoryitem_type=self.inventoryitem_type1,
             inventoryitem=self.inventoryitem1,
         )
@@ -120,6 +126,7 @@ class AssetReassignBase:
             asset_tag='asset_rack',
             serial='asset_rack',
             status='used',
+            storage_location=self.location1,
             rack_type=self.rack_type1,
             rack=self.rack1,
         )
@@ -163,6 +170,8 @@ class AssetReassignBase:
         obj_perm.save()
         obj_perm.users.add(self.user)
         obj_perm.object_types.add(ObjectType.objects.get_for_model(self.model))
+        # reassigning writes the old and new assets as well as the hardware
+        obj_perm.object_types.add(ObjectType.objects.get_for_model(Asset))
 
         # Try GET with model-level permission
         self.assertHttpStatus(self.client.get(self._get_url('edit', instance)), 200)

@@ -72,6 +72,21 @@ def get_all_statuses_for(status):
     return list(status_names)
 
 
+def user_can_change(obj):
+    """
+    True if the user behind the current request may change obj (checked against the database row, as NetBox's
+    views do). Asset joins write both the asset and its hardware, but the edit view only checks one of them.
+    Outside a request (scripts, shell) there is no user to check, so the change is allowed.
+    """
+    from netbox.context import current_request
+
+    request = current_request.get()
+    user = getattr(request, 'user', None)
+    if obj is None or obj.pk is None or user is None:
+        return True
+    return type(obj).objects.restrict(user, 'change').filter(pk=obj.pk).exists()
+
+
 def asset_clear_old_hw(old_hw):
     # need to temporarily disconnect signal receiver that prevents update of device serial if asset assigned
     from .signals import prevent_update_serial_asset_tag
