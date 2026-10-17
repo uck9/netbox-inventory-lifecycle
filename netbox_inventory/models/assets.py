@@ -767,10 +767,12 @@ class Asset(NamedModel, ImageAttachmentsMixin):
             if not getattr(self, '_in_reassign', False):
                 # but don't check if we are reassigning asset to another device
                 if hw and _type != getattr(hw, kind + '_type'):
+                    # Non-field error: forms such as AssetForm have no `{kind}`
+                    # field, and a keyed error there raises ValueError.
                     raise ValidationError(
-                        {
-                            kind: f'{kind} type of {kind} does not match {kind} type of asset'
-                        }
+                        f'{kind} type of assigned {kind} ({hw}: '
+                        f'{getattr(hw, kind + "_type")}) does not match {kind} '
+                        f'type of asset ({_type})'
                     )
         # ensure only one hardware is set and that it is correct kind
         # e.g. if self.device_type is set, we cannot have self.module or self.inventoryitem set
