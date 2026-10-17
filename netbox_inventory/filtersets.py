@@ -38,10 +38,16 @@ from .choices import (
     PurchaseStatusChoices,
 )
 from .models import *
-from .utils import get_asset_custom_fields_search_filters, query_located
+from .utils import (
+    ASSET_DISPOSED_STATUS,
+    get_asset_custom_fields_search_filters,
+    include_disposed_default,
+    query_located,
+)
 
 __all__ = (
     'AssetFilterSet',
+    'AssetListFilterSet',
     'AuditFlowFilterSet',
     'AuditFlowPageFilterSet',
     'AuditTrailFilterSet',
@@ -630,6 +636,48 @@ class AssetFilterSet(PrimaryModelFilterSet):
             return queryset.filter(pk__in=mismatched_pks)
         else:
             return queryset.exclude(pk__in=mismatched_pks)
+
+
+class AssetListFilterSet(AssetFilterSet):
+    """
+    Asset filterset for the UI list (and its bulk edit/delete "select all"),
+    which hides disposed assets unless asked for. The API keeps using
+    AssetFilterSet, so integrations still see every asset by default.
+
+    Disposed assets are included when any of these are true:
+      * include_disposed=true
+      * the request filters on status (status / status__n / ...)
+      * the request has a quick search (q), so disposed assets stay findable
+      * include_disposed is absent and the user's preference (or the
+        include_disposed_assets plugin setting) says to include them
+    include_disposed=false always hides them, overriding the preference.
+    """
+    include_disposed = django_filters.BooleanFilter(
+        method='filter_include_disposed',
+        label=_('Include disposed assets'),
+    )
+
+    def filter_include_disposed(self, queryset, name, value):
+        # Applied in filter_queryset(), since the default depends on the
+        # other params and the user's preference.
+        return queryset
+
+    def _include_disposed(self):
+        data = self.data or {}
+        explicit = data.get('include_disposed')
+        if explicit not in (None, ''):
+            return str(explicit).lower() in ('true', '1', 'on', 'yes')
+        if any(key == 'status' or key.startswith('status__') for key in data):
+            return True
+        if data.get('q'):
+            return True
+        return include_disposed_default(getattr(self, 'request', None))
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        if not self._include_disposed():
+            queryset = queryset.exclude(status=ASSET_DISPOSED_STATUS)
+        return queryset
 
 
 class InstalledAtLocationFilterSet(PrimaryModelFilterSet):

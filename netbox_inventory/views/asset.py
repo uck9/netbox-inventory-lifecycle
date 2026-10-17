@@ -75,7 +75,7 @@ class AssetListView(generic.ObjectListView):
         'contact',
     )
     table = tables.AssetTable
-    filterset = filtersets.AssetFilterSet
+    filterset = filtersets.AssetListFilterSet
     filterset_form = forms.AssetFilterForm
 
 
@@ -129,7 +129,7 @@ class AssetBulkImportView(generic.BulkImportView):
 @register_model_view(models.Asset, 'bulk_edit', path='edit', detail=False)
 class AssetBulkEditView(generic.BulkEditView):
     queryset = models.Asset.objects.all()
-    filterset = filtersets.AssetFilterSet
+    filterset = filtersets.AssetListFilterSet
     table = tables.AssetTable
     form = forms.AssetBulkEditForm
 
@@ -137,7 +137,7 @@ class AssetBulkEditView(generic.BulkEditView):
 @register_model_view(models.Asset, 'bulk_delete', path='delete', detail=False)
 class AssetBulkDeleteView(generic.BulkDeleteView):
     queryset = models.Asset.objects.all()
-    filterset = filtersets.AssetFilterSet
+    filterset = filtersets.AssetListFilterSet
     table = tables.AssetTable
 
 

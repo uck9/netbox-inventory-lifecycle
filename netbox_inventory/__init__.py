@@ -34,6 +34,9 @@ class NetBoxInventoryConfig(PluginConfig):
         'prefill_asset_name_create_inventoryitem': False,
         'prefill_asset_tag_create_inventoryitem': False,
         'audit_window': 4 * 60,  # 4 hours
+        # Show disposed assets in the asset list by default. Users can
+        # override this in their own preferences.
+        'include_disposed_assets': False,
     }
 
     def register_feature_views(self) -> None:

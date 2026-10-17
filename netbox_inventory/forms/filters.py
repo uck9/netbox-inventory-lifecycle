@@ -120,7 +120,7 @@ class InventoryItemTypeFilterForm(PrimaryModelFilterSetForm):
 class AssetFilterForm(PrimaryModelFilterSetForm):
     model = Asset
     fieldsets = (
-        FieldSet('q', 'filter_id', 'tag', 'owner_id', 'status', 'allocation_status'),
+        FieldSet('q', 'filter_id', 'tag', 'owner_id', 'status', 'allocation_status', 'include_disposed'),
         FieldSet(
             'kind',
             'manufacturer_id',
@@ -444,6 +444,14 @@ class AssetFilterForm(PrimaryModelFilterSetForm):
     disposal_reference = forms.CharField(
         required=False,
         label='Disposal reference contains',
+    )
+    # A select rather than a checkbox: blank means "use my preference", and
+    # an unticked checkbox on a GET form can't say "No".
+    include_disposed = forms.NullBooleanField(
+        required=False,
+        label='Include disposed',
+        help_text='Blank uses your preference. Ignored when filtering by status or searching.',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
     )
     tag = TagFilterField(model)
 

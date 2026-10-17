@@ -609,6 +609,7 @@ class ContractAssignmentForm(NetBoxModelForm):
         queryset=Asset.objects.all(),
         required=False,
         selector=True,
+        query_params={'status__n': 'disposed'},
         label=_('Asset'),
     )
     contract = DynamicModelChoiceField(
@@ -1037,6 +1038,7 @@ class LicenseBundleForm(NetBoxModelForm):
     asset = DynamicModelChoiceField(
         queryset=Asset.objects.all(),
         selector=True,
+        query_params={'status__n': 'disposed'},
         help_text=_('The device this bundle was purchased for.'),
     )
     sku = DynamicModelChoiceField(
@@ -1119,6 +1121,7 @@ class AssetLicenseForm(NetBoxModelForm):
         query_params={
             'subscription_id': '$subscription',
             'order_id': '$order',
+            'status__n': 'disposed',
         },
         help_text=_('Filtered to the selected subscription\'s or order\'s manufacturer/assets, when set.'),
     )
@@ -1216,6 +1219,7 @@ class AssetLicenseBulkAssignForm(forms.Form):
     assets = DynamicModelChoiceField(
         queryset=Asset.objects.all(),
         selector=True,
+        query_params={'status__n': 'disposed'},
         label=_('Assets'),
         help_text=_('Assets to assign this license to. Only assets matching the SKU manufacturer are valid.'),
     )

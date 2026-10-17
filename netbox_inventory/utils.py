@@ -25,8 +25,25 @@ def get_prechange_field(obj, field_name):
     return value
 
 
+ASSET_DISPOSED_STATUS = 'disposed'
+INCLUDE_DISPOSED_PREFERENCE = 'plugins.netbox_inventory.include_disposed_assets'
+
+
 def get_plugin_setting(setting_name):
     return get_plugin_config('netbox_inventory', setting_name)
+
+
+def include_disposed_default(request):
+    """
+    Whether the asset list should show disposed assets when the request
+    doesn't say. The user's preference wins, then the plugin setting.
+    """
+    user = getattr(request, 'user', None)
+    if user is not None and user.is_authenticated:
+        value = user.config.get(INCLUDE_DISPOSED_PREFERENCE)
+        if value in ('true', 'false'):
+            return value == 'true'
+    return bool(get_plugin_setting('include_disposed_assets'))
 
 
 def get_status_for(status):

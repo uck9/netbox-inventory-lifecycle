@@ -178,6 +178,7 @@ class AssetDeviceReassignForm(AssetReassignMixin, NetBoxModelForm):
         # Widget configuration for dynamic filtering
         static_params = []
         static_params.append({"queryParam": "is_assigned", "queryValue": "false"})
+        static_params.append({"queryParam": "status__n", "queryValue": "disposed"})
         if dt_id:
             static_params.append({"queryParam": "device_type_id", "queryValue": str(dt_id)})
 
@@ -200,6 +201,7 @@ class AssetModuleReassignForm(AssetReassignMixin, NetBoxModelForm):
         query_params={
             'kind': 'module',
             'is_assigned': False,
+            'status__n': 'disposed',
             'storage_site_id': '$storage_site',
             'storage_location_id': '$storage_location',
         },
@@ -243,6 +245,7 @@ class AssetInventoryItemReassignForm(AssetReassignMixin, NetBoxModelForm):
         query_params={
             'kind': 'inventoryitem',
             'is_assigned': False,
+            'status__n': 'disposed',
             'storage_site_id': '$storage_site',
             'storage_location_id': '$storage_location',
             'manufacturer_id': '$manufacturer',
@@ -283,6 +286,7 @@ class AssetRackReassignForm(AssetReassignMixin, NetBoxModelForm):
         query_params={
             'kind': 'rack',
             'is_assigned': False,
+            'status__n': 'disposed',
             'storage_site_id': '$storage_site',
             'storage_location_id': '$storage_location',
         },
