@@ -50,16 +50,43 @@ class AssetReassignMixin(forms.Form):
         label='Status',
         help_text='Status to set to existing asset that is being unassigned',
     )
+    old_asset_storage_site = DynamicModelChoiceField(
+        queryset=Site.objects.all(),
+        required=False,
+        label='Storage Site',
+        help_text='Site where the unassigned asset will be stored',
+    )
+    old_asset_storage_location = DynamicModelChoiceField(
+        queryset=Location.objects.all(),
+        required=False,
+        label='Storage Location',
+        query_params={
+            'site_id': '$old_asset_storage_site',
+        },
+        help_text='Storage location to set on the existing asset when its status is changed to stored',
+    )
 
     fieldsets = (
         FieldSet(
             'storage_site', 'storage_location', 'assigned_asset', name=_('New Asset')
         ),
-        FieldSet('asset_status', name=_('Old Asset')),
+        FieldSet(
+            'asset_status',
+            'old_asset_storage_site',
+            'old_asset_storage_location',
+            name=_('Old Asset'),
+        ),
     )
 
     class Meta:
-        fields = ('storage_site', 'storage_location', 'assigned_asset', 'asset_status')
+        fields = (
+            'storage_site',
+            'storage_location',
+            'assigned_asset',
+            'asset_status',
+            'old_asset_storage_site',
+            'old_asset_storage_location',
+        )
 
     def save(self, commit=True):
         # if existing assigned_asset, clear assignment before save
@@ -105,6 +132,19 @@ class AssetReassignMixin(forms.Form):
             )
         # set device/module for asset and clean/validate
         if self.old_asset:
+            old_asset_status = self.cleaned_data.get('asset_status')
+            old_asset_storage_location = self.cleaned_data.get('old_asset_storage_location')
+            if old_asset_status == get_status_for('stored') and not old_asset_storage_location:
+                raise ValidationError(
+                    {
+                        'old_asset_storage_location': "Storage Location is required when Status is 'stored'."
+                    }
+                )
+            # apply chosen storage location to the old asset before validating/
+            # saving it, since its status will be (re)set to 'stored' by
+            # Asset.update_status() during full_clean()
+            if old_asset_storage_location:
+                self.old_asset.storage_location = old_asset_storage_location
             self._clean_asset(self.old_asset, None)
         if self.new_asset:
             self._clean_asset(self.new_asset, self.instance)
@@ -139,8 +179,10 @@ class AssetReassignMixin(forms.Form):
         try:
             self.instance.assigned_asset
         except Asset.DoesNotExist:
-            # no asset currently assigned, hide status field for old asset
+            # no asset currently assigned, hide status/storage fields for old asset
             self.fields.pop('asset_status')
+            self.fields.pop('old_asset_storage_site')
+            self.fields.pop('old_asset_storage_location')
             self.fieldsets = (self.fieldsets[0],)
 
 
