@@ -8,6 +8,7 @@ from dcim.models import (
     DeviceRole,
     DeviceType,
     InventoryItem,
+    Location,
     Manufacturer,
     Module,
     ModuleBay,
@@ -37,6 +38,11 @@ class AssetReassignBase:
             name='site1',
             slug='site1',
             status='active',
+        )
+        self.location1 = Location.objects.create(
+            name='location1',
+            slug='location1',
+            site=self.site1,
         )
         self.manufacturer1 = Manufacturer.objects.create(
             name='manufacturer1',
@@ -197,6 +203,7 @@ class AssetReassignBase:
         self.asset_old.refresh_from_db()
         self.assertEqual(self.asset_old.status, 'stored')
         self.assertEqual(self.asset_old.hardware, None)
+        self.assertEqual(self.asset_old.storage_location, self.location1)
         objectchanges = ObjectChange.objects.filter(
             changed_object_type=ContentType.objects.get_for_model(self.asset_old),
             changed_object_id=self.asset_old.pk,
@@ -232,10 +239,47 @@ class DeviceReassignAssetTestCase(AssetReassignBase, ModelViewTestCase):
             'device_type': self.device1.device_type.pk,
             'assigned_asset': self.asset_device_new.pk,
             'asset_status': 'stored',
+            'old_asset_storage_location': self.location1.pk,
         }
         self.tested_hardware = self.device1
         self.asset_new = self.asset_device_new
         self.asset_old = self.asset_device_old
+
+
+class DeviceReassignAssetMissingLocationTestCase(AssetReassignBase, ModelViewTestCase):
+    """
+    Regression test: unassigning an asset (moving it to 'stored') without
+    supplying a storage location for it must be rejected by form validation
+    with a clear error, instead of failing deep in model validation.
+    """
+
+    model = Device
+
+    def setUp(self):
+        super().setUp()
+        self.tested_hardware = self.device1
+
+    @override_settings(EXEMPT_VIEW_PERMISSIONS=['*'])
+    @override_settings(PLUGINS_CONFIG=CONFIG_SYNC_ON)
+    def test_missing_storage_location_rejected_by_form(self):
+        obj_perm = ObjectPermission(name='Test permission', actions=['change'])
+        obj_perm.save()
+        obj_perm.users.add(self.user)
+        obj_perm.object_types.add(ObjectType.objects.get_for_model(self.model))
+
+        form_data = {
+            'device_type': self.device1.device_type.pk,
+            'asset_status': 'stored',
+        }
+        request = {
+            'path': self._get_url('edit', self.device1),
+            'data': post_data(form_data),
+        }
+        # form re-renders with a validation error (200), it must not 500
+        # and must not persist a 'stored' asset without a storage_location
+        self.assertHttpStatus(self.client.post(**request), 200)
+        self.asset_device_old.refresh_from_db()
+        self.assertEqual(self.asset_device_old.status, 'used')
 
 
 class ModuleReassignAssetTestCase(AssetReassignBase, ModelViewTestCase):
@@ -251,6 +295,7 @@ class ModuleReassignAssetTestCase(AssetReassignBase, ModelViewTestCase):
             'module_type': self.module1.module_type.pk,
             'assigned_asset': self.asset_module_new.pk,
             'asset_status': 'stored',
+            'old_asset_storage_location': self.location1.pk,
         }
         self.tested_hardware = self.module1
         self.asset_new = self.asset_module_new
@@ -269,6 +314,7 @@ class InventoryItemReassignAssetTestCase(AssetReassignBase, ModelViewTestCase):
         self.form_data = {
             'assigned_asset': self.asset_inventoryitem_new.pk,
             'asset_status': 'stored',
+            'old_asset_storage_location': self.location1.pk,
         }
         self.tested_hardware = self.inventoryitem1
         self.asset_new = self.asset_inventoryitem_new
@@ -303,6 +349,7 @@ class RackReassignAssetTestCase(AssetReassignBase, ModelViewTestCase):
             'rack_type': self.rack1.rack_type.pk,
             'assigned_asset': self.asset_rack_new.pk,
             'asset_status': 'stored',
+            'old_asset_storage_location': self.location1.pk,
         }
         self.tested_hardware = self.rack1
         self.asset_new = self.asset_rack_new
@@ -321,6 +368,7 @@ class DeviceUnassignAssetTestCase(AssetReassignBase, ModelViewTestCase):
         self.form_data = {
             'device_type': self.device1.device_type.pk,
             'asset_status': 'stored',
+            'old_asset_storage_location': self.location1.pk,
         }
         self.tested_hardware = self.device1
         self.asset_new = None
@@ -339,6 +387,7 @@ class ModuleUnassignAssetTestCase(AssetReassignBase, ModelViewTestCase):
         self.form_data = {
             'module_type': self.module1.module_type.pk,
             'asset_status': 'stored',
+            'old_asset_storage_location': self.location1.pk,
         }
         self.tested_hardware = self.module1
         self.asset_new = None
@@ -356,6 +405,7 @@ class InventoryItemUnassignAssetTestCase(AssetReassignBase, ModelViewTestCase):
         super().setUp()
         self.form_data = {
             'asset_status': 'stored',
+            'old_asset_storage_location': self.location1.pk,
         }
         self.tested_hardware = self.inventoryitem1
         self.asset_new = None
@@ -388,6 +438,7 @@ class RackUnassignAssetTestCase(AssetReassignBase, ModelViewTestCase):
         self.form_data = {
             'rack_type': self.rack1.rack_type.pk,
             'asset_status': 'stored',
+            'old_asset_storage_location': self.location1.pk,
         }
         self.tested_hardware = self.rack1
         self.asset_new = None
