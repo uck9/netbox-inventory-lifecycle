@@ -344,6 +344,7 @@ PLUGINS_CONFIG = {
 | `stored_status_name` | `'stored'`| Status that indicates asset is in storage. See "Automatic management of asset status" below for more info on this setting.
 | `stored_additional_status_names` | `['retired',]`| List of statuses that are also considered as not in use by various filters.
 | `sync_hardware_serial_asset_tag` | `False` | When an asset is assigned or unassigned to a device, module or inventory item, update its serial number and asset tag to be in sync with the asset? For device and module device type or module type is also updated to match asset. For inventory items, manufacturer and part ID are updated to match asset. |
+| `sync_hardware_name` | `False` | When an asset is assigned to a device, update asset's name to match the device's name. When the asset is unassigned from a device, reset asset's name to its asset tag and append the device's old name in parentheses (e.g. `(WEB01)`) to the asset's description. Only applies to device assignments. |
 | `asset_import_create_purchase` | `False` | When importing assets, automatically create any given purchase, order or supplier if it doesn't exist already |
 | `asset_import_create_device_type` | `False` | When importing a device type asset, automatically create manufacturer and/or device type if it doesn't exist |
 | `asset_import_create_module_type` | `False` | When importing a module type asset, automatically create manufacturer and/or module type if it doesn't exist |
