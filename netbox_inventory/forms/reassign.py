@@ -164,6 +164,20 @@ class AssetReassignMixin(forms.Form):
             # "remap" to error for whole form
             raise ValidationError(e.messages)
 
+    def _get_instance_site(self):
+        """
+        Determine the Site the reassignment-target object (device, module,
+        inventoryitem or rack) belongs to, so storage location choices can be
+        limited to that site by default.
+        """
+        site = getattr(self.instance, 'site', None)
+        if site:
+            return site
+        device = getattr(self.instance, 'device', None)
+        if device:
+            return getattr(device, 'site', None)
+        return None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -175,6 +189,19 @@ class AssetReassignMixin(forms.Form):
             self.fields.pop(cf_name, None)
         self.custom_fields = {}
         self.custom_fields_groups = {}
+
+        # Default storage_site/old_asset_storage_site to the site of the
+        # object being reassigned, so the storage_location/
+        # old_asset_storage_location dropdowns are filtered to that site
+        # without requiring the user to manually pick it.
+        instance_site = self._get_instance_site()
+        if instance_site and not self.is_bound:
+            if 'storage_site' in self.fields and not self.initial.get('storage_site'):
+                self.initial['storage_site'] = instance_site
+            if 'old_asset_storage_site' in self.fields and not self.initial.get(
+                'old_asset_storage_site'
+            ):
+                self.initial['old_asset_storage_site'] = instance_site
 
         try:
             self.instance.assigned_asset

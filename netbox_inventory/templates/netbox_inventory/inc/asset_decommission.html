@@ -1,0 +1,23 @@
+{% extends 'generic/object_edit.html' %}
+
+{% block title %}Decommission {{ object }}{% endblock %}
+
+{% block tabs %}
+  <ul class="nav nav-tabs px-3">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="edit-form-tab" data-bs-toggle="tab" data-bs-target="#edit-form" type="button" role="tab" aria-controls="edit-form" aria-selected="true">
+        Decommission
+      </button>
+    </li>
+  </ul>
+{% endblock %}
+
+{% block form %}
+<div class="field-group mb-5">
+  Decommissioning {{ object }} will unassign its currently assigned asset and
+  return it to storage. The asset is <strong>not</strong> disposed - disposal
+  remains a separate step performed later directly on the asset. Once the
+  asset is unassigned, {{ object }} can safely be deleted.
+</div>
+{{ block.super }}
+{% endblock %}

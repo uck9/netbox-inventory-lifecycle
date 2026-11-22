@@ -126,6 +126,59 @@ def asset_set_new_hw(asset, hw):
         hw.save()
 
 
+def prepare_asset_for_storage(asset, storage_location, status=None):
+    """
+    Mutate and validate (but do not save) an asset so it is ready to be moved
+    back into storage, detached from whatever hardware (device/module/
+    inventoryitem/rack) it is currently assigned to.
+
+    Split from `unassign_asset_to_storage()` so callers (e.g. form clean()
+    methods) can validate and surface errors before actually persisting
+    anything, matching the usual Django form clean()/save() split.
+
+    Calls asset.snapshot() first, so changelog/pre-save hooks see correct
+    prior state.
+
+    Raises django.core.exceptions.ValidationError if the resulting asset
+    state is invalid (e.g. missing required storage_location).
+    """
+    if status is None:
+        status = get_status_for('stored')
+    asset.snapshot()
+    setattr(asset, asset.kind, None)
+    asset.status = status
+    if storage_location:
+        asset.storage_location = storage_location
+    asset.full_clean()
+    return asset
+
+
+def unassign_asset_to_storage(asset, storage_location, status=None, clear_old_hw=True):
+    """
+    Detach asset from whatever hardware (device/module/inventoryitem/rack) it
+    is currently assigned to, move it into storage, and save it.
+
+    Shared by the asset reassign form (when a new asset isn't immediately
+    assigned in its place) and the device decommission workflow, so both
+    apply the exact same validation/state rules.
+
+    Args:
+        * asset - Asset instance currently assigned to some hardware
+        * storage_location - Location instance to store the asset at.
+          Required if resulting status is the configured 'stored' status.
+        * status - status to set on asset. Defaults to the configured
+          'stored' status.
+        * clear_old_hw - whether to also clear serial/asset_tag etc on the
+          hardware being unassigned (passed through to Asset.save())
+
+    Raises django.core.exceptions.ValidationError if the resulting asset
+    state is invalid (e.g. missing required storage_location).
+    """
+    prepare_asset_for_storage(asset, storage_location, status=status)
+    asset.save(clear_old_hw=clear_old_hw)
+    return asset
+
+
 def is_equal_none(a, b):
     """Compare a and b as string. None is considered the same as empty string."""
     if a is None or b is None:

@@ -17,9 +17,17 @@
         {% elif object_type == "rack" %}
         <a href="{% url 'plugins:netbox_inventory:asset_rack_reassign' object.pk %}" class="btn btn-sm btn-ghost-orange">
         {% endif %}
-        {% endwith %}
           <i class="mdi mdi-vector-link" aria-hidden="true"></i> Edit Assignment
         </a>
+        {% if object_type == "device" and asset %}
+        <a href="{% url 'plugins:netbox_inventory:asset_device_replace' object.pk %}" class="btn btn-sm btn-ghost-blue">
+          <i class="mdi mdi-swap-horizontal" aria-hidden="true"></i> Replace Hardware
+        </a>
+        <a href="{% url 'plugins:netbox_inventory:asset_device_decommission' object.pk %}" class="btn btn-sm btn-ghost-red">
+          <i class="mdi mdi-archive-arrow-down-outline" aria-hidden="true"></i> Decommission
+        </a>
+        {% endif %}
+        {% endwith %}
       </div>
     {% endif %}
   </h5>
