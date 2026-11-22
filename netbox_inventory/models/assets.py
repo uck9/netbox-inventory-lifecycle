@@ -494,8 +494,6 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     )
 
     clone_fields = [
-        'name',
-        'asset_tag',
         'status',
         'device_type',
         'module_type',
@@ -506,6 +504,8 @@ class Asset(NamedModel, ImageAttachmentsMixin):
         'contract',
         'warranty_start',
         'warranty_end',
+        'warranty_type',
+        'base_license_sku',
         'tenant',
         'contact',
         'storage_location',
@@ -698,6 +698,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
 
     def clean(self):
         self.clean_order()
+        self.align_warranty_start_with_ship_date()
         self.clean_warranty_dates()
         self.validate_hardware_types()
         self.validate_hardware()
@@ -719,6 +720,7 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     def save(self, clear_old_hw=True, *args, **kwargs):
         self.update_allocation_status()
         self.update_hardware_used(clear_old_hw)
+        self.sync_name_with_device()
         return super().save(*args, **kwargs)
 
     def validate_hardware_types(self):
@@ -868,11 +870,54 @@ class Asset(NamedModel, ImageAttachmentsMixin):
             if new_hw:
                 asset_set_new_hw(asset=self, hw=new_hw)
 
+    def sync_name_with_device(self):
+        """
+        If asset is being assigned as a device, copy the device's name onto
+        asset.name. If asset is being unassigned from a device, reset
+        asset.name to the asset's asset_tag and append the old device's name
+        in parentheses to asset.description, e.g. "... (WEB01)", so there is
+        still a record of what the asset was last installed as.
+
+        Only applies to device assignments (not module/inventoryitem/rack),
+        and only runs if the 'sync_hardware_name' plugin setting is enabled.
+        """
+        if not get_plugin_setting('sync_hardware_name'):
+            return None
+        if self.kind != 'device':
+            return None
+
+        old_device = get_prechange_field(self, 'device')
+        new_device = self.device
+
+        if new_device and old_device != new_device:
+            # newly assigned (or reassigned) to a device, copy its name
+            if new_device.name:
+                self.name = new_device.name
+        elif not new_device and old_device:
+            # unassigned from a device
+            if self.asset_tag:
+                self.name = self.asset_tag
+            old_device_name = old_device.name
+            if old_device_name:
+                tag = f'({old_device_name})'
+                description = self.description or ''
+                if not description.rstrip().endswith(tag):
+                    self.description = f'{description} {tag}'.strip()
+
     def clean_order(self):
         if self.order and self.order.purchase != self.purchase:
             raise ValidationError(
                 f'Assigned order must belong to selected purchase ({self.purchase}).'
             )
+
+    def align_warranty_start_with_ship_date(self):
+        """
+        If vendor_ship_date is set but warranty_start is not, default
+        warranty_start to vendor_ship_date. Does nothing if warranty_start
+        is already set.
+        """
+        if self.vendor_ship_date and not self.warranty_start:
+            self.warranty_start = self.vendor_ship_date
 
     def clean_warranty_dates(self):
         if (
