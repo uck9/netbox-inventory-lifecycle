@@ -1,0 +1,22 @@
+{% extends 'generic/object_edit.html' %}
+
+{% block title %}Replace Hardware for {{ object }}{% endblock %}
+
+{% block tabs %}
+  <ul class="nav nav-tabs px-3">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="edit-form-tab" data-bs-toggle="tab" data-bs-target="#edit-form" type="button" role="tab" aria-controls="edit-form" aria-selected="true">
+        Replace Hardware
+      </button>
+    </li>
+  </ul>
+{% endblock %}
+
+{% block form %}
+<div class="field-group mb-5">
+  Replacing hardware for {{ object }}: the currently assigned asset will be
+  returned to storage (Step 1), and a replacement asset will be assigned to
+  {{ object }} in its place (Step 2).
+</div>
+{{ block.super }}
+{% endblock %}
