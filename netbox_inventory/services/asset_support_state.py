@@ -89,7 +89,7 @@ def apply_computed_support(asset, *, save: bool = True) -> bool:
     asset.support_state = result.state
     asset.support_reason = result.reason
     asset.support_source = AssetSupportSourceChoices.COMPUTED
-    asset.touch_support_validated()
+    asset.support_validated_at = timezone.now().date()
 
     if save:
         asset.full_clean()
