@@ -10,7 +10,12 @@
     {% endif %}
   </h2>
   {% if sor_records %}
-  <table class="table table-hover attr-table">
+  <table class="table table-hover attr-table" style="table-layout: fixed;">
+    <colgroup>
+      <col style="width: 33.333%;">
+      <col style="width: 33.333%;">
+      <col style="width: 33.333%;">
+    </colgroup>
     {% for sor in sor_records %}
     <tr>
       <th scope="row">{{ sor.get_system_display }}</th>
