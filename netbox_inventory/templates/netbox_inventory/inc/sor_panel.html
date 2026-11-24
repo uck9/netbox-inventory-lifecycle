@@ -16,7 +16,10 @@
       <th scope="row">{{ sor.get_system_display }}</th>
       <td>
         {% badge sor.get_validation_status_display bg_color=sor.get_validation_status_color %}
-        {% if sor.is_stale %}<span class="badge text-bg-warning" title="Last validated: {{ sor.last_validated|default:'never' }}">Stale</span>{% endif %}
+        {% if sor.is_stale %}<span class="badge text-bg-warning">Stale</span>{% endif %}
+      </td>
+      <td class="text-muted small text-end">
+        {% if sor.last_validated %}Validated {{ sor.last_validated|isodate }}{% else %}Never validated{% endif %}
       </td>
     </tr>
     {% endfor %}
