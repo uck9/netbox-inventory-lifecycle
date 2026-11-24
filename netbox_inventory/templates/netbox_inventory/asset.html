@@ -301,7 +301,6 @@
           </tr>
         </table>
       </div>
-      {% include 'netbox_inventory/inc/sor_panel.html' with asset=object sor_records=sor_records %}
       {% if object.status == "disposed" %}
       <div class="card">
         <h5 class="card-header">Disposal Details</h5>
@@ -357,6 +356,7 @@
       </div>
       {% endif %}
       {% include 'netbox_inventory/inc/contracts_panel.html' with asset=object contracts=contracts %}
+      {% include 'netbox_inventory/inc/sor_panel.html' with asset=object sor_records=sor_records %}
       {% include 'netbox_inventory/inc/hardware_lifecycle_info.html' with lifecycle_info=lifecycle_info %}
       {% include 'inc/panels/image_attachments.html' %}
       {% plugin_right_page object %}
