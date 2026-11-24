@@ -5,3 +5,4 @@ from .hardware import *
 from .licenses import *
 from .locations import *
 from .purchases import *
+from .system_of_record import *

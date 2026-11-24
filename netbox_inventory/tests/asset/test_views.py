@@ -6,7 +6,7 @@ from users.models import ObjectPermission
 from utilities.testing import ViewTestCases, post_data
 
 from ..settings import CONFIG_ALLOW_CREATE_DEVICE_TYPE
-from netbox_inventory.models import Asset, Delivery, Purchase, Supplier
+from netbox_inventory.models import Asset, Order, Purchase, Supplier
 from netbox_inventory.tests.custom import ModelViewTestCase
 
 
@@ -32,13 +32,19 @@ class AssetTestCase(
             supplier=supplier1,
             status='closed',
         )
-        Delivery.objects.create(
-            name='the_delivery',
-            purchase=purchase1,
+        order_manufacturer = Manufacturer.objects.create(
+            name='Order Manufacturer',
+            slug='order-manufacturer',
         )
-        Delivery.objects.create(
-            name='the_delivery',
+        Order.objects.create(
+            name='the_order',
+            purchase=purchase1,
+            manufacturer=order_manufacturer,
+        )
+        Order.objects.create(
+            name='the_order',
             purchase=purchase2,
+            manufacturer=order_manufacturer,
         )
         Site.objects.create(
             name='site1',
@@ -82,9 +88,9 @@ class AssetTestCase(
             'device_type': device_type1.pk,
         }
         cls.csv_data = (
-            'serial,status,hardware_kind,manufacturer,model_name,supplier,purchase,delivery',
-            'csv1,stored,device,manufacturer1,device_type1,Supplier1,Purchase1,the_delivery',
-            'csv2,stored,device,manufacturer1,device_type1,Supplier1,Purchase1,the_delivery',
+            'serial,status,hardware_kind,manufacturer,model_name,supplier,purchase,order',
+            'csv1,stored,device,manufacturer1,device_type1,Supplier1,Purchase1,the_order',
+            'csv2,stored,device,manufacturer1,device_type1,Supplier1,Purchase1,the_order',
             'csv3,stored,device,manufacturer_csv,device_type_csv,,,',
         )
         cls.csv_update_data = (
@@ -146,9 +152,9 @@ class AssetTestCase(
         return super().test_bulk_import_objects_with_constrained_permission()
 
     @override_settings(EXEMPT_VIEW_PERMISSIONS=['*'])
-    def test_purchase_delivery_autoset(self):
+    def test_purchase_order_autoset(self):
         """
-        check that assigning delivery without purchase auto-sets purchase
+        check that assigning order without purchase auto-sets purchase
         """
         # Assign unconstrained permission
         obj_perm = ObjectPermission(
@@ -167,16 +173,17 @@ class AssetTestCase(
             supplier=supplier1,
             status='closed',
         )
-        delivery1 = Delivery.objects.create(
-            name='Delivery1-autoset',
+        order1 = Order.objects.create(
+            name='Order1-autoset',
             purchase=purchase1,
+            manufacturer=Manufacturer.objects.first(),
         )
 
         form_data = {
             'status': 'stored',
-            'serial': '123delivery',
+            'serial': '123order',
             'device_type': DeviceType.objects.first(),
-            'delivery': delivery1.pk,
+            'order': order1.pk,
         }
 
         request = {
@@ -185,7 +192,7 @@ class AssetTestCase(
         }
         self.assertHttpStatus(self.client.post(**request), 302)
 
-        assets = Asset.objects.filter(serial='123delivery')
+        assets = Asset.objects.filter(serial='123order')
         self.assertEqual(len(assets), 1)
         self.assertEqual(assets.first().purchase, purchase1)
 

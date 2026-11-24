@@ -3,6 +3,7 @@ from netbox.search import SearchIndex
 from .models import (
     Asset,
     AssetLicense,
+    AssetSystemOfRecord,
     AuditTrailSource,
     Contract,
     ContractSKU,
@@ -131,6 +132,14 @@ class LicenseBundleIndex(SearchIndex):
     )
 
 
+class AssetSystemOfRecordIndex(SearchIndex):
+    model = AssetSystemOfRecord
+    fields = (
+        ('record_id', 60),
+    )
+    display_attrs = ('asset', 'system', 'validation_status')
+
+
 class AssetLicenseIndex(SearchIndex):
     model = AssetLicense
     fields = (
@@ -200,6 +209,7 @@ indexes = [
     SubscriptionIndex,
     LicenseBundleIndex,
     AssetLicenseIndex,
+    AssetSystemOfRecordIndex,
     ContractVendorIndex,
     ContractSKUIndex,
     ContractIndex,

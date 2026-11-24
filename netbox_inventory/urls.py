@@ -160,6 +160,10 @@ urlpatterns = [
     path("asset-licenses/", include(get_model_urls('netbox_inventory', 'assetlicense', detail=False))),
     path("asset-licenses/<int:pk>/", include(get_model_urls('netbox_inventory', 'assetlicense'))),
     path("asset-licenses/bulk-assign/", views.AssetLicenseBulkAssignView.as_view(), name="assetlicense_bulk_assign"),
+
+    # System of Record (read-only in the UI; maintained via API)
+    path("sor-records/", include(get_model_urls('netbox_inventory', 'assetsystemofrecord', detail=False))),
+    path("sor-records/<int:pk>/", include(get_model_urls('netbox_inventory', 'assetsystemofrecord'))),
     path("asset-licenses/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
         name="assetlicense_changelog",
         kwargs={"model": AssetLicense},

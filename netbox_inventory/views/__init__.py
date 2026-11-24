@@ -19,3 +19,4 @@ from .locations import *
 from .order import *
 from .purchase import *
 from .supplier import *
+from .system_of_record import *

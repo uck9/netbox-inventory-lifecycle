@@ -989,6 +989,9 @@ class Asset(NamedModel, ImageAttachmentsMixin):
     def get_support_source_color(self):
         return AssetSupportSourceChoices.colors.get(self.support_source)
 
+    def get_disposal_reason_color(self):
+        return AssetDisposalReasonChoices.colors.get(self.disposal_reason)
+
     def validate_disposal(self) -> None:
         if self.status != 'disposed':
             # Clear disposal data when status is not disposed

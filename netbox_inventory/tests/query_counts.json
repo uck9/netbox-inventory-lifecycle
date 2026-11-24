@@ -1,4 +1,6 @@
 {
+  "assetsystemofrecord:api_list_objects": 14,
+  "assetsystemofrecord:list_objects_with_permission": 22,
   "auditflow:api_list_objects": 14,
   "auditflow:list_objects_with_permission": 20,
   "auditflowpage:api_list_objects": 13,

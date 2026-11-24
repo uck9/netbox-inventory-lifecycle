@@ -1,0 +1,26 @@
+{% load helpers %}
+{% if perms.netbox_inventory.view_assetsystemofrecord %}
+<div class="card">
+  <h5 class="card-header d-flex justify-content-between align-items-center">
+    System of Record
+    {% if sor_records %}
+      <a href="{% url 'plugins:netbox_inventory:asset_system-of-record' pk=asset.pk %}" class="btn btn-sm btn-outline-secondary">Details</a>
+    {% endif %}
+  </h5>
+  {% if sor_records %}
+  <table class="table table-hover attr-table">
+    {% for sor in sor_records %}
+    <tr>
+      <th scope="row">{{ sor.get_system_display }}</th>
+      <td>
+        {% badge sor.get_validation_status_display bg_color=sor.get_validation_status_color %}
+        {% if sor.is_stale %}<span class="badge text-bg-warning" title="Last validated: {{ sor.last_validated|default:'never' }}">Stale</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <div class="card-body text-muted">No system of record entries.</div>
+  {% endif %}
+</div>
+{% endif %}

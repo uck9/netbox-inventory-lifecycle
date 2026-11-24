@@ -36,12 +36,15 @@ from ..choices import (
     PurchaseStatusChoices,
     AssetSupportStateChoices,
     AssetSupportReasonChoices,
-    AssetSupportSourceChoices
+    AssetSupportSourceChoices,
+    SORValidationStatusChoices,
+    SystemOfRecordChoices,
 )
 from ..models import *
 
 __all__ = (
     'AssetFilterForm',
+    'AssetSystemOfRecordFilterForm',
     'AuditFlowFilterForm',
     'AuditFlowPageFilterForm',
     'AuditTrailFilterForm',
@@ -972,5 +975,49 @@ class AssetLicenseFilterForm(NetBoxModelFilterSetForm):
         required=False,
         label='Is pending (not yet started)',
         widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    tag = TagFilterField(model)
+
+
+#
+# System of Record
+#
+
+
+class AssetSystemOfRecordFilterForm(NetBoxModelFilterSetForm):
+    model = AssetSystemOfRecord
+    fieldsets = (
+        FieldSet('q', 'filter_id', 'tag'),
+        FieldSet('asset_id', 'system', 'validation_status', 'is_stale', name='System of Record'),
+        FieldSet('last_validated__gte', 'last_validated__lte', name='Dates'),
+    )
+    asset_id = DynamicModelMultipleChoiceField(
+        queryset=Asset.objects.all(),
+        required=False,
+        selector=True,
+        label='Asset',
+    )
+    system = forms.MultipleChoiceField(
+        choices=SystemOfRecordChoices,
+        required=False,
+    )
+    validation_status = forms.MultipleChoiceField(
+        choices=SORValidationStatusChoices,
+        required=False,
+    )
+    is_stale = forms.NullBooleanField(
+        required=False,
+        label='Is stale',
+        widget=forms.Select(choices=BOOLEAN_WITH_BLANK_CHOICES),
+    )
+    last_validated__gte = forms.DateField(
+        required=False,
+        label='Last validated (from)',
+        widget=DatePicker(),
+    )
+    last_validated__lte = forms.DateField(
+        required=False,
+        label='Last validated (to)',
+        widget=DatePicker(),
     )
     tag = TagFilterField(model)

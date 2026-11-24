@@ -38,6 +38,9 @@ class NetBoxInventoryConfig(PluginConfig):
         # Show disposed assets in the asset list by default. Users can
         # override this in their own preferences.
         'include_disposed_assets': False,
+        # System of Record entries not validated within this many days
+        # (or never validated) are flagged as stale.
+        'sor_stale_days': 30,
     }
 
     def register_feature_views(self) -> None:

@@ -5,3 +5,4 @@ from .serializers_.hardware import *
 from .serializers_.licenses import *
 from .serializers_.locations import *
 from .serializers_.purchases import *
+from .serializers_.system_of_record import *

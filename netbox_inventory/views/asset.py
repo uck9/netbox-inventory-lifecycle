@@ -36,6 +36,12 @@ class AssetView(generic.ObjectView):
             .select_related('contract')
             .order_by('contract__contract_id', 'end_date')
         )
+        context['sor_records'] = (
+            models.AssetSystemOfRecord.objects
+            .restrict(request.user, 'view')
+            .filter(asset=instance)
+            .order_by('system')
+        )
 
         # --- Lifecycle context ---
         lifecycle_ct = ContentType.objects.get(app_label="dcim", model=self.lifecycle_content_type_model)
