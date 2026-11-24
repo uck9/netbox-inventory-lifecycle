@@ -188,3 +188,38 @@ class AssetSupportReasonChoices(ChoiceSet):
         (SPARE, _("Spare"), "blue"),
         (DECOMMISSION_PLANNED, _("Decommission planned"), "blue"),
     ]
+
+
+#
+# System of Record
+#
+
+
+class SystemOfRecordChoices(ChoiceSet):
+    key = 'AssetSystemOfRecord.system'
+
+    CISCO_IQ = 'cisco_iq'
+    CMDB = 'cmdb'
+
+    CHOICES = [
+        (CISCO_IQ, 'Cisco IQ', 'blue'),
+        (CMDB, 'CMDB', 'purple'),
+    ]
+
+
+class SORValidationStatusChoices(ChoiceSet):
+    key = 'AssetSystemOfRecord.validation_status'
+
+    PENDING = 'pending'
+    VALID = 'valid'
+    MISMATCH = 'mismatch'
+    NOT_FOUND = 'not_found'
+    ERROR = 'error'
+
+    CHOICES = [
+        (PENDING, 'Pending', 'gray'),
+        (VALID, 'Valid', 'green'),
+        (MISMATCH, 'Mismatch', 'orange'),
+        (NOT_FOUND, 'Not Found', 'red'),
+        (ERROR, 'Error', 'black'),
+    ]

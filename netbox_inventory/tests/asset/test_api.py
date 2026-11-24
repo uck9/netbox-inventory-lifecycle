@@ -16,7 +16,7 @@ from dcim.models import (
 from users.models import ObjectPermission
 from utilities.testing import APIViewTestCases, disable_warnings
 
-from ...models import Asset, Delivery, InventoryItemType, Purchase, Supplier
+from ...models import Asset, InventoryItemType, Order, Purchase, Supplier
 from ..custom import APITestCase
 
 
@@ -101,9 +101,9 @@ class AssetTest(
         with disable_warnings('django.request'):
             self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
 
-    def test_purchase_delivery_autoset(self):
+    def test_purchase_order_autoset(self):
         """
-        check that assigning delivery without purchase auto-sets purchase
+        check that assigning order without purchase auto-sets purchase
         """
         # Add object-level permission
         obj_perm = ObjectPermission(name='Test permission', actions=['add', 'change'])
@@ -181,8 +181,8 @@ class AssetTest(
         cls.purchase1 = Purchase.objects.create(
             name='Purchase1', supplier=supplier1, status='closed'
         )
-        cls.delivery1 = Delivery.objects.create(
-            name='Delivery1', purchase=cls.purchase1
+        cls.order1 = Order.objects.create(
+            name='Order1', purchase=cls.purchase1, manufacturer=manufacturer
         )
 
         Asset.objects.create(name='Asset 1', serial='asset1', device_type=device_type1)
@@ -212,6 +212,6 @@ class AssetTest(
                 'status': 'stored',
                 'inventoryitem_type': inventoryitem_type1.pk,
                 'inventoryitem': cls.inventoryitem1.pk,
-                'delivery': cls.delivery1.pk,
+                'order': cls.order1.pk,
             },
         ]

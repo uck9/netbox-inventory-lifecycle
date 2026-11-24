@@ -46,4 +46,7 @@ router.register("subscriptions", views.SubscriptionViewSet)
 router.register("license-bundles", views.LicenseBundleViewSet)
 router.register("asset-licenses", views.AssetLicenseViewSet)
 
+# System of Record
+router.register("sor-records", views.AssetSystemOfRecordViewSet)
+
 urlpatterns = router.urls

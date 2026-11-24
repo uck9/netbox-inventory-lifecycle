@@ -301,6 +301,7 @@
           </tr>
         </table>
       </div>
+      {% include 'netbox_inventory/inc/sor_panel.html' with asset=object sor_records=sor_records %}
       {% if object.status == "disposed" %}
       <div class="card">
         <h5 class="card-header">Disposal Details</h5>
@@ -311,7 +312,13 @@
           </tr>
           <tr>
             <th scope="row">Disposal Reason</th>
-            <td>{{ object.disposal_reason|placeholder }}</td>
+            <td>
+              {% if object.disposal_reason %}
+              {% badge object.get_disposal_reason_display bg_color=object.get_disposal_reason_color %}
+              {% else %}
+              {{ ''|placeholder }}
+              {% endif %}
+            </td>
           </tr>
           <tr>
             <th scope="row">Disposal Reference</th>

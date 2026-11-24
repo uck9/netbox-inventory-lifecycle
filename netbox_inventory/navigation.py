@@ -97,6 +97,12 @@ assets_items = (
         permissions=['netbox_inventory.view_warrantytype'],
         buttons=warrantytype_buttons,
     ),
+    # Read-only list: SOR records are maintained via the API, so no Add/Import buttons.
+    PluginMenuItem(
+        link='plugins:netbox_inventory:assetsystemofrecord_list',
+        link_text='System of Record',
+        permissions=['netbox_inventory.view_assetsystemofrecord'],
+    ),
     #PluginMenuItem(
     #    link='plugins:netbox_inventory:inventoryitemtype_list',
     #    link_text='Inventory Item Types',

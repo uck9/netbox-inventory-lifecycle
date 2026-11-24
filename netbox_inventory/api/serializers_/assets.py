@@ -18,6 +18,7 @@ from tenancy.api.serializers import ContactSerializer, TenantSerializer
 from .licenses import *
 from .nested import *
 from .purchases import *
+from .system_of_record import NestedAssetSystemOfRecordSerializer
 from netbox_inventory.models import Asset, InventoryItemGroup, InventoryItemType, WarrantyType
 
 
@@ -218,6 +219,10 @@ class AssetSerializer(PrimaryModelSerializer):
         many=True,
         required=False,
     )
+    sor_records = NestedAssetSystemOfRecordSerializer(
+        many=True,
+        read_only=True,
+    )
 
     def to_internal_value(self, data):
         ret = super().to_internal_value(data)
@@ -274,6 +279,7 @@ class AssetSerializer(PrimaryModelSerializer):
             'disposal_reference',
             'planned_decommission_date',
             'exclude_from_lifecycle_planning',
+            'sor_records',
             'owner',
             'comments',
             'tags',

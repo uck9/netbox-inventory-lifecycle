@@ -5,7 +5,7 @@ from dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site
 from utilities.exceptions import AbortRequest
 
 from ..settings import CONFIG_SYNC_OFF, CONFIG_SYNC_ON
-from netbox_inventory.models import Asset, Delivery, Purchase, Supplier
+from netbox_inventory.models import Asset, Order, Purchase, Supplier
 
 
 class TestAssetModel(TestCase):
@@ -24,9 +24,14 @@ class TestAssetModel(TestCase):
             supplier=self.supplier1,
             status='closed',
         )
-        self.delivery1 = Delivery.objects.create(
-            name='Delivery1',
+        self.order_manufacturer = Manufacturer.objects.create(
+            name='Order Manufacturer',
+            slug='order-manufacturer',
+        )
+        self.order1 = Order.objects.create(
+            name='Order1',
             purchase=self.purchase1,
+            manufacturer=self.order_manufacturer,
         )
         self.site1 = Site.objects.create(
             name='site1',
@@ -184,31 +189,31 @@ class TestAssetModel(TestCase):
         self.asset1.refresh_from_db()
         self.assertEqual(self.asset1.status, 'stored')
 
-    def test_purchase_delivery_missmatch(self):
+    def test_purchase_order_missmatch(self):
         self.asset1.snapshot()
         self.asset1.purchase = self.purchase2
-        self.asset1.delivery = self.delivery1
+        self.asset1.order = self.order1
         with self.assertRaises(ValidationError):
             self.asset1.full_clean()
 
-    def test_purchase_delivery_empty(self):
+    def test_purchase_order_empty(self):
         self.asset1.snapshot()
         self.asset1.purchase = None
-        self.asset1.delivery = self.delivery1
+        self.asset1.order = self.order1
         with self.assertRaises(ValidationError):
             self.asset1.full_clean()
 
-    def test_change_delivery_purchse(self):
+    def test_change_order_purchase(self):
         """
-        Test that when delivery.purchase changes, asset.purchase is updated via signals
+        Test that when order.purchase changes, asset.purchase is updated via signals
         """
         self.asset1.snapshot()
         self.asset1.purchase = self.purchase1
-        self.asset1.delivery = self.delivery1
+        self.asset1.order = self.order1
         self.asset1.full_clean()
         self.asset1.save()
-        self.delivery1.purchase = self.purchase2
-        self.delivery1.full_clean()
-        self.delivery1.save()
+        self.order1.purchase = self.purchase2
+        self.order1.full_clean()
+        self.order1.save()
         self.asset1.refresh_from_db()
         self.assertEqual(self.asset1.purchase, self.purchase2)

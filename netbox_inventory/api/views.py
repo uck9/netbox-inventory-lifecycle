@@ -32,6 +32,7 @@ __all__ = (
     'LicenseSKUViewSet',
     'SubscriptionViewSet',
     'AssetLicenseViewSet',
+    'AssetSystemOfRecordViewSet',
 )
 
 
@@ -86,6 +87,7 @@ class AssetViewSet(NetBoxModelViewSet):
         'storage_location',
         'order',
         'purchase__supplier',
+        'sor_records',
         'tags',
     )
     serializer_class = AssetSerializer
@@ -268,3 +270,14 @@ class AssetLicenseViewSet(NetBoxModelViewSet):
     ).prefetch_related('tags')
     serializer_class = AssetLicenseSerializer
     filterset_class = filtersets.AssetLicenseFilterSet
+
+
+#
+# System of Record
+#
+
+
+class AssetSystemOfRecordViewSet(NetBoxModelViewSet):
+    queryset = models.AssetSystemOfRecord.objects.select_related('asset').prefetch_related('tags')
+    serializer_class = AssetSystemOfRecordSerializer
+    filterset_class = filtersets.AssetSystemOfRecordFilterSet

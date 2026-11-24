@@ -1,0 +1,16 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <h5 class="card-header">System of Record</h5>
+        {% include 'inc/table.html' with table=sor_table %}
+        <div class="card-footer text-muted small">
+          Records are maintained via the API. Entries not validated in the last {{ sor_stale_days }} days are flagged as stale.
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

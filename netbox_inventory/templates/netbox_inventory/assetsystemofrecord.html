@@ -1,0 +1,50 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load plugins %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">System of Record</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">Asset</th>
+            <td>{{ object.asset|linkify }}</td>
+          </tr>
+          <tr>
+            <th scope="row">System</th>
+            <td>{% badge object.get_system_display bg_color=object.get_system_color %}</td>
+          </tr>
+          <tr>
+            <th scope="row">SOR ID</th>
+            <td><span class="font-monospace">{{ object.record_id }}</span></td>
+          </tr>
+          <tr>
+            <th scope="row">Validation Status</th>
+            <td>
+              {% badge object.get_validation_status_display bg_color=object.get_validation_status_color %}
+              {% if object.is_stale %}<span class="badge text-bg-warning">Stale</span>{% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Last Validated</th>
+            <td>{{ object.last_validated|isodate|placeholder }}</td>
+          </tr>
+        </table>
+        <div class="card-footer text-muted small">Maintained via the API &mdash; not editable in the UI.</div>
+      </div>
+      {% plugin_left_page object %}
+    </div>
+    <div class="col col-md-6">
+      {% include 'inc/panels/custom_fields.html' %}
+      {% include 'inc/panels/tags.html' %}
+      {% plugin_right_page object %}
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      {% plugin_full_width_page object %}
+    </div>
+  </div>
+{% endblock content %}

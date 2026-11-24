@@ -36,6 +36,8 @@ from .choices import (
     ContractTypeChoices,
     HardwareKindChoices,
     PurchaseStatusChoices,
+    SORValidationStatusChoices,
+    SystemOfRecordChoices,
 )
 from .models import *
 from .utils import (
@@ -69,6 +71,7 @@ __all__ = (
     'LicenseSKUFilterSet',
     'SubscriptionFilterSet',
     'AssetLicenseFilterSet',
+    'AssetSystemOfRecordFilterSet',
 )
 
 
@@ -159,6 +162,26 @@ class AssetFilterSet(PrimaryModelFilterSet):
     )
     planned_decommission_date = django_filters.DateFromToRangeFilter()
     exclude_from_lifecycle_planning = django_filters.BooleanFilter()
+    # Each sor_* filter matches assets having *any* SOR record that matches;
+    # combining them does not require the same record to match both. For
+    # per-record queries use the sor-records endpoint instead.
+    sor_system = django_filters.MultipleChoiceFilter(
+        field_name='sor_records__system',
+        choices=SystemOfRecordChoices,
+        distinct=True,
+        label=_('System of record'),
+    )
+    sor_record_id = filters.MultiValueCharFilter(
+        field_name='sor_records__record_id',
+        distinct=True,
+        label=_('SOR ID'),
+    )
+    sor_validation_status = django_filters.MultipleChoiceFilter(
+        field_name='sor_records__validation_status',
+        choices=SORValidationStatusChoices,
+        distinct=True,
+        label=_('SOR validation status'),
+    )
     kind = filters.MultiValueCharFilter(
         method='filter_kind',
         label='Type of hardware',
@@ -1525,3 +1548,44 @@ class AssetLicenseFilterSet(NetBoxModelFilterSet):
         from datetime import date
         today = date.today()
         return queryset.filter(start_date__gt=today) if value else queryset.exclude(start_date__gt=today)
+
+
+#
+# System of Record
+#
+
+
+class AssetSystemOfRecordFilterSet(NetBoxModelFilterSet):
+    asset_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='asset',
+        queryset=Asset.objects.all(),
+        label=_('Asset (ID)'),
+    )
+    system = django_filters.MultipleChoiceFilter(
+        choices=SystemOfRecordChoices,
+    )
+    validation_status = django_filters.MultipleChoiceFilter(
+        choices=SORValidationStatusChoices,
+    )
+    is_stale = django_filters.BooleanFilter(
+        method='filter_is_stale',
+        label=_('Is stale'),
+    )
+
+    class Meta:
+        model = AssetSystemOfRecord
+        fields = ('id', 'asset_id', 'system', 'record_id', 'validation_status', 'last_validated')
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(record_id__icontains=value)
+            | Q(asset__name__icontains=value)
+            | Q(asset__serial__icontains=value)
+            | Q(asset__asset_tag__icontains=value)
+        )
+
+    def filter_is_stale(self, queryset, name, value):
+        stale = Q(last_validated__isnull=True) | Q(last_validated__lt=AssetSystemOfRecord.stale_cutoff())
+        return queryset.filter(stale) if value else queryset.exclude(stale)
