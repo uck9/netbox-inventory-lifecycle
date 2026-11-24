@@ -14,7 +14,7 @@
     {% for sor in sor_records %}
     <tr>
       <th scope="row">{{ sor.get_system_display }}</th>
-      <td>
+      <td class="text-center">
         {% badge sor.get_validation_status_display bg_color=sor.get_validation_status_color %}
         {% if sor.is_stale %}<span class="badge text-bg-warning">Stale</span>{% endif %}
       </td>
